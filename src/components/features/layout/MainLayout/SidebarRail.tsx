@@ -1,7 +1,8 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { CheckSquare, Award, Settings, RefreshCw, Volume2, VolumeX, User } from 'lucide-react';
+import { CheckSquare, Award, Settings, RefreshCw, Volume2, VolumeX, User, Download } from 'lucide-react';
 import { useAppDispatch } from '../../../../hooks/useRedux';
 import { setActiveCollectionId, setActiveSubcollectionId, setFilter } from '../../../../store/slices/todoSlice';
+import { usePWA } from '../../../../hooks/usePWA';
 import type { UserProfile } from '../../../../types';
 
 interface SidebarRailProps {
@@ -26,6 +27,7 @@ export const SidebarRail = ({
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useAppDispatch();
+  const { shouldShowButton, triggerInstall } = usePWA();
 
 
   return (
@@ -115,6 +117,18 @@ export const SidebarRail = ({
         >
           {soundEnabled ? <Volume2 aria-hidden="true" className="w-4.5 h-4.5" /> : <VolumeX aria-hidden="true" className="w-4.5 h-4.5 text-error" />}
         </button>
+
+        {/* PWA Install Button */}
+        {shouldShowButton && (
+          <button
+            onClick={triggerInstall}
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-brand-primary bg-brand-primary/10 border border-brand-primary/30 hover:bg-brand-primary/20 cursor-pointer transition-all active:scale-95 glow-primary animate-pulse"
+            title="Download & Install App 📲"
+            aria-label="Install Todio Application"
+          >
+            <Download aria-hidden="true" className="w-4.5 h-4.5" />
+          </button>
+        )}
 
         {/* User Profile avatar trigger */}
         <div className="relative shrink-0 select-none">

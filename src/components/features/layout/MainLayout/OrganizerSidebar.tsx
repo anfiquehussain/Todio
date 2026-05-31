@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  CheckSquare, Calendar, Folder, Plus, Check, X, Edit2, Trash2, LayoutList, ChevronDown, ChevronRight 
+  CheckSquare, Calendar, Folder, Plus, Check, X, Edit2, Trash2, LayoutList, ChevronDown, ChevronRight, Download 
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../../../hooks/useRedux';
+import { usePWA } from '../../../../hooks/usePWA';
 import { 
   setActiveCollectionId, setActiveSubcollectionId, setFilter, 
   createCollectionAsync, deleteCollectionAsync, createSubcollectionAsync, deleteSubcollectionAsync,
@@ -24,6 +25,7 @@ export const OrganizerSidebar = ({
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const { checkAuth } = useAuthGuard();
+  const { shouldShowButton, triggerInstall } = usePWA();
 
   const { 
     collections, subcollections, tasks, activeCollectionId, 
@@ -589,6 +591,21 @@ export const OrganizerSidebar = ({
           <Check className="w-4 h-4" />
           <span>Completed</span>
         </button>
+
+        {/* PWA Install Banner */}
+        {shouldShowButton && (
+          <div className="mt-2 mb-1 p-3 rounded-2xl bg-linear-to-br from-brand-primary/10 to-brand-accent/5 border border-brand-primary/20 hover:border-brand-primary/35 transition-colors select-none text-left shrink-0">
+            <h4 className="text-xs font-bold text-text-primary mb-0.5">Get Todio App</h4>
+            <p className="text-[10px] text-text-secondary mb-2 leading-relaxed">Install for a faster, offline-ready productivity experience.</p>
+            <button
+              onClick={triggerInstall}
+              className="w-full py-1.5 px-3 bg-brand-primary hover:bg-brand-primary/95 text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 cursor-pointer active:scale-97 transition-all shadow-md hover:shadow-lg glow-primary"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Install Workspace</span>
+            </button>
+          </div>
+        )}
 
         <div className="text-[10px] text-text-secondary/40 font-medium px-3 mt-2 select-none">
           v1.3.0 • Premium 3-Column

@@ -12,3 +12,16 @@ createRoot(document.getElementById('root')!).render(
     </Provider>
   </StrictMode>,
 )
+
+// Register Progressive Web App Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((reg) => {
+        console.log('Todio Service Worker registered successfully:', reg.scope);
+      })
+      .catch((err) => {
+        console.error('Todio Service Worker registration failed:', err);
+      });
+  });
+}

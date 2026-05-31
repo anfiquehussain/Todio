@@ -51,6 +51,7 @@ src/
 │   ├── useAuthGuard.ts # Action security cloud lock validation
 │   ├── useRedux.ts     # Pre-typed useAppDispatch & useAppSelector
 │   ├── useToast.ts     # Typed toast notification hook (Sonner wrapper)
+│   ├── usePWA.ts       # PWA installer prompt and state manager hook
 │   └── useIntersectionObserver.ts # Observer hook for infinite scroll loading
 ├── lib/                # Third-party library configs
 │   ├── firebase.ts     # Firebase config credentials initialization
