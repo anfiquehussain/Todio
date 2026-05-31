@@ -3,7 +3,9 @@ const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/favicon.svg',
-  '/icons.svg'
+  '/icons.svg',
+  '/icon-192.png',
+  '/icon-512.png'
 ];
 
 // Install Event
