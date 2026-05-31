@@ -118,7 +118,7 @@ export const CategoryManager = ({
   };
 
   return (
-    <div className="w-72 shrink-0 bg-card border border-gray-border rounded-3xl p-4 flex flex-col gap-4 overflow-y-auto no-scrollbar select-none">
+    <div className="w-full lg:w-72 shrink-0 bg-card border border-gray-border rounded-3xl p-4 flex flex-col gap-4 overflow-y-auto no-scrollbar select-none">
       <div className="flex items-center justify-between px-2 mb-2">
         <h2 className="text-lg font-bold text-text-primary tracking-wide">Workspace</h2>
         <IconButton variant="ghost" size="sm" onClick={() => setIsCreatingCollection(true)}>
@@ -199,7 +199,7 @@ export const CategoryManager = ({
                   <span className="text-sm font-semibold truncate">{collection.name}</span>
                 </div>
 
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                   <button 
                     onClick={(e) => { 
                       e.stopPropagation(); 
@@ -243,7 +243,7 @@ export const CategoryManager = ({
                         </div>
                         <button 
                           onClick={(e) => { e.stopPropagation(); handleDeleteSubcollection(sub.id); }}
-                          className="p-1 hover:bg-error/20 rounded text-error opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="p-1 hover:bg-error/20 rounded text-error opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>

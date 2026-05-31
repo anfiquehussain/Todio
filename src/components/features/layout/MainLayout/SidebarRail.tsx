@@ -43,7 +43,7 @@ export const SidebarRail = ({
             dispatch(setFilter('all'));
             navigate('/');
           }}
-          title="Simple Todo Cockpit"
+          title="Todio Cockpit"
           aria-label="Home Workspace"
         >
           <svg aria-hidden="true" viewBox="0 0 24 24" className="w-5.5 h-5.5 fill-brand-primary">

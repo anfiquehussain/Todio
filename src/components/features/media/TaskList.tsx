@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Plus, Check, Trash2, ArrowUpDown, Smile, Edit2, X, Copy 
+  Plus, Check, Trash2, ArrowUpDown, Smile, Edit2, X, Copy, ChevronDown, ChevronUp 
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../../hooks/useRedux';
 import { 
@@ -12,6 +12,61 @@ import { playCompletionSound } from '../../../lib/sound';
 import { useToast } from '../../../hooks/useToast';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import type { Task } from '../../../types';
+
+interface TaskTitleTextProps {
+  title: string;
+  lineClass?: string;
+}
+
+const TaskTitleText = ({ title, lineClass = '' }: TaskTitleTextProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+  const textRef = useRef<HTMLSpanElement | null>(null);
+
+  useEffect(() => {
+    const measure = () => {
+      const el = textRef.current;
+      if (el) {
+        setIsOverflowing(el.scrollHeight > el.clientHeight);
+      }
+    };
+    
+    measure();
+    const timeout = setTimeout(measure, 100);
+    return () => clearTimeout(timeout);
+  }, [title]);
+
+  return (
+    <div className="flex items-start gap-1.5 flex-1 min-w-0">
+      <span
+        ref={textRef}
+        title={title}
+        className={`text-xs font-bold text-left select-text wrap-break-word flex-1 ${lineClass} ${
+          isExpanded ? 'whitespace-pre-wrap' : 'line-clamp-1 overflow-hidden'
+        }`}
+      >
+        {title}
+      </span>
+      {isOverflowing && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsExpanded(!isExpanded);
+          }}
+          className="p-0.5 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0 mt-0.5"
+          title={isExpanded ? "Collapse" : "Expand"}
+        >
+          {isExpanded ? (
+            <ChevronUp className="w-3 h-3" />
+          ) : (
+            <ChevronDown className="w-3 h-3" />
+          )}
+        </button>
+      )}
+    </div>
+  );
+};
 
 export const TaskList = () => {
   const dispatch = useAppDispatch();
@@ -231,7 +286,6 @@ export const TaskList = () => {
           {activeQueue.length > 0 ? (
             activeQueue.map(task => {
               const isSelected = task.id === activeTaskId;
-              const cat = collections.find(c => c.id === task.collectionId);
 
               return editingTaskId === task.id ? (
                 <form
@@ -332,10 +386,10 @@ export const TaskList = () => {
                         : `${isSelected ? 'bg-[#222222] border-[#383838]' : 'bg-[#181818]/60 border-gray-border hover:bg-[#1c1c1c]'} border-l-success`
                   } ${isSelected ? 'shadow-md shadow-brand-primary/5' : ''}`}
                 >
-                  <div className="flex items-center gap-3 overflow-hidden flex-1">
+                  <div className="flex items-start gap-3 overflow-hidden flex-1">
                     <button
                       onClick={(e) => { e.stopPropagation(); handleToggleComplete(task); }}
-                      className={`w-4.5 h-4.5 rounded-full border bg-bg-secondary flex items-center justify-center text-transparent transition-all shrink-0 cursor-pointer ${
+                      className={`w-4.5 h-4.5 rounded-full border bg-bg-secondary flex items-center justify-center text-transparent transition-all shrink-0 cursor-pointer mt-0.5 ${
                         task.priority >= 4
                           ? 'border-error hover:border-error/80'
                           : task.priority >= 2
@@ -348,29 +402,17 @@ export const TaskList = () => {
                         task.priority >= 4 ? 'hover:text-error' : task.priority >= 2 ? 'hover:text-warning' : 'hover:text-brand-primary'
                       }`} />
                     </button>
-                    <span className="text-xs font-bold text-text-primary truncate">
-                      {task.title}
-                    </span>
+                    <TaskTitleText title={task.title} lineClass="text-text-primary" />
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    {/* Project badge tag */}
-                    {cat && (
-                      <span 
-                        className="text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-md border text-white/90"
-                        style={{ backgroundColor: `${cat.color}15`, borderColor: `${cat.color}25` }}
-                      >
-                        {cat.name}
-                      </span>
-                    )}
-                    
                     {/* Copy action only shown on hover */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleCopyTask(task);
                       }}
-                      className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                      className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
                       title="Copy Task"
                     >
                       <Copy className="w-3.5 h-3.5" />
@@ -384,7 +426,7 @@ export const TaskList = () => {
                         setEditingTaskTitle(task.title);
                         setEditingTaskPriority(task.priority || 1);
                       }}
-                      className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                      className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
                       title="Edit Task"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
@@ -393,7 +435,7 @@ export const TaskList = () => {
                     {/* Deletion action only shown on hover */}
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
-                      className="p-1 hover:bg-[#2e2e2e] rounded text-error/70 hover:text-error opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                      className="p-1 hover:bg-[#2e2e2e] rounded text-error/70 hover:text-error opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
                       title="Delete Task"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -527,17 +569,15 @@ export const TaskList = () => {
                             : 'border-l-success/40'
                       } ${isSelected ? 'bg-[#222] border-[#383838] opacity-100' : 'hover:opacity-100'}`}
                     >
-                      <div className="flex items-center gap-3 overflow-hidden flex-1">
+                      <div className="flex items-start gap-3 overflow-hidden flex-1">
                         <button
                           onClick={(e) => { e.stopPropagation(); handleToggleComplete(task); }}
-                          className="w-4.5 h-4.5 rounded-full border border-success bg-success text-white flex items-center justify-center shrink-0 cursor-pointer"
+                          className="w-4.5 h-4.5 rounded-full border border-success bg-success text-white flex items-center justify-center shrink-0 cursor-pointer mt-0.5"
                           aria-label="Revert task active"
                         >
                           <Check className="w-3.5 h-3.5" />
                         </button>
-                        <span className="text-xs font-semibold text-text-secondary line-through truncate">
-                          {task.title}
-                        </span>
+                        <TaskTitleText title={task.title} lineClass="text-text-secondary line-through opacity-60" />
                       </div>
 
                       <div className="flex items-center gap-1 shrink-0">
@@ -546,7 +586,7 @@ export const TaskList = () => {
                             e.stopPropagation();
                             handleCopyTask(task);
                           }}
-                          className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                          className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
                           title="Copy Task"
                         >
                           <Copy className="w-3 h-3" />
@@ -558,14 +598,14 @@ export const TaskList = () => {
                             setEditingTaskTitle(task.title);
                             setEditingTaskPriority(task.priority || 1);
                           }}
-                          className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                          className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
                           title="Edit Task"
                         >
                           <Edit2 className="w-3 h-3" />
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
-                          className="p-1 hover:bg-[#2e2e2e] rounded text-error/60 hover:text-error opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+                          className="p-1 hover:bg-[#2e2e2e] rounded text-error/60 hover:text-error opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
                           title="Delete Task"
                         >
                           <Trash2 className="w-3 h-3" />

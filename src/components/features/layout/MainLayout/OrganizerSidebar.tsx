@@ -393,10 +393,10 @@ export const OrganizerSidebar = ({
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[#202020] text-text-secondary/70 group-hover:hidden">
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[#202020] text-text-secondary/70 lg:group-hover:hidden hidden lg:block">
                         {totalActiveTasks}
                       </span>
-                      <div className="hidden group-hover:flex items-center gap-1">
+                      <div className="flex lg:hidden lg:group-hover:flex items-center gap-1">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -495,10 +495,10 @@ export const OrganizerSidebar = ({
                               </div>
                               
                               <div className="flex items-center gap-1 shrink-0">
-                                <span className="text-[9px] font-semibold px-1 rounded bg-[#202020] text-text-secondary/60 group-hover:hidden">
+                                <span className="text-[9px] font-semibold px-1 rounded bg-[#202020] text-text-secondary/60 lg:group-hover:hidden hidden lg:block">
                                   {subTasksCount}
                                 </span>
-                                <div className="hidden group-hover:flex items-center gap-1">
+                                <div className="flex lg:hidden lg:group-hover:flex items-center gap-1">
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();

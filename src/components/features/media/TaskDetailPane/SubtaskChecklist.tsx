@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
-  AlertCircle, Edit2, Trash2, Check, X, Copy 
+  AlertCircle, Edit2, Trash2, Check, X, Copy, ChevronDown, ChevronUp 
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../../../hooks/useRedux';
 import { 
@@ -18,6 +18,62 @@ interface SubtaskChecklistProps {
   checkAuth: (action: string) => boolean;
   toast: (msg: string, type: 'success' | 'error' | 'info') => void;
 }
+
+interface SubtaskTitleTextProps {
+  title: string;
+  lineClass?: string;
+}
+
+const SubtaskTitleText = ({ title, lineClass = '' }: SubtaskTitleTextProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+  const textRef = useRef<HTMLSpanElement | null>(null);
+
+  useEffect(() => {
+    const measure = () => {
+      const el = textRef.current;
+      if (el) {
+        setIsOverflowing(el.scrollHeight > el.clientHeight);
+      }
+    };
+    
+    measure();
+    // Re-check after a brief tick to ensure layout and fonts are fully settled
+    const timeout = setTimeout(measure, 100);
+    return () => clearTimeout(timeout);
+  }, [title]);
+
+  return (
+    <div className="flex items-start gap-1.5 flex-1 min-w-0">
+      <span
+        ref={textRef}
+        title={title}
+        className={`text-[11px] font-bold text-left select-text wrap-break-word flex-1 ${lineClass} ${
+          isExpanded ? 'whitespace-pre-wrap' : 'line-clamp-1 overflow-hidden'
+        }`}
+      >
+        {title}
+      </span>
+      {isOverflowing && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsExpanded(!isExpanded);
+          }}
+          className="p-0.5 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0 mt-0.5"
+          title={isExpanded ? "Collapse" : "Expand"}
+        >
+          {isExpanded ? (
+            <ChevronUp className="w-3 h-3" />
+          ) : (
+            <ChevronDown className="w-3 h-3" />
+          )}
+        </button>
+      )}
+    </div>
+  );
+};
 
 export const SubtaskChecklist = ({
   activeTask,
@@ -464,10 +520,10 @@ export const SubtaskChecklist = ({
                       </form>
                     ) : (
                       <>
-                        <div className="flex items-center gap-2.5 overflow-hidden flex-1">
+                        <div className="flex items-start gap-2.5 overflow-hidden flex-1">
                           <button
                             onClick={() => handleToggleSubtask(sub)}
-                            className={`w-4 h-4 rounded-md flex items-center justify-center border transition-all shrink-0 cursor-pointer ${
+                            className={`w-4 h-4 rounded-md flex items-center justify-center border transition-all shrink-0 cursor-pointer mt-0.5 ${
                               sub.priority === 'high'
                                 ? 'border-error bg-bg-secondary text-transparent hover:border-error/80'
                                 : sub.priority === 'medium'
@@ -477,9 +533,7 @@ export const SubtaskChecklist = ({
                           >
                             <Check className="w-2.5 h-2.5" />
                           </button>
-                          <span className="text-[11px] font-bold truncate">
-                            {sub.title}
-                          </span>
+                          <SubtaskTitleText title={sub.title} />
                         </div>
 
                         <div className="flex items-center gap-1 shrink-0">
@@ -489,7 +543,7 @@ export const SubtaskChecklist = ({
                               navigator.clipboard.writeText(sub.title);
                               toast('Subtask copied to clipboard! 📋', 'success');
                             }}
-                            className="p-1 hover:bg-[#282828] rounded text-text-secondary hover:text-text-primary opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+                            className="p-1 hover:bg-[#282828] rounded text-text-secondary hover:text-text-primary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
                             title="Copy subtask"
                           >
                             <Copy className="w-3 h-3" />
@@ -501,7 +555,7 @@ export const SubtaskChecklist = ({
                               setEditingSubtaskTitle(sub.title);
                               setEditingSubtaskPriority(sub.priority || 'low');
                             }}
-                            className="p-1 hover:bg-[#282828] rounded text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+                            className="p-1 hover:bg-[#282828] rounded text-text-secondary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
                             title="Edit subtask"
                           >
                             <Edit2 className="w-3 h-3" />
@@ -511,7 +565,7 @@ export const SubtaskChecklist = ({
                               e.stopPropagation();
                               handleDeleteSubtask(sub.id);
                             }}
-                            className="p-1 hover:bg-[#282828] rounded text-error opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+                            className="p-1 hover:bg-[#282828] rounded text-error opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
                             title="Delete subtask"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -637,16 +691,14 @@ export const SubtaskChecklist = ({
                       </form>
                     ) : (
                       <>
-                        <div className="flex items-center gap-2.5 overflow-hidden flex-1">
+                        <div className="flex items-start gap-2.5 overflow-hidden flex-1">
                           <button
                             onClick={() => handleToggleSubtask(sub)}
-                            className="w-4 h-4 rounded-md flex items-center justify-center border border-success bg-success text-white transition-all shrink-0 cursor-pointer"
+                            className="w-4 h-4 rounded-md flex items-center justify-center border border-success bg-success text-white transition-all shrink-0 cursor-pointer mt-0.5"
                           >
                             <Check className="w-2.5 h-2.5" />
                           </button>
-                          <span className="text-[11px] font-bold truncate line-through opacity-50">
-                            {sub.title}
-                          </span>
+                          <SubtaskTitleText title={sub.title} lineClass="line-through opacity-50" />
                         </div>
 
                         <div className="flex items-center gap-1 shrink-0">
@@ -656,7 +708,7 @@ export const SubtaskChecklist = ({
                               navigator.clipboard.writeText(sub.title);
                               toast('Subtask copied to clipboard! 📋', 'success');
                             }}
-                            className="p-1 hover:bg-[#282828] rounded text-text-secondary hover:text-text-primary opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+                            className="p-1 hover:bg-[#282828] rounded text-text-secondary hover:text-text-primary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
                             title="Copy subtask"
                           >
                             <Copy className="w-3 h-3" />
@@ -668,7 +720,7 @@ export const SubtaskChecklist = ({
                               setEditingSubtaskTitle(sub.title);
                               setEditingSubtaskPriority(sub.priority || 'low');
                             }}
-                            className="p-1 hover:bg-[#282828] text-text-secondary rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+                            className="p-1 hover:bg-[#282828] text-text-secondary rounded opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
                             title="Edit subtask"
                           >
                             <Edit2 className="w-3 h-3" />
@@ -678,7 +730,7 @@ export const SubtaskChecklist = ({
                               e.stopPropagation();
                               handleDeleteSubtask(sub.id);
                             }}
-                            className="p-1 hover:bg-[#282828] rounded text-error opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+                            className="p-1 hover:bg-[#282828] rounded text-error opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>

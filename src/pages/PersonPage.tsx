@@ -17,7 +17,7 @@ export const PersonPage: React.FC = () => {
     <div className="flex flex-col gap-8 font-sans">
       <PageHeader
         title="Engineering Contributors"
-        subtitle="Meet the architects behind Simple Todo's premium 3-Layer UI frameworks."
+        subtitle="Meet the architects behind Todio's premium 3-Layer UI frameworks."
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

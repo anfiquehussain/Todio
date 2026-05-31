@@ -45,7 +45,7 @@ export const CollectionsPage = () => {
   });
 
   return (
-    <div className="flex h-[calc(100vh-100px)] gap-6 font-sans">
+    <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-100px)] gap-6 font-sans">
       
       {/* 1. LEFT SIDEBAR: Extracted Category Manager feature */}
       <CategoryManager
@@ -56,7 +56,7 @@ export const CollectionsPage = () => {
       />
 
       {/* 2. RIGHT MAIN PANEL: Task List for selected node */}
-      <div className="flex-1 bg-card border border-gray-border rounded-3xl p-6 md:p-8 flex flex-col gap-6 overflow-y-auto no-scrollbar">
+      <div className="flex-1 bg-card border border-gray-border rounded-3xl p-6 md:p-8 flex flex-col gap-6 overflow-y-auto no-scrollbar min-h-[400px] lg:min-h-0">
         {(!selectedCollectionId && !selectedSubcollectionId) ? (
           <div className="flex flex-col items-center justify-center h-full text-text-secondary/50 gap-4">
             <LayoutList className="w-16 h-16 opacity-20" />

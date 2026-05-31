@@ -86,7 +86,7 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isSignUp ? "Create Todo Profile" : "Access Simple Todo Control"}
+      title={isSignUp ? "Create Todo Profile" : "Access Todio Control"}
       size="sm"
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-2">

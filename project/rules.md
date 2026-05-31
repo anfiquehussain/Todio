@@ -1,6 +1,6 @@
 # Project Rules & Best Practices
 
-This document outlines the coding standards and architectural principles for the **Simple Todo** project.
+This document outlines the coding standards and architectural principles for the **Todio** project.
 
 ## 1. Core Architecture (Strict 3-Layer UI)
 

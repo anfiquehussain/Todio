@@ -15,8 +15,6 @@ src/
 │   ├── collections/    # Workspace collections service layer
 │   │   ├── collectionsService.ts # Firebase firestore for lists & categories
 │   │   └── collectionsApi.ts     # API client for workspace categories
-│   ├── discussions/    # Discussions/Checklist service layer
-│   │   └── discussionsService.ts # Firebase firestore for subtask logs
 │   └── todo/           # Core task (todo) service layer
 │       └── firestoreService.ts # CRUD tasks and details sync service
 ├── assets/             # Static assets (images, logos)
@@ -81,7 +79,6 @@ src/
 │   ├── collections.types.ts # Category lists types
 │   ├── settings.types.ts # Font family and font-size configuration typings
 │   ├── auth.types.ts   # Firebase auth types
-│   ├── discussions.types.ts # Checklist and subtask types
 │   └── index.ts        # Barrel export for all global types
 ├── App.tsx             # App entry with RouterProvider
 ├── main.tsx            # React DOM mounting point with Redux Provider
