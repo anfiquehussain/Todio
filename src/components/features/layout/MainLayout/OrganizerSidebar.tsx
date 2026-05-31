@@ -188,7 +188,7 @@ export const OrganizerSidebar = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-bg-secondary border-r border-gray-border p-4 w-60 shrink-0 select-none">
+    <div className="flex flex-col h-full bg-bg-secondary border-r border-gray-border pt-4 px-4 pb-12 md:pb-4 w-60 shrink-0 select-none">
       {/* Smart views section */}
       <div className="flex flex-col gap-1 mb-6">
         <button
