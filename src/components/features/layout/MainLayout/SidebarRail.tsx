@@ -3,6 +3,7 @@ import { CheckSquare, Award, Settings, RefreshCw, Volume2, VolumeX, User, Downlo
 import { useAppDispatch } from '../../../../hooks/useRedux';
 import { setActiveCollectionId, setActiveSubcollectionId, setFilter } from '../../../../store/slices/todoSlice';
 import { usePWA } from '../../../../hooks/usePWA';
+import { useToast } from '../../../../hooks/useToast';
 import type { UserProfile } from '../../../../types';
 
 interface SidebarRailProps {
@@ -13,6 +14,7 @@ interface SidebarRailProps {
   setIsProfileOpen: (open: boolean) => void;
   handleSync: () => void;
   handleToggleSound: () => void;
+  className?: string;
 }
 
 export const SidebarRail = ({
@@ -22,16 +24,31 @@ export const SidebarRail = ({
   isProfileOpen,
   setIsProfileOpen,
   handleSync,
-  handleToggleSound
+  handleToggleSound,
+  className
 }: SidebarRailProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useAppDispatch();
+  const { toast } = useToast();
   const { shouldShowButton, triggerInstall } = usePWA();
 
+  const handlePwaInstall = async () => {
+    const result = await triggerInstall();
+    if (result === 'fallback') {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      if (isIOS) {
+        toast('To install Todio on iOS: tap the Share button in Safari and select "Add to Home Screen" 📲', 'info');
+      } else {
+        toast('To install Todio: open your browser options menu (three dots) and select "Install" or "Add to Home screen" 📲', 'info');
+      }
+    } else if (result === 'installed') {
+      toast('Todio has been installed successfully! 🎉', 'success');
+    }
+  };
 
   return (
-    <nav className="hidden md:flex flex-col justify-between items-center bg-bg-secondary border-r border-gray-border py-6 w-14 shrink-0 h-full relative z-20">
+    <nav className={className || "hidden md:flex flex-col justify-between items-center bg-bg-secondary border-r border-gray-border py-6 w-14 shrink-0 h-full relative z-20"}>
       
       {/* Logo & Top vertical options */}
       <div className="flex flex-col items-center gap-6 w-full">
@@ -121,7 +138,7 @@ export const SidebarRail = ({
         {/* PWA Install Button */}
         {shouldShowButton && (
           <button
-            onClick={triggerInstall}
+            onClick={handlePwaInstall}
             className="w-9 h-9 rounded-xl flex items-center justify-center text-brand-primary bg-brand-primary/10 border border-brand-primary/30 hover:bg-brand-primary/20 cursor-pointer transition-all active:scale-95 glow-primary animate-pulse"
             title="Download & Install App 📲"
             aria-label="Install Todio Application"

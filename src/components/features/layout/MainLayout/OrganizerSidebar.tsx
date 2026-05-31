@@ -187,6 +187,20 @@ export const OrganizerSidebar = ({
     }).length;
   };
 
+  const handlePwaInstall = async () => {
+    const result = await triggerInstall();
+    if (result === 'fallback') {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      if (isIOS) {
+        toast('To install Todio on iOS: tap the Share button in Safari and select "Add to Home Screen" 📲', 'info');
+      } else {
+        toast('To install Todio: open your browser options menu (three dots) and select "Install" or "Add to Home screen" 📲', 'info');
+      }
+    } else if (result === 'installed') {
+      toast('Todio has been installed successfully! 🎉', 'success');
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-bg-secondary border-r border-gray-border p-4 w-60 shrink-0 select-none">
       {/* Smart views section */}
@@ -598,7 +612,7 @@ export const OrganizerSidebar = ({
             <h4 className="text-xs font-bold text-text-primary mb-0.5">Get Todio App</h4>
             <p className="text-[10px] text-text-secondary mb-2 leading-relaxed">Install for a faster, offline-ready productivity experience.</p>
             <button
-              onClick={triggerInstall}
+              onClick={handlePwaInstall}
               className="w-full py-1.5 px-3 bg-brand-primary hover:bg-brand-primary/95 text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 cursor-pointer active:scale-97 transition-all shadow-md hover:shadow-lg glow-primary"
             >
               <Download className="w-3.5 h-3.5" />

@@ -14,6 +14,8 @@ export const usePWA = () => {
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
 
+  const [isMobile, setIsMobile] = useState(false);
+
   useEffect(() => {
     // Check if currently running in standalone (installed) mode
     const checkStandalone = () => {
@@ -23,6 +25,13 @@ export const usePWA = () => {
     };
 
     checkStandalone();
+
+    const checkMobile = () => {
+      const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+      const isMobileUA = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+      setIsMobile(isMobileUA);
+    };
+    checkMobile();
 
     // Listen for display mode changes (e.g. user launches or exits standalone)
     const mediaQuery = window.matchMedia('(display-mode: standalone)');
@@ -66,30 +75,35 @@ export const usePWA = () => {
     };
   }, []);
 
-  const triggerInstall = async () => {
+  const triggerInstall = async (): Promise<'installed' | 'cancelled' | 'fallback'> => {
     if (!deferredPrompt) {
-      return false;
+      return 'fallback';
     }
-    // Show the install prompt
-    await deferredPrompt.prompt();
-    // Wait for the user to respond to the prompt
-    const choiceResult = await deferredPrompt.userChoice;
-    
-    // Clear the prompt since it can only be used once
-    setDeferredPrompt(null);
-    setIsInstallable(false);
+    try {
+      // Show the install prompt
+      await deferredPrompt.prompt();
+      // Wait for the user to respond to the prompt
+      const choiceResult = await deferredPrompt.userChoice;
+      
+      // Clear the prompt since it can only be used once
+      setDeferredPrompt(null);
+      setIsInstallable(false);
 
-    return choiceResult.outcome === 'accepted';
+      return choiceResult.outcome === 'accepted' ? 'installed' : 'cancelled';
+    } catch {
+      return 'fallback';
+    }
   };
 
   // The button should be shown ONLY if:
-  // 1. The browser flags the page as installable (we received the prompt event)
+  // 1. The browser flags the page as installable (we received the prompt event) OR is a mobile device
   // 2. The app is not already running or installed in standalone mode
-  const shouldShowButton = isInstallable && !isInstalled;
+  const shouldShowButton = !isInstalled && (isInstallable || isMobile);
 
   return {
     isInstallable,
     isInstalled,
+    isMobile,
     shouldShowButton,
     triggerInstall
   };
