@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useToast } from './useToast';
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -13,8 +14,7 @@ export const usePWA = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
-
-  const [isMobile, setIsMobile] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Check if currently running in standalone (installed) mode
@@ -38,14 +38,7 @@ export const usePWA = () => {
 
     checkStandalone();
 
-    const checkMobile = () => {
-      const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
-      const isMobileUA = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
-      setIsMobile(isMobileUA);
-    };
-    checkMobile();
-
-    // Listen for display mode changes (e.g. user launches or exits standalone)
+    // Listen for display mode changes
     const mediaQuery = window.matchMedia('(display-mode: standalone)');
     const handleDisplayChange = (e: MediaQueryListEvent) => {
       setIsInstalled(e.matches);
@@ -59,9 +52,7 @@ export const usePWA = () => {
 
     // Capture the beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
-      // Stash the event so it can be triggered later.
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
     };
@@ -72,6 +63,7 @@ export const usePWA = () => {
       setIsInstalled(true);
       setIsInstallable(false);
       setDeferredPrompt(null);
+      toast('Todio has been installed successfully! 🎉', 'success');
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -86,42 +78,36 @@ export const usePWA = () => {
         mediaQuery.removeListener(handleDisplayChange);
       }
     };
-  }, []);
+  }, [toast]);
 
-  const triggerInstall = async (): Promise<'installed' | 'cancelled' | 'fallback'> => {
+  const triggerInstall = async () => {
     if (!deferredPrompt) {
-      return 'fallback';
+      toast('Installation is not supported on this browser or the app is already installed.', 'error');
+      return;
     }
     try {
-      // Show the install prompt
+      toast('Installing Todio…', 'info');
       await deferredPrompt.prompt();
-      // Wait for the user to respond to the prompt
-      const choiceResult = await deferredPrompt.userChoice;
-      
-      // Clear the prompt since it can only be used once
-      setDeferredPrompt(null);
-      setIsInstallable(false);
-
-      if (choiceResult.outcome === 'accepted') {
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
         localStorage.setItem('todio_pwa_installed', 'true');
         setIsInstalled(true);
-        return 'installed';
       }
-      return 'cancelled';
-    } catch {
-      return 'fallback';
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error during installation';
+      toast(`Installation failed: ${errorMessage}`, 'error');
+    } finally {
+      setDeferredPrompt(null);
+      setIsInstallable(false);
     }
   };
 
-  // The button should be shown ONLY if:
-  // 1. The browser flags the page as installable (we received the prompt event) OR is a mobile device
-  // 2. The app is not already running or installed in standalone mode
-  const shouldShowButton = !isInstalled && (isInstallable || isMobile);
+  // Button should only show when natively installable AND not already installed
+  const shouldShowButton = isInstallable && !isInstalled;
 
   return {
     isInstallable,
     isInstalled,
-    isMobile,
     shouldShowButton,
     triggerInstall
   };
