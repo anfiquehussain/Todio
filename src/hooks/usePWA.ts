@@ -18,10 +18,22 @@ export const usePWA = () => {
 
   useEffect(() => {
     // Check if currently running in standalone (installed) mode
-    const checkStandalone = () => {
+    const checkStandalone = async () => {
       const isStandaloneMedia = window.matchMedia('(display-mode: standalone)').matches;
       const isIOSStandalone = (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-      setIsInstalled(isStandaloneMedia || isIOSStandalone);
+      const isLocallyInstalled = localStorage.getItem('todio_pwa_installed') === 'true';
+      
+      let isRelatedAppInstalled = false;
+      if ('getInstalledRelatedApps' in navigator) {
+        try {
+          const relatedApps = await (navigator as any).getInstalledRelatedApps();
+          isRelatedAppInstalled = relatedApps.length > 0;
+        } catch (e) {
+          console.warn('Failed to query installed related apps:', e);
+        }
+      }
+
+      setIsInstalled(isStandaloneMedia || isIOSStandalone || isLocallyInstalled || isRelatedAppInstalled);
     };
 
     checkStandalone();
@@ -56,6 +68,7 @@ export const usePWA = () => {
 
     // Listen for the appinstalled event
     const handleAppInstalled = () => {
+      localStorage.setItem('todio_pwa_installed', 'true');
       setIsInstalled(true);
       setIsInstallable(false);
       setDeferredPrompt(null);
@@ -89,7 +102,12 @@ export const usePWA = () => {
       setDeferredPrompt(null);
       setIsInstallable(false);
 
-      return choiceResult.outcome === 'accepted' ? 'installed' : 'cancelled';
+      if (choiceResult.outcome === 'accepted') {
+        localStorage.setItem('todio_pwa_installed', 'true');
+        setIsInstalled(true);
+        return 'installed';
+      }
+      return 'cancelled';
     } catch {
       return 'fallback';
     }
