@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Folder, Type, Smile, CheckSquare } from 'lucide-react';
+import { Folder, Type, Smile, CheckSquare, Calendar } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../../hooks/useRedux';
 import { 
   updateTaskAsync, deleteTaskAsync, setActiveTaskId 
@@ -9,6 +9,7 @@ import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { TaskDetailHeader } from './TaskDetailPane/TaskDetailHeader';
 import { TaskDescription } from './TaskDetailPane/TaskDescription';
 import { SubtaskChecklist } from './TaskDetailPane/SubtaskChecklist';
+import { ExportModal } from './TaskDetailPane/ExportModal';
 import type { Task } from '../../../types';
 
 export const TaskDetailPane = () => {
@@ -17,12 +18,12 @@ export const TaskDetailPane = () => {
   const { checkAuth } = useAuthGuard();
 
   const { 
-    tasks, collections, subtasks, activeTaskId, soundEnabled, isDetailsPaneExpanded 
+    tasks, collections, subcollections, subtasks, activeTaskId, soundEnabled, isDetailsPaneExpanded 
   } = useAppSelector((state) => state.todo);
   const { user } = useAppSelector((state) => state.auth);
 
   // Input ref for title
-  const rightPanelTitleInputRef = useRef<HTMLInputElement | null>(null);
+  const rightPanelTitleInputRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Details panel states for inputs auto-saving
   const [detailTitle, setDetailTitle] = useState('');
@@ -30,6 +31,20 @@ export const TaskDetailPane = () => {
   const [detailDueDate, setDetailDueDate] = useState('');
   const [detailPriority, setDetailPriority] = useState<number>(0);
   const [detailCollectionId, setDetailCollectionId] = useState<string>('');
+  const [detailSubcollectionId, setDetailSubcollectionId] = useState<string | null>(null);
+
+  // Export Modal state managers
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportMode, setExportMode] = useState<'task' | 'subtask'>('task');
+
+  // Auto-grow Title Textarea height to prevent clipping
+  useEffect(() => {
+    const el = rightPanelTitleInputRef.current;
+    if (el) {
+      el.style.height = 'auto';
+      el.style.height = `${el.scrollHeight}px`;
+    }
+  }, [detailTitle, activeTaskId]);
 
   const activeTask = tasks.find(t => t.id === activeTaskId) || null;
 
@@ -41,12 +56,14 @@ export const TaskDetailPane = () => {
       setDetailDueDate(activeTask.dueDate || '');
       setDetailPriority(activeTask.priority || 0);
       setDetailCollectionId(activeTask.collectionId || '');
+      setDetailSubcollectionId(activeTask.subcollectionId || null);
     } else {
       setDetailTitle('');
       setDetailOverview('');
       setDetailDueDate('');
       setDetailPriority(0);
       setDetailCollectionId('');
+      setDetailSubcollectionId(null);
     }
   }, [activeTaskId, activeTask]);
 
@@ -79,43 +96,114 @@ export const TaskDetailPane = () => {
           
           {/* 1. Header Subcomponent */}
           <TaskDetailHeader
-            detailDueDate={detailDueDate}
-            detailPriority={detailPriority}
-            detailCollectionId={detailCollectionId}
-            collections={collections}
             activeTask={activeTask}
             onClose={() => dispatch(setActiveTaskId(null))}
-            setDetailDueDate={setDetailDueDate}
-            setDetailPriority={setDetailPriority}
-            setDetailCollectionId={setDetailCollectionId}
-            handleUpdateActiveTask={handleUpdateActiveTask}
             handleDeleteTask={handleDeleteTask}
+            onTriggerExport={(mode) => {
+              setExportMode(mode);
+              setIsExportModalOpen(true);
+            }}
+            detailCollectionId={detailCollectionId}
+            collections={collections}
+            setDetailCollectionId={setDetailCollectionId}
+            detailSubcollectionId={detailSubcollectionId}
+            subcollections={subcollections}
+            setDetailSubcollectionId={setDetailSubcollectionId}
+            handleUpdateActiveTask={handleUpdateActiveTask}
             toast={(msg, type) => toast(msg, type)}
           />
 
           {/* Editable Content Pane scrollable */}
-          <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-5 no-scrollbar pb-10">
+          <div className="flex-1 overflow-y-auto pt-3.5 px-6 pb-10 flex flex-col gap-3.5 no-scrollbar">
             
-            {/* Expanded mode Title Header */}
-            {isDetailsPaneExpanded && (
-              <div className="border-b border-gray-border/20 pb-4 mb-2 select-none animate-slide-in">
-                <span className="text-[10px] font-black uppercase tracking-wider text-text-secondary/50">Active Task Scope</span>
-                <h1 className="text-xl font-black text-brand-primary mt-1">{activeTask.title}</h1>
-              </div>
-            )}
-
-            {/* Bold Title Input */}
+            {/* Title & Metadata Properties Row */}
             {!isDetailsPaneExpanded && (
-              <div className="flex flex-col gap-1 select-none">
-                <input
-                  ref={rightPanelTitleInputRef}
-                  type="text"
-                  placeholder="Task title..."
-                  value={detailTitle}
-                  onChange={(e) => setDetailTitle(e.target.value)}
-                  onBlur={() => handleUpdateActiveTask({ title: detailTitle })}
-                  className="w-full text-base font-black tracking-tight text-text-primary bg-transparent border-0 focus:outline-hidden focus:ring-0 placeholder:text-text-secondary/40"
-                />
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-gray-border/20 pb-2.5 select-none">
+                {/* Title Textarea (Left) */}
+                <div className="flex-1 min-w-0">
+                  <textarea
+                    ref={rightPanelTitleInputRef}
+                    placeholder="Task title..."
+                    value={detailTitle}
+                    onChange={(e) => {
+                      setDetailTitle(e.target.value);
+                      e.target.style.height = 'auto';
+                      e.target.style.height = `${e.target.scrollHeight}px`;
+                    }}
+                    onBlur={() => handleUpdateActiveTask({ title: detailTitle })}
+                    rows={1}
+                    className="w-full text-base font-black tracking-tight text-text-primary bg-transparent border-0 resize-none focus:outline-hidden focus:ring-0 placeholder:text-text-secondary/40 overflow-hidden min-h-[28px] leading-tight"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        e.currentTarget.blur();
+                      }
+                    }}
+                  />
+                </div>
+
+                {/* Compact Properties Row (Right) */}
+                <div className="flex items-center gap-1.5 shrink-0 self-start sm:self-center">
+                  {/* Due Date Pill (Icon + Selected Date, or Icon only if empty) */}
+                  <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold text-text-secondary bg-[#1a1a1a] hover:bg-[#222222] border border-gray-border/50 px-2.5 py-1.5 rounded-xl relative hover:text-text-primary transition-all cursor-pointer shrink-0" title={detailDueDate ? `Due Date: ${detailDueDate}` : 'Add Due Date'}>
+                    <Calendar className={`w-3.5 h-3.5 ${detailDueDate ? 'text-brand-primary' : 'text-text-secondary/50'}`} />
+                    <input
+                      type="date"
+                      value={detailDueDate}
+                      onChange={(e) => {
+                        setDetailDueDate(e.target.value);
+                        handleUpdateActiveTask({ dueDate: e.target.value });
+                      }}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
+                    {detailDueDate && (
+                      <span className="text-[10px] text-text-secondary">{detailDueDate}</span>
+                    )}
+                  </div>
+
+                  {/* Priority Selector Pill */}
+                  <div className="flex items-center bg-[#1a1a1a] border border-gray-border/50 px-2.5 py-1.5 rounded-xl gap-2 select-none shrink-0" title="Priority Weight">
+                    <button
+                      onClick={() => {
+                        setDetailPriority(1);
+                        handleUpdateActiveTask({ priority: 1 });
+                      }}
+                      className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
+                        detailPriority <= 1
+                          ? 'bg-success ring-2 ring-success/40 scale-110 shadow-md shadow-success/30'
+                          : 'bg-success/30 hover:bg-success/60'
+                      }`}
+                      title="Low Priority"
+                      aria-label="Set low priority"
+                    />
+                    <button
+                      onClick={() => {
+                        setDetailPriority(3);
+                        handleUpdateActiveTask({ priority: 3 });
+                      }}
+                      className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
+                        detailPriority >= 2 && detailPriority <= 3
+                          ? 'bg-warning ring-2 ring-warning/40 scale-110 shadow-md shadow-warning/30'
+                          : 'bg-warning/30 hover:bg-warning/60'
+                      }`}
+                      title="Medium Priority"
+                      aria-label="Set medium priority"
+                    />
+                    <button
+                      onClick={() => {
+                        setDetailPriority(5);
+                        handleUpdateActiveTask({ priority: 5 });
+                      }}
+                      className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
+                        detailPriority >= 4
+                          ? 'bg-error ring-2 ring-error/40 scale-110 shadow-md shadow-error/30'
+                          : 'bg-error/30 hover:bg-error/60'
+                      }`}
+                      title="High Priority"
+                      aria-label="Set high priority"
+                    />
+                  </div>
+                </div>
               </div>
             )}
 
@@ -136,6 +224,10 @@ export const TaskDetailPane = () => {
               soundEnabled={soundEnabled}
               checkAuth={checkAuth}
               toast={(msg, type) => toast(msg, type)}
+              onTriggerExport={(mode) => {
+                setExportMode(mode);
+                setIsExportModalOpen(true);
+              }}
             />
 
           </div>
@@ -159,6 +251,15 @@ export const TaskDetailPane = () => {
               </div>
             </div>
           )}
+
+          {/* Interactive Task & Subtask Export Configurator Dialog */}
+          <ExportModal
+            isOpen={isExportModalOpen}
+            onClose={() => setIsExportModalOpen(false)}
+            activeTask={activeTask}
+            subtasks={subtasks}
+            mode={exportMode}
+          />
         </div>
       ) : (
         /* Empty details status display */

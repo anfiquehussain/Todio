@@ -28,7 +28,7 @@ src/
 │       │   └── MainLayout/ # Encapsulated layout elements
 │       │       ├── SidebarRail.tsx # Narrow vertical navigation rail
 │       │       ├── ProfileDrawer.tsx # Streak and XP drawer popup
-│       │       └── OrganizerSidebar.tsx # Lists smart sidebar
+│       │       └── OrganizerSidebar.tsx # Smart views and completed sidebar
 │       ├── media/      # Task-specific feature components
 │       │   ├── TaskList.tsx # Tasks list manager, inline quick-adds, & filters
 │       │   ├── TaskDetailPane.tsx # Task details coordinator wrapper
@@ -37,7 +37,8 @@ src/
 │       │   └── TaskDetailPane/ # Encapsulated details inspector building blocks
 │       │       ├── TaskDetailHeader.tsx # Header details toolbar
 │       │       ├── TaskDescription.tsx # Description textarea
-│       │       └── SubtaskChecklist.tsx # Subtask checklists
+│       │       ├── SubtaskChecklist.tsx # Subtask checklists
+│       │       └── ExportModal.tsx # Interactive task & subtask configurations exporter
 │       ├── profile/    # Profile & analytics components
 │       │   ├── StreakFlame.tsx # Gold/silver streak SVG gauge meters
 │       │   └── XPProgress.tsx # Circular level XP progress loader

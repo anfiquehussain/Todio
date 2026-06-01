@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  AlertCircle, Edit2, Trash2, Check, X, Copy, ChevronDown, ChevronUp 
+  AlertCircle, Edit2, Trash2, Check, X, Copy, ChevronDown, ChevronUp, Upload, Download, ArrowUpDown 
 } from 'lucide-react';
-import { useAppDispatch, useAppSelector } from '../../../../hooks/useRedux';
+import { useAppDispatch } from '../../../../hooks/useRedux';
 import { 
   createSubtaskAsync, updateSubtaskAsync, deleteSubtaskAsync, createSubtasksBulkAsync 
 } from '../../../../store/slices/todoSlice';
@@ -17,6 +17,7 @@ interface SubtaskChecklistProps {
   soundEnabled: boolean;
   checkAuth: (action: string) => boolean;
   toast: (msg: string, type: 'success' | 'error' | 'info') => void;
+  onTriggerExport: (mode: 'task' | 'subtask') => void;
 }
 
 interface SubtaskTitleTextProps {
@@ -81,10 +82,10 @@ export const SubtaskChecklist = ({
   user,
   soundEnabled,
   checkAuth,
-  toast
+  toast,
+  onTriggerExport
 }: SubtaskChecklistProps) => {
   const dispatch = useAppDispatch();
-  const { isDetailsPaneExpanded } = useAppSelector((state) => state.todo);
 
   // Load subtask expand/collapse memory from localStorage
   const [isActiveSubtasksOpen, setIsActiveSubtasksOpen] = useState(() => {
@@ -255,21 +256,44 @@ export const SubtaskChecklist = ({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-b border-gray-border/30 pb-2 select-none">
         <div className="flex items-center gap-2">
-          <label className="text-[10px] font-black uppercase tracking-wider text-text-secondary/50">Subtask checklist</label>
+          <label className="text-[10px] font-black uppercase tracking-wider text-text-secondary/50">Subtasks</label>
+          <span className="text-[9px] font-bold text-text-secondary/60 bg-[#202020] border border-gray-border px-1.5 py-0.5 rounded-md">
+            {currentTaskSubtasks.length}
+          </span>
+        </div>
+        
+        <div className="flex items-center gap-1.5">
+          {/* Bulk Import Toggle */}
           <button
             type="button"
             onClick={() => setIsBulkMode(!isBulkMode)}
-            className="text-[9px] font-bold text-brand-primary hover:text-brand-primary/85 transition-colors flex items-center gap-1.5 cursor-pointer bg-brand-primary/10 px-2 py-0.5 rounded-md hover:bg-brand-primary/15"
+            className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+              isBulkMode
+                ? 'bg-brand-primary/15 border-brand-primary/20 text-brand-primary'
+                : 'bg-[#202020] border-gray-border text-text-secondary hover:text-text-primary hover:bg-[#252525]'
+            }`}
+            title={isBulkMode ? "Switch to single input" : "Bulk import subtasks"}
+            aria-label="Bulk import subtasks"
           >
-            {isBulkMode ? 'Switch to Single' : 'Bulk Import'}
+            <Upload className="w-3.5 h-3.5" />
           </button>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold text-text-secondary/70">
-            Tally: {currentTaskSubtasks.length} items
-          </span>
+
+          {/* Export Subtasks Action */}
+          {currentTaskSubtasks.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onTriggerExport('subtask')}
+              className="p-1.5 rounded-lg border border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525] transition-all cursor-pointer animate-scale-in"
+              title="Export subtasks list"
+              aria-label="Export subtasks list"
+            >
+              <Download className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {/* Sort Button */}
           <button
             type="button"
             onClick={() => {
@@ -279,10 +303,15 @@ export const SubtaskChecklist = ({
               setSubtaskSortOrder(nextSort);
               localStorage.setItem('todo_subtask_sort_order', nextSort);
             }}
-            className="text-[9px] font-bold text-brand-primary hover:text-brand-primary/80 transition-colors flex items-center gap-1 cursor-pointer bg-brand-primary/10 px-1.5 py-0.5 rounded-md hover:bg-brand-primary/15"
-            title="Sort subtasks by priority"
+            className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+              subtaskSortOrder !== 'default'
+                ? 'bg-brand-primary/15 border-brand-primary/20 text-brand-primary'
+                : 'bg-[#202020] border-gray-border text-text-secondary hover:text-text-primary hover:bg-[#252525]'
+            }`}
+            title={`Sort: ${subtaskSortOrder === 'default' ? 'Date' : subtaskSortOrder === 'desc' ? 'Priority Descending' : 'Priority Ascending'}`}
+            aria-label="Sort subtasks"
           >
-            Sort: {subtaskSortOrder === 'default' ? 'Date' : subtaskSortOrder === 'desc' ? 'Priority ↓' : 'Priority ↑'}
+            <ArrowUpDown className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
@@ -360,55 +389,60 @@ export const SubtaskChecklist = ({
           </div>
         </form>
       ) : (
-        <form onSubmit={handleAddSubtask} className="flex gap-2 items-center pb-2 border-b border-gray-border/20">
-          <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              type="button"
-              onClick={() => setNewSubtaskPriority('low')}
-              className={`w-3 h-3 rounded-full transition-all cursor-pointer ${
-                newSubtaskPriority === 'low'
-                  ? 'bg-success ring-2 ring-success/40 scale-110 shadow-md shadow-success/30'
-                  : 'bg-success/30 hover:bg-success/60'
-              }`}
-              title="Low Priority"
-              aria-label="Set low priority"
-            />
-            <button
-              type="button"
-              onClick={() => setNewSubtaskPriority('medium')}
-              className={`w-3 h-3 rounded-full transition-all cursor-pointer ${
-                newSubtaskPriority === 'medium'
-                  ? 'bg-warning ring-2 ring-warning/40 scale-110 shadow-md shadow-warning/30'
-                  : 'bg-warning/30 hover:bg-warning/60'
-              }`}
-              title="Medium Priority"
-              aria-label="Set medium priority"
-            />
-            <button
-              type="button"
-              onClick={() => setNewSubtaskPriority('high')}
-              className={`w-3 h-3 rounded-full transition-all cursor-pointer ${
-                newSubtaskPriority === 'high'
-                  ? 'bg-error ring-2 ring-error/40 scale-110 shadow-md shadow-error/30'
-                  : 'bg-error/30 hover:bg-error/60'
-              }`}
-              title="High Priority"
-              aria-label="Set high priority"
+        <form onSubmit={handleAddSubtask} className="flex flex-col sm:flex-row gap-2 pb-2 border-b border-gray-border/20">
+          <div className="flex items-center gap-2 w-full sm:w-auto flex-1">
+            <input
+              type="text"
+              placeholder="Add subtask instruction…"
+              value={newSubtaskTitle}
+              onChange={(e) => setNewSubtaskTitle(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl border border-gray-border bg-bg-primary text-text-primary text-[11px] font-semibold placeholder:text-text-secondary/40 focus:outline-hidden focus:border-brand-primary"
             />
           </div>
-          <input
-            type="text"
-            placeholder="Add subtask instruction…"
-            value={newSubtaskTitle}
-            onChange={(e) => setNewSubtaskTitle(e.target.value)}
-            className="flex-1 px-3 py-2 rounded-xl border border-gray-border bg-bg-primary text-text-primary text-[11px] font-semibold placeholder:text-text-secondary/40 focus:outline-hidden focus:border-brand-primary"
-          />
-          <button
-            type="submit"
-            className="px-3.5 py-2 bg-brand-primary hover:bg-brand-primary/95 text-white font-extrabold text-[11px] rounded-xl cursor-pointer active:scale-95 transition-all flex items-center justify-center shrink-0 shadow-md shadow-brand-primary/10"
-          >
-            Append
-          </button>
+          <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto shrink-0">
+            <div className="flex items-center gap-1.5 bg-[#1a1a1a] px-2 py-1.5 rounded-xl border border-gray-border/40">
+              <span className="text-[9px] font-bold text-text-secondary/50 mr-1 uppercase tracking-wider">Priority</span>
+              <button
+                type="button"
+                onClick={() => setNewSubtaskPriority('low')}
+                className={`w-3 h-3 rounded-full transition-all cursor-pointer ${
+                  newSubtaskPriority === 'low'
+                    ? 'bg-success ring-2 ring-success/40 scale-110 shadow-md shadow-success/30'
+                    : 'bg-success/30 hover:bg-success/60'
+                }`}
+                title="Low Priority"
+                aria-label="Set low priority"
+              />
+              <button
+                type="button"
+                onClick={() => setNewSubtaskPriority('medium')}
+                className={`w-3 h-3 rounded-full transition-all cursor-pointer ${
+                  newSubtaskPriority === 'medium'
+                    ? 'bg-warning ring-2 ring-warning/40 scale-110 shadow-md shadow-warning/30'
+                    : 'bg-warning/30 hover:bg-warning/60'
+                }`}
+                title="Medium Priority"
+                aria-label="Set medium priority"
+              />
+              <button
+                type="button"
+                onClick={() => setNewSubtaskPriority('high')}
+                className={`w-3 h-3 rounded-full transition-all cursor-pointer ${
+                  newSubtaskPriority === 'high'
+                    ? 'bg-error ring-2 ring-error/40 scale-110 shadow-md shadow-error/30'
+                    : 'bg-error/30 hover:bg-error/60'
+                }`}
+                title="High Priority"
+                aria-label="Set high priority"
+              />
+            </div>
+            <button
+              type="submit"
+              className="px-3.5 py-2 bg-brand-primary hover:bg-brand-primary/95 text-white font-extrabold text-[11px] rounded-xl cursor-pointer active:scale-95 transition-all flex items-center justify-center shrink-0 shadow-md shadow-brand-primary/10"
+            >
+              Append
+            </button>
+          </div>
         </form>
       )}
 
@@ -432,13 +466,11 @@ export const SubtaskChecklist = ({
 
           {isActiveSubtasksOpen && (
             sortedActiveSubtasks.length > 0 ? (
-              <div className={`flex flex-col gap-2 select-none overflow-y-auto pr-1 no-scrollbar animate-slide-in ${
-                isDetailsPaneExpanded ? 'max-h-[60vh]' : 'max-h-[200px]'
-              }`}>
+              <div className="flex flex-col gap-2 select-none pr-1 animate-slide-in">
                 {sortedActiveSubtasks.map(sub => (
                   <div
                     key={sub.id}
-                    className={`group flex items-center justify-between gap-3 p-3 rounded-2xl border transition-all ${
+                    className={`group flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-2xl border transition-all ${
                       sub.priority === 'high'
                         ? 'bg-error/5 border-error/20 text-text-primary border-l-4 border-l-error'
                         : sub.priority === 'medium'
@@ -452,75 +484,79 @@ export const SubtaskChecklist = ({
                           e.preventDefault();
                           handleUpdateSubtask(sub);
                         }}
-                        className="flex-1 flex items-center gap-2"
+                        className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => setEditingSubtaskPriority('low')}
-                            className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
-                              editingSubtaskPriority === 'low'
-                                ? 'bg-success ring-2 ring-success/40 scale-110'
-                                : 'bg-success/30 hover:bg-success/60'
-                            }`}
-                            title="Low"
-                            aria-label="Set low priority"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setEditingSubtaskPriority('medium')}
-                            className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
-                              editingSubtaskPriority === 'medium'
-                                ? 'bg-warning ring-2 ring-warning/40 scale-110'
-                                : 'bg-warning/30 hover:bg-warning/60'
-                            }`}
-                            title="Medium"
-                            aria-label="Set medium priority"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setEditingSubtaskPriority('high')}
-                            className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
-                              editingSubtaskPriority === 'high'
-                                ? 'bg-error ring-2 ring-error/40 scale-110'
-                                : 'bg-error/30 hover:bg-error/60'
-                            }`}
-                            title="High"
-                            aria-label="Set high priority"
+                        <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 w-full flex-1">
+                          <div className="flex items-center gap-1 shrink-0 bg-[#1a1a1a] px-2 py-1.5 rounded-lg border border-gray-border/40 self-start xs:self-auto">
+                            <button
+                              type="button"
+                              onClick={() => setEditingSubtaskPriority('low')}
+                              className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
+                                editingSubtaskPriority === 'low'
+                                  ? 'bg-success ring-2 ring-success/40 scale-110'
+                                  : 'bg-success/30 hover:bg-success/60'
+                              }`}
+                              title="Low"
+                              aria-label="Set low priority"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setEditingSubtaskPriority('medium')}
+                              className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
+                                editingSubtaskPriority === 'medium'
+                                  ? 'bg-warning ring-2 ring-warning/40 scale-110'
+                                  : 'bg-warning/30 hover:bg-warning/60'
+                              }`}
+                              title="Medium"
+                              aria-label="Set medium priority"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setEditingSubtaskPriority('high')}
+                              className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
+                                editingSubtaskPriority === 'high'
+                                  ? 'bg-error ring-2 ring-error/40 scale-110'
+                                  : 'bg-error/30 hover:bg-error/60'
+                              }`}
+                              title="High"
+                              aria-label="Set high priority"
+                            />
+                          </div>
+                          <input
+                            autoFocus
+                            type="text"
+                            value={editingSubtaskTitle}
+                            onChange={(e) => setEditingSubtaskTitle(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Escape') {
+                                setEditingSubtaskId(null);
+                              }
+                            }}
+                            className="flex-1 min-w-0 px-2 py-1 rounded bg-[#202020] border border-gray-border/20 text-text-primary text-[11px] font-semibold focus:outline-hidden focus:border-brand-primary"
                           />
                         </div>
-                        <input
-                          autoFocus
-                          type="text"
-                          value={editingSubtaskTitle}
-                          onChange={(e) => setEditingSubtaskTitle(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Escape') {
-                              setEditingSubtaskId(null);
-                            }
-                          }}
-                          className="flex-1 px-2 py-1 rounded bg-[#202020] border border-gray-border/20 text-text-primary text-[11px] font-semibold focus:outline-hidden focus:border-brand-primary"
-                        />
-                        <button
-                          type="submit"
-                          className="p-1 bg-brand-primary hover:bg-brand-primary/90 text-white rounded cursor-pointer flex items-center justify-center shrink-0"
-                          aria-label="Save subtask"
-                        >
-                          <Check className="w-2.5 h-2.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditingSubtaskId(null)}
-                          className="p-1 border border-gray-border hover:bg-white/5 text-text-secondary rounded cursor-pointer flex items-center justify-center shrink-0"
-                          aria-label="Cancel"
-                        >
-                          <X className="w-2.5 h-2.5" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5 shrink-0 self-end sm:self-auto">
+                          <button
+                            type="submit"
+                            className="p-1.5 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-lg cursor-pointer flex items-center justify-center shrink-0"
+                            aria-label="Save subtask"
+                          >
+                            <Check className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingSubtaskId(null)}
+                            className="p-1.5 border border-gray-border hover:bg-white/5 text-text-secondary rounded-lg cursor-pointer flex items-center justify-center shrink-0"
+                            aria-label="Cancel"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
                       </form>
                     ) : (
                       <>
-                        <div className="flex items-start gap-2.5 overflow-hidden flex-1">
+                        <div className="flex items-start gap-2.5 overflow-hidden flex-1 w-full">
                           <button
                             onClick={() => handleToggleSubtask(sub)}
                             className={`w-4 h-4 rounded-md flex items-center justify-center border transition-all shrink-0 cursor-pointer mt-0.5 ${
@@ -536,14 +572,14 @@ export const SubtaskChecklist = ({
                           <SubtaskTitleText title={sub.title} />
                         </div>
 
-                        <div className="flex items-center gap-1 shrink-0">
+                        <div className="flex items-center justify-end gap-1 shrink-0 w-full sm:w-auto border-t border-gray-border/10 pt-2 sm:border-t-0 sm:pt-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               navigator.clipboard.writeText(sub.title);
                               toast('Subtask copied to clipboard! 📋', 'success');
                             }}
-                            className="p-1 hover:bg-[#282828] rounded text-text-secondary hover:text-text-primary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+                            className="p-1 hover:bg-[#282828] rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0"
                             title="Copy subtask"
                           >
                             <Copy className="w-3 h-3" />
@@ -555,7 +591,7 @@ export const SubtaskChecklist = ({
                               setEditingSubtaskTitle(sub.title);
                               setEditingSubtaskPriority(sub.priority || 'low');
                             }}
-                            className="p-1 hover:bg-[#282828] rounded text-text-secondary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+                            className="p-1 hover:bg-[#282828] rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0"
                             title="Edit subtask"
                           >
                             <Edit2 className="w-3 h-3" />
@@ -565,7 +601,7 @@ export const SubtaskChecklist = ({
                               e.stopPropagation();
                               handleDeleteSubtask(sub.id);
                             }}
-                            className="p-1 hover:bg-[#282828] rounded text-error opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+                            className="p-1 hover:bg-[#282828] rounded text-error transition-colors cursor-pointer shrink-0"
                             title="Delete subtask"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -603,13 +639,11 @@ export const SubtaskChecklist = ({
             </div>
 
             {isCompletedSubtasksOpen && (
-              <div className={`flex flex-col gap-2 select-none overflow-y-auto pr-1 no-scrollbar animate-slide-in ${
-                isDetailsPaneExpanded ? 'max-h-[40vh]' : 'max-h-[150px]'
-              }`}>
+              <div className="flex flex-col gap-2 select-none pr-1 animate-slide-in">
                 {sortedCompletedSubtasks.map(sub => (
                   <div
                     key={sub.id}
-                    className={`group flex items-center justify-between gap-3 p-3 rounded-2xl border border-success/15 bg-success/5 text-text-secondary/50 transition-all hover:bg-success/10 border-l-4 ${
+                    className={`group flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-2xl border border-success/15 bg-success/5 text-text-secondary/50 transition-all hover:bg-success/10 border-l-4 ${
                       sub.priority === 'high'
                         ? 'border-l-error/40'
                         : sub.priority === 'medium'
@@ -623,75 +657,79 @@ export const SubtaskChecklist = ({
                           e.preventDefault();
                           handleUpdateSubtask(sub);
                         }}
-                        className="flex-1 flex items-center gap-2"
+                        className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => setEditingSubtaskPriority('low')}
-                            className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
-                              editingSubtaskPriority === 'low'
-                                ? 'bg-success ring-2 ring-success/40 scale-110'
-                                : 'bg-success/30 hover:bg-success/60'
-                            }`}
-                            title="Low"
-                            aria-label="Set low priority"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setEditingSubtaskPriority('medium')}
-                            className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
-                              editingSubtaskPriority === 'medium'
-                                ? 'bg-warning ring-2 ring-warning/40 scale-110'
-                                : 'bg-warning/30 hover:bg-warning/60'
-                            }`}
-                            title="Medium"
-                            aria-label="Set medium priority"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setEditingSubtaskPriority('high')}
-                            className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
-                              editingSubtaskPriority === 'high'
-                                ? 'bg-error ring-2 ring-error/40 scale-110'
-                                : 'bg-error/30 hover:bg-error/60'
-                            }`}
-                            title="High"
-                            aria-label="Set high priority"
+                        <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 w-full flex-1">
+                          <div className="flex items-center gap-1 shrink-0 bg-[#1a1a1a] px-2 py-1.5 rounded-lg border border-gray-border/40 self-start xs:self-auto">
+                            <button
+                              type="button"
+                              onClick={() => setEditingSubtaskPriority('low')}
+                              className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
+                                editingSubtaskPriority === 'low'
+                                  ? 'bg-success ring-2 ring-success/40 scale-110'
+                                  : 'bg-success/30 hover:bg-success/60'
+                              }`}
+                              title="Low"
+                              aria-label="Set low priority"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setEditingSubtaskPriority('medium')}
+                              className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
+                                editingSubtaskPriority === 'medium'
+                                  ? 'bg-warning ring-2 ring-warning/40 scale-110'
+                                  : 'bg-warning/30 hover:bg-warning/60'
+                              }`}
+                              title="Medium"
+                              aria-label="Set medium priority"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setEditingSubtaskPriority('high')}
+                              className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
+                                editingSubtaskPriority === 'high'
+                                  ? 'bg-error ring-2 ring-error/40 scale-110'
+                                  : 'bg-error/30 hover:bg-error/60'
+                              }`}
+                              title="High"
+                              aria-label="Set high priority"
+                            />
+                          </div>
+                          <input
+                            autoFocus
+                            type="text"
+                            value={editingSubtaskTitle}
+                            onChange={(e) => setEditingSubtaskTitle(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Escape') {
+                                setEditingSubtaskId(null);
+                              }
+                            }}
+                            className="flex-1 min-w-0 px-2 py-1 rounded bg-[#202020] border border-gray-border/20 text-text-primary text-[11px] font-semibold focus:outline-hidden focus:border-brand-primary"
                           />
                         </div>
-                        <input
-                          autoFocus
-                          type="text"
-                          value={editingSubtaskTitle}
-                          onChange={(e) => setEditingSubtaskTitle(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Escape') {
-                              setEditingSubtaskId(null);
-                            }
-                          }}
-                          className="flex-1 px-2 py-1 rounded bg-[#202020] border border-gray-border/20 text-text-primary text-[11px] font-semibold focus:outline-hidden focus:border-brand-primary"
-                        />
-                        <button
-                          type="submit"
-                          className="p-1 bg-brand-primary hover:bg-brand-primary/90 text-white rounded cursor-pointer flex items-center justify-center shrink-0"
-                          aria-label="Save subtask"
-                        >
-                          <Check className="w-2.5 h-2.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditingSubtaskId(null)}
-                          className="p-1 border border-gray-border hover:bg-white/5 text-text-secondary rounded cursor-pointer flex items-center justify-center shrink-0"
-                          aria-label="Cancel"
-                        >
-                          <X className="w-2.5 h-2.5" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5 shrink-0 self-end sm:self-auto">
+                          <button
+                            type="submit"
+                            className="p-1.5 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-lg cursor-pointer flex items-center justify-center shrink-0"
+                            aria-label="Save subtask"
+                          >
+                            <Check className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingSubtaskId(null)}
+                            className="p-1.5 border border-gray-border hover:bg-white/5 text-text-secondary rounded-lg cursor-pointer flex items-center justify-center shrink-0"
+                            aria-label="Cancel"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
                       </form>
                     ) : (
                       <>
-                        <div className="flex items-start gap-2.5 overflow-hidden flex-1">
+                        <div className="flex items-start gap-2.5 overflow-hidden flex-1 w-full">
                           <button
                             onClick={() => handleToggleSubtask(sub)}
                             className="w-4 h-4 rounded-md flex items-center justify-center border border-success bg-success text-white transition-all shrink-0 cursor-pointer mt-0.5"
@@ -701,14 +739,14 @@ export const SubtaskChecklist = ({
                           <SubtaskTitleText title={sub.title} lineClass="line-through opacity-50" />
                         </div>
 
-                        <div className="flex items-center gap-1 shrink-0">
+                        <div className="flex items-center justify-end gap-1 shrink-0 w-full sm:w-auto border-t border-gray-border/10 pt-2 sm:border-t-0 sm:pt-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               navigator.clipboard.writeText(sub.title);
                               toast('Subtask copied to clipboard! 📋', 'success');
                             }}
-                            className="p-1 hover:bg-[#282828] rounded text-text-secondary hover:text-text-primary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+                            className="p-1 hover:bg-[#282828] rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0"
                             title="Copy subtask"
                           >
                             <Copy className="w-3 h-3" />
@@ -720,7 +758,7 @@ export const SubtaskChecklist = ({
                               setEditingSubtaskTitle(sub.title);
                               setEditingSubtaskPriority(sub.priority || 'low');
                             }}
-                            className="p-1 hover:bg-[#282828] text-text-secondary rounded opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+                            className="p-1 hover:bg-[#282828] text-text-secondary rounded hover:text-text-primary transition-colors cursor-pointer shrink-0"
                             title="Edit subtask"
                           >
                             <Edit2 className="w-3 h-3" />
@@ -730,7 +768,8 @@ export const SubtaskChecklist = ({
                               e.stopPropagation();
                               handleDeleteSubtask(sub.id);
                             }}
-                            className="p-1 hover:bg-[#282828] rounded text-error opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+                            className="p-1 hover:bg-[#282828] rounded text-error transition-colors cursor-pointer shrink-0"
+                            title="Delete subtask"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
