@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Plus, Check, Trash2, ArrowUpDown, Smile, Edit2, X, Copy, ChevronDown, ChevronUp, GripVertical, ArrowRight 
+  Plus, Check, Trash2, Smile, Edit2, X, Copy, ChevronDown, ChevronUp, GripVertical, ArrowRight,
+  ArrowDown, ArrowUp, ArrowDownAZ, ArrowDownZA, Clock, Calendar
 } from 'lucide-react';
 import { Reorder } from 'framer-motion';
 import { useAppSelector, useAppDispatch } from '../../../hooks/useRedux';
@@ -133,6 +134,21 @@ export const TaskList = () => {
   const [newTitle, setNewTitle] = useState('');
   const [expandedCompleted, setExpandedCompleted] = useState(false);
 
+  const taskSortOptions = {
+    custom: { label: 'Manual Order', icon: GripVertical },
+    'priority-desc': { label: 'Priority: High → Low', icon: ArrowDown },
+    'priority-asc': { label: 'Priority: Low → High', icon: ArrowUp },
+    'dueDate-asc': { label: 'Due Date: Earliest', icon: Calendar },
+    'dueDate-desc': { label: 'Due Date: Latest', icon: Calendar },
+    'title-asc': { label: 'Name: A → Z', icon: ArrowDownAZ },
+    'title-desc': { label: 'Name: Z → A', icon: ArrowDownZA },
+    'createdAt-desc': { label: 'Newest Created', icon: Clock },
+    'createdAt-asc': { label: 'Oldest Created', icon: Clock },
+  } as const;
+
+  const currentSort = taskSortOptions[sortBy as keyof typeof taskSortOptions] || taskSortOptions.custom;
+  const ActiveSortIcon = currentSort.icon;
+
   // Drag and Drop Placement Indicator States
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
@@ -206,18 +222,45 @@ export const TaskList = () => {
   };
 
   const sortedTasks = [...getFilteredTasks()].sort((a, b) => {
-    if (sortBy === 'priority') return b.priority - a.priority;
-    if (sortBy === 'dueDate') {
+    if (sortBy === 'priority-desc') return b.priority - a.priority;
+    if (sortBy === 'priority-asc') return a.priority - b.priority;
+    if (sortBy === 'dueDate-desc') {
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime();
+    }
+    if (sortBy === 'dueDate-asc') {
       if (!a.dueDate) return 1;
       if (!b.dueDate) return -1;
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
     }
-    if (sortBy === 'createdAt') {
+    if (sortBy === 'createdAt-desc') {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    }
+    if (sortBy === 'createdAt-asc') {
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     }
-    if (sortBy === 'title') {
+    if (sortBy === 'title-asc') {
       return a.title.localeCompare(b.title);
     }
+    if (sortBy === 'title-desc') {
+      return b.title.localeCompare(a.title);
+    }
+    
+    // Legacy support fallback
+    if (sortBy as any === 'priority') return b.priority - a.priority;
+    if (sortBy as any === 'dueDate') {
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    }
+    if (sortBy as any === 'createdAt') {
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    }
+    if (sortBy as any === 'title') {
+      return a.title.localeCompare(b.title);
+    }
+
     // 'custom' manual dragging sorting
     const posA = a.position ?? 0;
     const posB = b.position ?? 0;
@@ -405,17 +448,23 @@ export const TaskList = () => {
         <div className="flex items-center gap-1">
           <button
             onClick={() => {
-              const order: Array<'custom' | 'priority' | 'dueDate' | 'title' | 'createdAt'> = ['custom', 'priority', 'dueDate', 'title', 'createdAt'];
+              const order: Array<
+                'custom' | 'priority-desc' | 'priority-asc' | 'dueDate-asc' | 'dueDate-desc' | 'title-asc' | 'title-desc' | 'createdAt-desc' | 'createdAt-asc'
+              > = [
+                'custom', 'priority-desc', 'priority-asc', 'dueDate-asc', 'dueDate-desc', 'title-asc', 'title-desc', 'createdAt-desc', 'createdAt-asc'
+              ];
               const idx = order.indexOf(sortBy);
               dispatch(setSortBy(order[(idx + 1) % order.length]));
             }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-[#1f1f1f] text-text-secondary hover:text-text-primary rounded-xl cursor-pointer transition-colors"
-            title="Cycle sorting mode"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525] transition-all cursor-pointer text-[10px] font-bold shadow-sm"
+            title={`Active Sort: ${currentSort.label} (Click to cycle)`}
+            aria-label="Cycle sorting options"
           >
-            <ArrowUpDown className="w-3.5 h-3.5" />
-            <span className="text-[10px] font-bold">
-              {sortBy === 'custom' ? 'Manual' : sortBy === 'priority' ? 'Priority' : sortBy === 'dueDate' ? 'Due Date' : sortBy === 'title' ? 'Title' : 'Created'}
-            </span>
+            <ActiveSortIcon className="w-3.5 h-3.5 text-brand-primary" />
+            <div className="flex items-center gap-1">
+              <span className="text-[8px] font-black uppercase tracking-wider text-text-secondary/50 select-none">Sort:</span>
+              <span className="text-text-primary text-[10px] font-extrabold">{currentSort.label}</span>
+            </div>
           </button>
         </div>
       </div>

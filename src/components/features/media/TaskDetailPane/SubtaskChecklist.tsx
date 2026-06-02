@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  AlertCircle, Edit2, Trash2, Check, X, Copy, ChevronDown, ChevronUp, Upload, Download, ArrowUpDown, GripVertical 
+  AlertCircle, Edit2, Trash2, Check, X, Copy, ChevronDown, ChevronUp, Upload, Download, GripVertical,
+  ArrowDown, ArrowUp, ArrowDownAZ, ArrowDownZA, Clock
 } from 'lucide-react';
 import { Reorder } from 'framer-motion';
 import { useAppDispatch } from '../../../../hooks/useRedux';
@@ -104,10 +105,25 @@ export const SubtaskChecklist = ({
     return cached === null ? false : cached === 'true';
   });
 
-  const [subtaskSortOrder, setSubtaskSortOrder] = useState<'default' | 'asc' | 'desc'>(() => {
+  const [subtaskSortOrder, setSubtaskSortOrder] = useState<'default' | 'priority-desc' | 'priority-asc' | 'title-asc' | 'title-desc' | 'date-desc' | 'date-asc'>(() => {
     const cached = localStorage.getItem('todo_subtask_sort_order');
-    return (cached as 'default' | 'asc' | 'desc') || 'default';
+    return (cached as any) || 'default';
   });
+
+
+
+  const sortOptions = [
+    { value: 'default', label: 'Manual Order', icon: GripVertical },
+    { value: 'priority-desc', label: 'Priority: High → Low', icon: ArrowDown },
+    { value: 'priority-asc', label: 'Priority: Low → High', icon: ArrowUp },
+    { value: 'title-asc', label: 'Name: A → Z', icon: ArrowDownAZ },
+    { value: 'title-desc', label: 'Name: Z → A', icon: ArrowDownZA },
+    { value: 'date-desc', label: 'Date: Newest First', icon: Clock },
+    { value: 'date-asc', label: 'Date: Oldest First', icon: Clock },
+  ] as const;
+
+  const activeSortOption = sortOptions.find(opt => opt.value === subtaskSortOrder) || sortOptions[0];
+  const ActiveSortIcon = activeSortOption.icon;
 
   // Reactive auto-completion and auto-reversion of task based on subtask states
   useEffect(() => {
@@ -298,15 +314,24 @@ export const SubtaskChecklist = ({
   const sortSubtasks = (list: Subtask[]) => {
     const priorityWeight = { high: 3, medium: 2, low: 1 };
     return [...list].sort((a, b) => {
-      if (subtaskSortOrder === 'desc') {
+      if (subtaskSortOrder === 'priority-desc') {
         const weightA = priorityWeight[a.priority || 'low'];
         const weightB = priorityWeight[b.priority || 'low'];
         if (weightA !== weightB) return weightB - weightA;
-      } else if (subtaskSortOrder === 'asc') {
+      } else if (subtaskSortOrder === 'priority-asc') {
         const weightA = priorityWeight[a.priority || 'low'];
         const weightB = priorityWeight[b.priority || 'low'];
         if (weightA !== weightB) return weightA - weightB;
+      } else if (subtaskSortOrder === 'title-asc') {
+        return a.title.localeCompare(b.title);
+      } else if (subtaskSortOrder === 'title-desc') {
+        return b.title.localeCompare(a.title);
+      } else if (subtaskSortOrder === 'date-desc') {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      } else if (subtaskSortOrder === 'date-asc') {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       }
+      
       // 'default' manual dragging sorting
       const posA = a.position ?? 0;
       const posB = b.position ?? 0;
@@ -357,25 +382,27 @@ export const SubtaskChecklist = ({
             </button>
           )}
 
-          {/* Sort Button */}
+          {/* Cycle Sort Button */}
           <button
             type="button"
             onClick={() => {
-              let nextSort: 'default' | 'asc' | 'desc' = 'default';
-              if (subtaskSortOrder === 'default') nextSort = 'desc';
-              else if (subtaskSortOrder === 'desc') nextSort = 'asc';
+              const order: Array<'default' | 'priority-desc' | 'priority-asc' | 'title-asc' | 'title-desc' | 'date-desc' | 'date-asc'> = [
+                'default', 'priority-desc', 'priority-asc', 'title-asc', 'title-desc', 'date-desc', 'date-asc'
+              ];
+              const idx = order.indexOf(subtaskSortOrder);
+              const nextSort = order[(idx + 1) % order.length];
               setSubtaskSortOrder(nextSort);
               localStorage.setItem('todo_subtask_sort_order', nextSort);
             }}
-            className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
-              subtaskSortOrder !== 'default'
-                ? 'bg-brand-primary/15 border-brand-primary/20 text-brand-primary'
-                : 'bg-[#202020] border-gray-border text-text-secondary hover:text-text-primary hover:bg-[#252525]'
-            }`}
-            title={`Sort: ${subtaskSortOrder === 'default' ? 'Date' : subtaskSortOrder === 'desc' ? 'Priority Descending' : 'Priority Ascending'}`}
-            aria-label="Sort subtasks"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525] transition-all cursor-pointer text-[10px] font-bold"
+            title={`Active Sort: ${activeSortOption.label} (Click to cycle)`}
+            aria-label="Cycle sorting options"
           >
-            <ArrowUpDown className="w-3.5 h-3.5" />
+            <ActiveSortIcon className="w-3.5 h-3.5 text-brand-primary" />
+            <div className="flex items-center gap-1">
+              <span className="text-[8px] font-black uppercase tracking-wider text-text-secondary/50 select-none">Sort:</span>
+              <span className="text-text-primary text-[10px] font-extrabold">{activeSortOption.label}</span>
+            </div>
           </button>
         </div>
       </div>

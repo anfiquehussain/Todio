@@ -13,7 +13,7 @@ export interface TodoState {
   activeTaskId: string | null;
   filter: 'all' | 'active' | 'completed' | 'overdue';
   searchQuery: string;
-  sortBy: 'dueDate' | 'priority' | 'title' | 'createdAt' | 'custom';
+  sortBy: 'custom' | 'priority-desc' | 'priority-asc' | 'dueDate-asc' | 'dueDate-desc' | 'title-asc' | 'title-desc' | 'createdAt-desc' | 'createdAt-asc';
   soundEnabled: boolean;
   isLoading: boolean;
   error: string | null;
