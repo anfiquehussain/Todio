@@ -106,7 +106,7 @@ export const MainLayout = () => {
             }}
             className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-xs select-none"
           >
-            <div className="w-[296px] h-[100dvh] relative z-50 animate-slide-in flex bg-bg-secondary">
+            <div className="w-[296px] h-dvh relative z-50 animate-slide-in flex bg-bg-secondary">
               <SidebarRail
                 user={user}
                 soundEnabled={soundEnabled}
@@ -115,10 +115,10 @@ export const MainLayout = () => {
                 setIsProfileOpen={setIsProfileOpen}
                 handleSync={handleSync}
                 handleToggleSound={handleToggleSound}
-                className="flex flex-col justify-between items-center bg-bg-secondary border-r border-gray-border/50 py-6 w-14 shrink-0 h-[100dvh] relative z-20"
+                className="flex flex-col justify-between items-center bg-bg-secondary border-r border-gray-border/50 py-6 w-14 shrink-0 h-dvh relative z-20"
               />
 
-              <div className="flex-1 relative h-[100dvh] flex flex-col min-w-0">
+              <div className="flex-1 relative h-dvh flex flex-col min-w-0">
                 <div className="absolute top-4 right-4 z-50">
                   <button
                     onClick={() => setIsMobileMenuOpen(false)}

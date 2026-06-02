@@ -5,7 +5,8 @@ import {
 import { Reorder } from 'framer-motion';
 import { useAppDispatch } from '../../../../hooks/useRedux';
 import { 
-  createSubtaskAsync, updateSubtaskAsync, deleteSubtaskAsync, createSubtasksBulkAsync, updateSubtasksPositionsAsync 
+  createSubtaskAsync, updateSubtaskAsync, deleteSubtaskAsync, createSubtasksBulkAsync, updateSubtasksPositionsAsync,
+  updateTaskAsync
 } from '../../../../store/slices/todoSlice';
 import { incrementXP, updateStreak } from '../../../../store/slices/profileSlice';
 import { playCompletionSound } from '../../../../lib/sound';
@@ -108,6 +109,42 @@ export const SubtaskChecklist = ({
     return (cached as 'default' | 'asc' | 'desc') || 'default';
   });
 
+  // Reactive auto-completion and auto-reversion of task based on subtask states
+  useEffect(() => {
+    if (!activeTask) return;
+
+    const taskSubtasks = subtasks.filter(s => s.taskId === activeTask.id);
+    if (taskSubtasks.length > 0) {
+      const allCompleted = taskSubtasks.every(s => s.completed);
+
+      if (allCompleted && !activeTask.completed && !activeTask.manuallyUnchecked) {
+        // Auto-complete parent task
+        const completeParentTask = async () => {
+          try {
+            await dispatch(updateTaskAsync({ ...activeTask, completed: true })).unwrap();
+            dispatch(incrementXP(50));
+            playCompletionSound(soundEnabled);
+            toast('All subtasks completed! Task automatically completed! +50 XP Score! 🏆🔔', 'success');
+          } catch {
+            // Fail silently or log
+          }
+        };
+        completeParentTask();
+      } else if (!allCompleted && activeTask.completed) {
+        // Auto-revert parent task to active because a subtask was unchecked or added
+        const revertParentTask = async () => {
+          try {
+            await dispatch(updateTaskAsync({ ...activeTask, completed: false })).unwrap();
+            toast('Incomplete subtasks found! Task reverted to active queue. 🧭', 'info');
+          } catch {
+            // Fail silently
+          }
+        };
+        revertParentTask();
+      }
+    }
+  }, [subtasks, activeTask, dispatch, soundEnabled, toast]);
+
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [newSubtaskPriority, setNewSubtaskPriority] = useState<'low' | 'medium' | 'high'>('low');
   const [isBulkMode, setIsBulkMode] = useState(false);
@@ -122,6 +159,16 @@ export const SubtaskChecklist = ({
   const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
   const [editingSubtaskTitle, setEditingSubtaskTitle] = useState('');
   const [editingSubtaskPriority, setEditingSubtaskPriority] = useState<'low' | 'medium' | 'high'>('low');
+
+  const clearManuallyUnchecked = async () => {
+    if (activeTask && activeTask.manuallyUnchecked) {
+      try {
+        await dispatch(updateTaskAsync({ ...activeTask, manuallyUnchecked: false })).unwrap();
+      } catch {
+        // Fail silently
+      }
+    }
+  };
 
   // Subtask Addition
   const handleAddSubtask = async (e: React.FormEvent) => {
@@ -141,6 +188,7 @@ export const SubtaskChecklist = ({
 
     try {
       await dispatch(createSubtaskAsync(subtask)).unwrap();
+      await clearManuallyUnchecked();
       setNewSubtaskTitle('');
       setNewSubtaskPriority('low'); // Reset to default low
       toast('Checklist item appended! 🧱', 'success');
@@ -186,6 +234,7 @@ export const SubtaskChecklist = ({
 
     try {
       await dispatch(createSubtasksBulkAsync(newSubtasks)).unwrap();
+      await clearManuallyUnchecked();
       setBulkText('');
       setIsBulkMode(false);
       setNewSubtaskPriority('low'); // Reset to default low
@@ -202,6 +251,7 @@ export const SubtaskChecklist = ({
 
     try {
       await dispatch(updateSubtaskAsync({ ...sub, completed: completedState })).unwrap();
+      await clearManuallyUnchecked();
       if (completedState) {
         dispatch(incrementXP(35));
         dispatch(updateStreak());

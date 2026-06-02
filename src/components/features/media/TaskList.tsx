@@ -6,13 +6,15 @@ import { Reorder } from 'framer-motion';
 import { useAppSelector, useAppDispatch } from '../../../hooks/useRedux';
 import { 
   createTaskAsync, updateTaskAsync, deleteTaskAsync, 
-  setActiveTaskId, setSortBy, updateTasksPositionsAsync,
+  setActiveTaskId, setSortBy, updateTasksPositionsAsync, updateSubtasksPositionsAsync,
   setActiveCollectionId, setActiveSubcollectionId, setFilter
 } from '../../../store/slices/todoSlice';
 import { incrementXP, updateStreak } from '../../../store/slices/profileSlice';
 import { playCompletionSound } from '../../../lib/sound';
 import { useToast } from '../../../hooks/useToast';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
+import { Modal } from '../../patterns/Modal';
+import { Button } from '../../ui/Button';
 import type { Task } from '../../../types';
 
 interface TaskTitleTextProps {
@@ -256,13 +258,106 @@ export const TaskList = () => {
     }
   };
 
+  // Warning Modal for Incomplete Subtasks state
+  const [warningTask, setWarningTask] = useState<Task | null>(null);
+  const [isBulkCompleting, setIsBulkCompleting] = useState(false);
+
+  const handleCompleteAllSubtasksAndTask = async () => {
+    if (!warningTask || isBulkCompleting) return;
+    setIsBulkCompleting(true);
+    try {
+      const taskSubtasks = subtasks.filter(s => s.taskId === warningTask.id);
+      const incompleteSubtasks = taskSubtasks.filter(s => !s.completed);
+
+      // 1. Mark all incomplete subtasks as completed
+      const updatedSubtasks = incompleteSubtasks.map(s => ({ ...s, completed: true }));
+      if (updatedSubtasks.length > 0) {
+        await dispatch(updateSubtasksPositionsAsync(updatedSubtasks)).unwrap();
+      }
+
+      // 2. Mark parent task as completed
+      await dispatch(updateTaskAsync({ ...warningTask, completed: true })).unwrap();
+
+      // 3. XP reward: 35 XP per newly completed subtask + 50 XP for task
+      const totalXP = updatedSubtasks.length * 35 + 50;
+      dispatch(incrementXP(totalXP));
+      dispatch(updateStreak());
+      playCompletionSound(soundEnabled);
+
+      toast(`Task and all its subtasks completed! +${totalXP} XP Score! 🏆🔔`, 'success');
+    } catch {
+      toast('Failed to complete all subtasks and task.', 'error');
+    } finally {
+      setIsBulkCompleting(false);
+      setWarningTask(null);
+    }
+  };
+
+  // Revert task modal state
+  const [revertTask, setRevertTask] = useState<Task | null>(null);
+
+  const handleRevertTaskResetSubtasks = async () => {
+    if (!revertTask) return;
+    try {
+      const taskSubtasks = subtasks.filter(s => s.taskId === revertTask.id);
+      const resetSubtasks = taskSubtasks.map(s => ({ ...s, completed: false }));
+
+      // 1. Reset all subtasks
+      if (resetSubtasks.length > 0) {
+        await dispatch(updateSubtasksPositionsAsync(resetSubtasks)).unwrap();
+      }
+
+      // 2. Mark parent task as active (completed: false)
+      await dispatch(updateTaskAsync({ ...revertTask, completed: false, manuallyUnchecked: false })).unwrap();
+
+      toast('Task reverted to active and all subtasks reset! 🧭🧱', 'info');
+    } catch {
+      toast('Failed to revert task and reset subtasks.', 'error');
+    } finally {
+      setRevertTask(null);
+    }
+  };
+
+  const handleRevertTaskKeepSubtasks = async () => {
+    if (!revertTask) return;
+    try {
+      // Mark parent task as active (completed: false) and set manuallyUnchecked: true
+      await dispatch(updateTaskAsync({ ...revertTask, completed: false, manuallyUnchecked: true })).unwrap();
+
+      toast('Task reverted to active. Subtasks remain completed. 🧭', 'info');
+    } catch {
+      toast('Failed to revert task.', 'error');
+    } finally {
+      setRevertTask(null);
+    }
+  };
+
   // Task Toggle Complete Handler
   const handleToggleComplete = async (task: Task) => {
     if (!checkAuth('toggle task completion')) return;
     const completedState = !task.completed;
 
+    if (completedState) {
+      const taskSubtasks = subtasks.filter(s => s.taskId === task.id);
+      const hasIncompleteSubtasks = taskSubtasks.some(s => !s.completed);
+      if (hasIncompleteSubtasks) {
+        setWarningTask(task);
+        return;
+      }
+    } else {
+      // The task is being UNCHECKED (completedState is false)
+      // Check if all subtasks are completed
+      const taskSubtasks = subtasks.filter(s => s.taskId === task.id);
+      const allSubtasksCompleted = taskSubtasks.length > 0 && taskSubtasks.every(s => s.completed);
+
+      if (allSubtasksCompleted) {
+        setRevertTask(task);
+        return;
+      }
+    }
+
     try {
-      await dispatch(updateTaskAsync({ ...task, completed: completedState })).unwrap();
+      await dispatch(updateTaskAsync({ ...task, completed: completedState, manuallyUnchecked: false })).unwrap();
       
       if (completedState) {
         dispatch(incrementXP(50));
@@ -802,6 +897,81 @@ export const TaskList = () => {
           </div>
         )}
       </div>
+      {/* Incomplete Subtasks Warning Modal */}
+      <Modal
+        isOpen={warningTask !== null}
+        onClose={() => {
+          if (!isBulkCompleting) setWarningTask(null);
+        }}
+        title="Incomplete Subtasks Warning ⚠️"
+        size="sm"
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-xs font-bold text-text-secondary leading-relaxed select-text">
+            You haven't completed all the subtasks for <span className="text-brand-primary">"{warningTask?.title}"</span>. What would you like to do?
+          </p>
+          <div className="flex flex-col gap-2 mt-2">
+            <Button
+              variant="primary"
+              size="sm"
+              className="w-full font-bold select-none cursor-pointer"
+              disabled={isBulkCompleting}
+              onClick={handleCompleteAllSubtasksAndTask}
+            >
+              {isBulkCompleting ? 'Completing…' : 'Complete all subtasks & continue'}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full font-bold select-none cursor-pointer text-text-secondary hover:text-text-primary"
+              disabled={isBulkCompleting}
+              onClick={() => setWarningTask(null)}
+            >
+              Go back
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Task Reversion Confirmation Modal */}
+      <Modal
+        isOpen={revertTask !== null}
+        onClose={() => setRevertTask(null)}
+        title="Task Reversion Options 🔄"
+        size="sm"
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-xs font-bold text-text-secondary leading-relaxed select-text">
+            All the subtasks for <span className="text-brand-primary">"{revertTask?.title}"</span> are currently completed. How would you like to handle them?
+          </p>
+          <div className="flex flex-col gap-2 mt-2">
+            <Button
+              variant="danger"
+              size="sm"
+              className="w-full font-bold select-none cursor-pointer"
+              onClick={handleRevertTaskResetSubtasks}
+            >
+              Reset all subtasks to active
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              className="w-full font-bold select-none cursor-pointer"
+              onClick={handleRevertTaskKeepSubtasks}
+            >
+              Keep subtasks completed
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full font-bold select-none cursor-pointer text-text-secondary hover:text-text-primary"
+              onClick={() => setRevertTask(null)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

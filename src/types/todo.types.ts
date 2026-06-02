@@ -15,6 +15,7 @@ export interface Task {
   createdAt: string;
   position?: number;
   imported?: boolean;
+  manuallyUnchecked?: boolean;
 }
 
 export interface Subtask {
