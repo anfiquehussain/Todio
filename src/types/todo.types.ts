@@ -13,6 +13,7 @@ export interface Task {
   completed: boolean;
   userId: string;
   createdAt: string;
+  position?: number;
 }
 
 export interface Subtask {
@@ -23,4 +24,5 @@ export interface Subtask {
   userId: string;
   createdAt: string;
   priority?: 'low' | 'medium' | 'high';
+  position?: number;
 }

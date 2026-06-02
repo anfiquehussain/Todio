@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Plus, Check, Trash2, ArrowUpDown, Smile, Edit2, X, Copy, ChevronDown, ChevronUp 
+  Plus, Check, Trash2, ArrowUpDown, Smile, Edit2, X, Copy, ChevronDown, ChevronUp, GripVertical 
 } from 'lucide-react';
+import { Reorder } from 'framer-motion';
 import { useAppSelector, useAppDispatch } from '../../../hooks/useRedux';
 import { 
   createTaskAsync, updateTaskAsync, deleteTaskAsync, 
-  setActiveTaskId, setSortBy 
+  setActiveTaskId, setSortBy, updateTasksPositionsAsync
 } from '../../../store/slices/todoSlice';
 import { incrementXP, updateStreak } from '../../../store/slices/profileSlice';
 import { playCompletionSound } from '../../../lib/sound';
@@ -81,6 +82,11 @@ export const TaskList = () => {
 
   const [newTitle, setNewTitle] = useState('');
   const [expandedCompleted, setExpandedCompleted] = useState(false);
+
+  // Drag and Drop Placement Indicator States
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
+  const [dropPosition, setDropPosition] = useState<'top' | 'bottom' | null>(null);
 
   // Task Editing Inline State
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
@@ -159,7 +165,17 @@ export const TaskList = () => {
       if (!b.dueDate) return -1;
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
     }
-    return a.title.localeCompare(b.title);
+    if (sortBy === 'createdAt') {
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    }
+    if (sortBy === 'title') {
+      return a.title.localeCompare(b.title);
+    }
+    // 'custom' manual dragging sorting
+    const posA = a.position ?? 0;
+    const posB = b.position ?? 0;
+    if (posA !== posB) return posA - posB;
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
   });
 
   const activeQueue = sortedTasks.filter(t => !t.completed);
@@ -249,7 +265,7 @@ export const TaskList = () => {
         <div className="flex items-center gap-1">
           <button
             onClick={() => {
-              const order: Array<'priority' | 'dueDate' | 'title' | 'createdAt'> = ['priority', 'dueDate', 'title', 'createdAt'];
+              const order: Array<'custom' | 'priority' | 'dueDate' | 'title' | 'createdAt'> = ['custom', 'priority', 'dueDate', 'title', 'createdAt'];
               const idx = order.indexOf(sortBy);
               dispatch(setSortBy(order[(idx + 1) % order.length]));
             }}
@@ -258,7 +274,7 @@ export const TaskList = () => {
           >
             <ArrowUpDown className="w-3.5 h-3.5" />
             <span className="text-[10px] font-bold">
-              {sortBy === 'priority' ? 'Priority' : sortBy === 'dueDate' ? 'Due Date' : sortBy === 'title' ? 'Title' : 'Created'}
+              {sortBy === 'custom' ? 'Manual' : sortBy === 'priority' ? 'Priority' : sortBy === 'dueDate' ? 'Due Date' : sortBy === 'title' ? 'Title' : 'Created'}
             </span>
           </button>
         </div>
@@ -284,166 +300,251 @@ export const TaskList = () => {
         {/* Active Tasks Queue */}
         <div className="flex flex-col gap-1.5">
           {activeQueue.length > 0 ? (
-            activeQueue.map(task => {
-              const isSelected = task.id === activeTaskId;
+            <Reorder.Group
+              axis="y"
+              values={activeQueue}
+              onReorder={(newOrder) => {
+                if (sortBy !== 'custom') {
+                  dispatch(setSortBy('custom'));
+                }
+                const updated = newOrder.map((task, index) => ({
+                  ...task,
+                  position: index,
+                }));
+                dispatch(updateTasksPositionsAsync(updated));
+              }}
+              className="flex flex-col gap-1.5"
+            >
+              {activeQueue.map(task => {
+                const isSelected = task.id === activeTaskId;
 
-              return editingTaskId === task.id ? (
-                <form
-                  key={task.id}
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleUpdateTaskInline(task);
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  className={`flex items-center justify-between px-3.5 py-3.5 rounded-2xl border border-l-4 select-none transition-all ${
-                    editingTaskPriority >= 4
-                      ? 'bg-error/5 border-error/20 border-l-error'
-                      : editingTaskPriority >= 2
-                        ? 'bg-warning/5 border-warning/20 border-l-warning'
-                        : 'bg-[#181818]/60 border-gray-border border-l-success'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 flex-1 overflow-hidden">
-                    {/* Priority Dots */}
-                    <div className="flex items-center gap-1 shrink-0 bg-[#202020] border border-gray-border/20 px-2 py-1.5 rounded-xl">
-                      <button
-                        type="button"
-                        onClick={() => setEditingTaskPriority(1)}
-                        className={`w-3.5 h-3.5 rounded-full transition-all cursor-pointer ${
-                          editingTaskPriority <= 1
-                            ? 'bg-success ring-2 ring-success/40 scale-110'
-                            : 'bg-success/30 hover:bg-success/60'
-                        }`}
-                        title="Low Priority"
-                        aria-label="Set low priority"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setEditingTaskPriority(3)}
-                        className={`w-3.5 h-3.5 rounded-full transition-all cursor-pointer ${
-                          editingTaskPriority >= 2 && editingTaskPriority <= 3
-                            ? 'bg-warning ring-2 ring-warning/40 scale-110'
-                            : 'bg-warning/30 hover:bg-warning/60'
-                        }`}
-                        title="Medium Priority"
-                        aria-label="Set medium priority"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setEditingTaskPriority(5)}
-                        className={`w-3.5 h-3.5 rounded-full transition-all cursor-pointer ${
-                          editingTaskPriority >= 4
-                            ? 'bg-error ring-2 ring-error/40 scale-110'
-                            : 'bg-error/30 hover:bg-error/60'
-                        }`}
-                        title="High Priority"
-                        aria-label="Set high priority"
-                      />
-                    </div>
-
-                    {/* Title Input */}
-                    <input
-                      autoFocus
-                      type="text"
-                      value={editingTaskTitle}
-                      onChange={(e) => setEditingTaskTitle(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Escape') {
-                          setEditingTaskId(null);
+                return (
+                  <Reorder.Item
+                    key={task.id}
+                    value={task}
+                    dragListener={editingTaskId !== task.id}
+                    className="w-full focus:outline-hidden relative"
+                    draggable={editingTaskId !== task.id}
+                    onDragStart={() => {
+                      setDraggedTaskId(task.id);
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const relativeY = e.clientY - rect.top;
+                      const isTop = relativeY < rect.height / 2;
+                      setDragOverTaskId(task.id);
+                      setDropPosition(isTop ? 'top' : 'bottom');
+                    }}
+                    onDragLeave={() => {
+                      setDragOverTaskId(null);
+                      setDropPosition(null);
+                    }}
+                    onDragEnd={() => {
+                      setDraggedTaskId(null);
+                      setDragOverTaskId(null);
+                      setDropPosition(null);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (draggedTaskId && draggedTaskId !== task.id) {
+                        const updatedTasks = [...activeQueue];
+                        const fromIdx = updatedTasks.findIndex(t => t.id === draggedTaskId);
+                        if (fromIdx !== -1) {
+                          const [removed] = updatedTasks.splice(fromIdx, 1);
+                          // Calculate exact landing index in the updated (shrunk) list
+                          let toIdx = updatedTasks.findIndex(t => t.id === task.id);
+                          if (toIdx !== -1) {
+                            if (dropPosition === 'bottom') {
+                              toIdx = toIdx + 1;
+                            }
+                            updatedTasks.splice(toIdx, 0, removed);
+                            
+                            if (sortBy !== 'custom') {
+                              dispatch(setSortBy('custom'));
+                            }
+                            const updated = updatedTasks.map((t, index) => ({
+                              ...t,
+                              position: index,
+                            }));
+                            dispatch(updateTasksPositionsAsync(updated));
+                          }
                         }
-                      }}
-                      className="flex-1 px-3 py-2 rounded-xl border border-gray-border bg-bg-primary text-text-primary text-[11px] font-semibold focus:outline-hidden focus:border-brand-primary"
-                    />
-                  </div>
+                      }
+                      setDraggedTaskId(null);
+                      setDragOverTaskId(null);
+                      setDropPosition(null);
+                    }}
+                  >
+                    {dragOverTaskId === task.id && dropPosition === 'top' && draggedTaskId !== task.id && (
+                      <div className="absolute top-0 left-0 right-0 h-[4px] bg-brand-primary shadow-[0_0_10px_#6366f1] rounded-full z-50 pointer-events-none" />
+                    )}
 
-                  <div className="flex items-center gap-1.5 shrink-0 ml-2.5">
-                    <button
-                      type="submit"
-                      className="p-1.5 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-lg cursor-pointer flex items-center justify-center shrink-0"
-                      aria-label="Save task"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingTaskId(null)}
-                      className="p-1.5 border border-gray-border hover:bg-white/5 text-text-secondary rounded-lg cursor-pointer flex items-center justify-center shrink-0"
-                      aria-label="Cancel"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <div
-                  key={task.id}
-                  onClick={() => dispatch(setActiveTaskId(task.id))}
-                  className={`group flex items-center justify-between px-3.5 py-3 rounded-2xl border border-l-4 cursor-pointer select-none transition-all ${
-                    task.priority >= 4
-                      ? `${isSelected ? 'bg-error/10 border-[#383838]' : 'bg-error/5 border-error/20 hover:bg-error/10'} border-l-error`
-                      : task.priority >= 2
-                        ? `${isSelected ? 'bg-warning/10 border-[#383838]' : 'bg-warning/5 border-warning/20 hover:bg-warning/10'} border-l-warning`
-                        : `${isSelected ? 'bg-[#222222] border-[#383838]' : 'bg-[#181818]/60 border-gray-border hover:bg-[#1c1c1c]'} border-l-success`
-                  } ${isSelected ? 'shadow-md shadow-brand-primary/5' : ''}`}
-                >
-                  <div className="flex items-start gap-3 overflow-hidden flex-1">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleToggleComplete(task); }}
-                      className={`w-4.5 h-4.5 rounded-full border bg-bg-secondary flex items-center justify-center text-transparent transition-all shrink-0 cursor-pointer mt-0.5 ${
-                        task.priority >= 4
-                          ? 'border-error hover:border-error/80'
-                          : task.priority >= 2
-                            ? 'border-warning hover:border-warning/80'
-                            : 'border-text-secondary/40 hover:border-brand-primary/80'
-                      }`}
-                      aria-label="Mark task completed"
-                    >
-                      <Check className={`w-3 h-3 ${
-                        task.priority >= 4 ? 'hover:text-error' : task.priority >= 2 ? 'hover:text-warning' : 'hover:text-brand-primary'
-                      }`} />
-                    </button>
-                    <TaskTitleText title={task.title} lineClass="text-text-primary" />
-                  </div>
+                    {editingTaskId === task.id ? (
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleUpdateTaskInline(task);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className={`flex items-center justify-between px-3.5 py-3.5 rounded-2xl border border-l-4 select-none transition-all ${
+                          editingTaskPriority >= 4
+                            ? 'bg-error/5 border-error/20 border-l-error'
+                            : editingTaskPriority >= 2
+                              ? 'bg-warning/5 border-warning/20 border-l-warning'
+                              : 'bg-[#181818]/60 border-gray-border border-l-success'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 flex-1 overflow-hidden">
+                          {/* Priority Dots */}
+                          <div className="flex items-center gap-1 shrink-0 bg-[#202020] border border-gray-border/20 px-2 py-1.5 rounded-xl">
+                            <button
+                              type="button"
+                              onClick={() => setEditingTaskPriority(1)}
+                              className={`w-3.5 h-3.5 rounded-full transition-all cursor-pointer ${
+                                editingTaskPriority <= 1
+                                  ? 'bg-success ring-2 ring-success/40 scale-110'
+                                  : 'bg-success/30 hover:bg-success/60'
+                              }`}
+                              title="Low Priority"
+                              aria-label="Set low priority"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setEditingTaskPriority(3)}
+                              className={`w-3.5 h-3.5 rounded-full transition-all cursor-pointer ${
+                                editingTaskPriority >= 2 && editingTaskPriority <= 3
+                                  ? 'bg-warning ring-2 ring-warning/40 scale-110'
+                                  : 'bg-warning/30 hover:bg-warning/60'
+                              }`}
+                              title="Medium Priority"
+                              aria-label="Set medium priority"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setEditingTaskPriority(5)}
+                              className={`w-3.5 h-3.5 rounded-full transition-all cursor-pointer ${
+                                editingTaskPriority >= 4
+                                  ? 'bg-error ring-2 ring-error/40 scale-110'
+                                  : 'bg-error/30 hover:bg-error/60'
+                              }`}
+                              title="High Priority"
+                              aria-label="Set high priority"
+                            />
+                          </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    {/* Copy action only shown on hover */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCopyTask(task);
-                      }}
-                      className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
-                      title="Copy Task"
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                    </button>
+                          {/* Title Input */}
+                          <input
+                            autoFocus
+                            type="text"
+                            value={editingTaskTitle}
+                            onChange={(e) => setEditingTaskTitle(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Escape') {
+                                setEditingTaskId(null);
+                              }
+                            }}
+                            className="flex-1 px-3 py-2 rounded-xl border border-gray-border bg-bg-primary text-text-primary text-[11px] font-semibold focus:outline-hidden focus:border-brand-primary"
+                          />
+                        </div>
 
-                    {/* Edit action only shown on hover */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingTaskId(task.id);
-                        setEditingTaskTitle(task.title);
-                        setEditingTaskPriority(task.priority || 1);
-                      }}
-                      className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
-                      title="Edit Task"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
+                        <div className="flex items-center gap-1.5 shrink-0 ml-2.5">
+                          <button
+                            type="submit"
+                            className="p-1.5 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-lg cursor-pointer flex items-center justify-center shrink-0"
+                            aria-label="Save task"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingTaskId(null)}
+                            className="p-1.5 border border-gray-border hover:bg-white/5 text-text-secondary rounded-lg cursor-pointer flex items-center justify-center shrink-0"
+                            aria-label="Cancel"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <div
+                        onClick={() => dispatch(setActiveTaskId(task.id))}
+                        className={`group flex items-center justify-between px-3.5 py-3 rounded-2xl border border-l-4 cursor-pointer select-none transition-all ${
+                          task.priority >= 4
+                            ? `${isSelected ? 'bg-error/10 border-[#383838]' : 'bg-error/5 border-error/20 hover:bg-error/10'} border-l-error`
+                            : task.priority >= 2
+                              ? `${isSelected ? 'bg-warning/10 border-[#383838]' : 'bg-warning/5 border-warning/20 hover:bg-warning/10'} border-l-warning`
+                              : `${isSelected ? 'bg-[#222222] border-[#383838]' : 'bg-[#181818]/60 border-gray-border hover:bg-[#1c1c1c]'} border-l-success`
+                        } ${isSelected ? 'shadow-md shadow-brand-primary/5' : ''}`}
+                      >
+                        <div className="flex items-start gap-3 overflow-hidden flex-1">
+                          <div className="p-1 -ml-1 text-text-secondary/30 group-hover:text-text-secondary/70 hover:bg-[#282828] rounded cursor-grab active:cursor-grabbing transition-colors shrink-0 mt-0.5" title="Drag to reorder">
+                            <GripVertical className="w-3.5 h-3.5" />
+                          </div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleToggleComplete(task); }}
+                            className={`w-4.5 h-4.5 rounded-full border bg-bg-secondary flex items-center justify-center text-transparent transition-all shrink-0 cursor-pointer mt-0.5 ${
+                              task.priority >= 4
+                                ? 'border-error hover:border-error/80'
+                                : task.priority >= 2
+                                  ? 'border-warning hover:border-warning/80'
+                                  : 'border-text-secondary/40 hover:border-brand-primary/80'
+                            }`}
+                            aria-label="Mark task completed"
+                          >
+                            <Check className={`w-3 h-3 ${
+                              task.priority >= 4 ? 'hover:text-error' : task.priority >= 2 ? 'hover:text-warning' : 'hover:text-brand-primary'
+                            }`} />
+                          </button>
+                          <TaskTitleText title={task.title} lineClass="text-text-primary" />
+                        </div>
 
-                    {/* Deletion action only shown on hover */}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
-                      className="p-1 hover:bg-[#2e2e2e] rounded text-error/70 hover:text-error opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
-                      title="Delete Task"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })
+                        <div className="flex items-center gap-2 shrink-0">
+                          {/* Copy action only shown on hover */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCopyTask(task);
+                            }}
+                            className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
+                            title="Copy Task"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Edit action only shown on hover */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingTaskId(task.id);
+                              setEditingTaskTitle(task.title);
+                              setEditingTaskPriority(task.priority || 1);
+                            }}
+                            className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
+                            title="Edit Task"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* Deletion action only shown on hover */}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
+                            className="p-1 hover:bg-[#2e2e2e] rounded text-error/70 hover:text-error opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
+                            title="Delete Task"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {dragOverTaskId === task.id && dropPosition === 'bottom' && draggedTaskId !== task.id && (
+                      <div className="absolute bottom-0 left-0 right-0 h-[4px] bg-brand-primary shadow-[0_0_10px_#6366f1] rounded-full z-50 pointer-events-none" />
+                    )}
+                  </Reorder.Item>
+                );
+              })}
+            </Reorder.Group>
           ) : (
             <div className="flex flex-col items-center justify-center text-center py-20 text-text-secondary/40 gap-3 border border-dashed border-gray-border/50 rounded-3xl mt-2 select-none">
               <Smile className="w-12 h-12 text-brand-primary/40 animate-bounce" />

@@ -13,7 +13,7 @@ export interface TodoState {
   activeTaskId: string | null;
   filter: 'all' | 'active' | 'completed' | 'overdue';
   searchQuery: string;
-  sortBy: 'dueDate' | 'priority' | 'title' | 'createdAt';
+  sortBy: 'dueDate' | 'priority' | 'title' | 'createdAt' | 'custom';
   soundEnabled: boolean;
   isLoading: boolean;
   error: string | null;
@@ -30,7 +30,7 @@ const initialState: TodoState = {
   activeTaskId: null,
   filter: 'all',
   searchQuery: '',
-  sortBy: 'priority',
+  sortBy: 'custom',
   soundEnabled: true,
   isLoading: false,
   error: null,
@@ -150,6 +150,22 @@ export const createSubtasksBulkAsync = createAsyncThunk(
   'todo/createSubtasksBulk',
   async (subtasks: Subtask[]) => {
     await Promise.all(subtasks.map(s => firestoreService.createSubtask(s)));
+    return subtasks;
+  }
+);
+
+export const updateTasksPositionsAsync = createAsyncThunk(
+  'todo/updateTasksPositions',
+  async (tasks: Task[]) => {
+    await Promise.all(tasks.map(t => firestoreService.updateTask(t)));
+    return tasks;
+  }
+);
+
+export const updateSubtasksPositionsAsync = createAsyncThunk(
+  'todo/updateSubtasksPositions',
+  async (subtasks: Subtask[]) => {
+    await Promise.all(subtasks.map(s => firestoreService.updateSubtask(s)));
     return subtasks;
   }
 );
@@ -282,6 +298,22 @@ const todoSlice = createSlice({
       })
       .addCase(deleteSubtaskAsync.fulfilled, (state, action) => {
         state.subtasks = state.subtasks.filter(s => s.id !== action.payload);
+      })
+      .addCase(updateTasksPositionsAsync.fulfilled, (state, action) => {
+        action.payload.forEach(updatedTask => {
+          const idx = state.tasks.findIndex(t => t.id === updatedTask.id);
+          if (idx !== -1) {
+            state.tasks[idx] = updatedTask;
+          }
+        });
+      })
+      .addCase(updateSubtasksPositionsAsync.fulfilled, (state, action) => {
+        action.payload.forEach(updatedSubtask => {
+          const idx = state.subtasks.findIndex(s => s.id === updatedSubtask.id);
+          if (idx !== -1) {
+            state.subtasks[idx] = updatedSubtask;
+          }
+        });
       });
   }
 });

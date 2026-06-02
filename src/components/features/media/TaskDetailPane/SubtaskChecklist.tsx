@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  AlertCircle, Edit2, Trash2, Check, X, Copy, ChevronDown, ChevronUp, Upload, Download, ArrowUpDown 
+  AlertCircle, Edit2, Trash2, Check, X, Copy, ChevronDown, ChevronUp, Upload, Download, ArrowUpDown, GripVertical 
 } from 'lucide-react';
+import { Reorder } from 'framer-motion';
 import { useAppDispatch } from '../../../../hooks/useRedux';
 import { 
-  createSubtaskAsync, updateSubtaskAsync, deleteSubtaskAsync, createSubtasksBulkAsync 
+  createSubtaskAsync, updateSubtaskAsync, deleteSubtaskAsync, createSubtasksBulkAsync, updateSubtasksPositionsAsync 
 } from '../../../../store/slices/todoSlice';
 import { incrementXP, updateStreak } from '../../../../store/slices/profileSlice';
 import { playCompletionSound } from '../../../../lib/sound';
@@ -107,6 +108,11 @@ export const SubtaskChecklist = ({
   const [newSubtaskPriority, setNewSubtaskPriority] = useState<'low' | 'medium' | 'high'>('low');
   const [isBulkMode, setIsBulkMode] = useState(false);
   const [bulkText, setBulkText] = useState('');
+
+  // Drag and Drop Placement Indicator States
+  const [draggedSubtaskId, setDraggedSubtaskId] = useState<string | null>(null);
+  const [dragOverSubtaskId, setDragOverSubtaskId] = useState<string | null>(null);
+  const [dropPosition, setDropPosition] = useState<'top' | 'bottom' | null>(null);
 
   // Subtask Editing Inline State
   const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null);
@@ -247,6 +253,10 @@ export const SubtaskChecklist = ({
         const weightB = priorityWeight[b.priority || 'low'];
         if (weightA !== weightB) return weightA - weightB;
       }
+      // 'default' manual dragging sorting
+      const posA = a.position ?? 0;
+      const posB = b.position ?? 0;
+      if (posA !== posB) return posA - posB;
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
   };
@@ -466,152 +476,236 @@ export const SubtaskChecklist = ({
 
           {isActiveSubtasksOpen && (
             sortedActiveSubtasks.length > 0 ? (
-              <div className="flex flex-col gap-2 select-none pr-1 animate-slide-in">
+              <Reorder.Group
+                axis="y"
+                values={sortedActiveSubtasks}
+                onReorder={(newOrder) => {
+                  if (subtaskSortOrder !== 'default') {
+                    setSubtaskSortOrder('default');
+                    localStorage.setItem('todo_subtask_sort_order', 'default');
+                  }
+                  const updated = newOrder.map((sub, index) => ({
+                    ...sub,
+                    position: index,
+                  }));
+                  dispatch(updateSubtasksPositionsAsync(updated));
+                }}
+                className="flex flex-col gap-2 select-none pr-1 animate-slide-in"
+              >
                 {sortedActiveSubtasks.map(sub => (
-                  <div
+                  <Reorder.Item
                     key={sub.id}
-                    className={`group flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-2xl border transition-all ${
-                      sub.priority === 'high'
-                        ? 'bg-error/5 border-error/20 text-text-primary border-l-4 border-l-error'
-                        : sub.priority === 'medium'
-                          ? 'bg-warning/5 border-warning/20 text-text-primary border-l-4 border-l-warning'
-                          : 'bg-bg-primary border-gray-border text-text-primary border-l-4 border-l-success'
-                    }`}
+                    value={sub}
+                    dragListener={editingSubtaskId !== sub.id}
+                    className="w-full focus:outline-hidden relative"
+                    draggable={editingSubtaskId !== sub.id}
+                    onDragStart={() => {
+                      setDraggedSubtaskId(sub.id);
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const relativeY = e.clientY - rect.top;
+                      const isTop = relativeY < rect.height / 2;
+                      setDragOverSubtaskId(sub.id);
+                      setDropPosition(isTop ? 'top' : 'bottom');
+                    }}
+                    onDragLeave={() => {
+                      setDragOverSubtaskId(null);
+                      setDropPosition(null);
+                    }}
+                    onDragEnd={() => {
+                      setDraggedSubtaskId(null);
+                      setDragOverSubtaskId(null);
+                      setDropPosition(null);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (draggedSubtaskId && draggedSubtaskId !== sub.id) {
+                        const updatedSubtasks = [...sortedActiveSubtasks];
+                        const fromIdx = updatedSubtasks.findIndex(s => s.id === draggedSubtaskId);
+                        if (fromIdx !== -1) {
+                          const [removed] = updatedSubtasks.splice(fromIdx, 1);
+                          // Calculate exact landing index in the updated (shrunk) list
+                          let toIdx = updatedSubtasks.findIndex(s => s.id === sub.id);
+                          if (toIdx !== -1) {
+                            if (dropPosition === 'bottom') {
+                              toIdx = toIdx + 1;
+                            }
+                            updatedSubtasks.splice(toIdx, 0, removed);
+                            
+                            if (subtaskSortOrder !== 'default') {
+                              setSubtaskSortOrder('default');
+                              localStorage.setItem('todo_subtask_sort_order', 'default');
+                            }
+                            const updated = updatedSubtasks.map((s, index) => ({
+                              ...s,
+                              position: index,
+                            }));
+                            dispatch(updateSubtasksPositionsAsync(updated));
+                          }
+                        }
+                      }
+                      setDraggedSubtaskId(null);
+                      setDragOverSubtaskId(null);
+                      setDropPosition(null);
+                    }}
                   >
-                    {editingSubtaskId === sub.id ? (
-                      <form 
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          handleUpdateSubtask(sub);
-                        }}
-                        className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 w-full flex-1">
-                          <div className="flex items-center gap-1 shrink-0 bg-[#1a1a1a] px-2 py-1.5 rounded-lg border border-gray-border/40 self-start xs:self-auto">
-                            <button
-                              type="button"
-                              onClick={() => setEditingSubtaskPriority('low')}
-                              className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
-                                editingSubtaskPriority === 'low'
-                                  ? 'bg-success ring-2 ring-success/40 scale-110'
-                                  : 'bg-success/30 hover:bg-success/60'
-                              }`}
-                              title="Low"
-                              aria-label="Set low priority"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setEditingSubtaskPriority('medium')}
-                              className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
-                                editingSubtaskPriority === 'medium'
-                                  ? 'bg-warning ring-2 ring-warning/40 scale-110'
-                                  : 'bg-warning/30 hover:bg-warning/60'
-                              }`}
-                              title="Medium"
-                              aria-label="Set medium priority"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setEditingSubtaskPriority('high')}
-                              className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
-                                editingSubtaskPriority === 'high'
-                                  ? 'bg-error ring-2 ring-error/40 scale-110'
-                                  : 'bg-error/30 hover:bg-error/60'
-                              }`}
-                              title="High"
-                              aria-label="Set high priority"
+                    {dragOverSubtaskId === sub.id && dropPosition === 'top' && draggedSubtaskId !== sub.id && (
+                      <div className="absolute top-0 left-0 right-0 h-[3px] bg-brand-primary shadow-[0_0_8px_#6366f1] rounded-full z-50 pointer-events-none" />
+                    )}
+
+                    <div
+                      className={`group flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-2xl border transition-all ${
+                        sub.priority === 'high'
+                          ? 'bg-error/5 border-error/20 text-text-primary border-l-4 border-l-error'
+                          : sub.priority === 'medium'
+                            ? 'bg-warning/5 border-warning/20 text-text-primary border-l-4 border-l-warning'
+                            : 'bg-bg-primary border-gray-border text-text-primary border-l-4 border-l-success'
+                      }`}
+                    >
+                      {editingSubtaskId === sub.id ? (
+                        <form 
+                          onSubmit={(e) => {
+                            e.preventDefault();
+                            handleUpdateSubtask(sub);
+                          }}
+                          className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 w-full flex-1">
+                            <div className="flex items-center gap-1 shrink-0 bg-[#1a1a1a] px-2 py-1.5 rounded-lg border border-gray-border/40 self-start xs:self-auto">
+                              <button
+                                type="button"
+                                onClick={() => setEditingSubtaskPriority('low')}
+                                className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
+                                  editingSubtaskPriority === 'low'
+                                    ? 'bg-success ring-2 ring-success/40 scale-110'
+                                    : 'bg-success/30 hover:bg-success/60'
+                                }`}
+                                title="Low"
+                                aria-label="Set low priority"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setEditingSubtaskPriority('medium')}
+                                className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
+                                  editingSubtaskPriority === 'medium'
+                                    ? 'bg-warning ring-2 ring-warning/40 scale-110'
+                                    : 'bg-warning/30 hover:bg-warning/60'
+                                }`}
+                                title="Medium"
+                                aria-label="Set medium priority"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setEditingSubtaskPriority('high')}
+                                className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
+                                  editingSubtaskPriority === 'high'
+                                    ? 'bg-error ring-2 ring-error/40 scale-110'
+                                    : 'bg-error/30 hover:bg-error/60'
+                                }`}
+                                title="High"
+                                aria-label="Set high priority"
+                              />
+                            </div>
+                            <input
+                              autoFocus
+                              type="text"
+                              value={editingSubtaskTitle}
+                              onChange={(e) => setEditingSubtaskTitle(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Escape') {
+                                  setEditingSubtaskId(null);
+                                }
+                              }}
+                              className="flex-1 min-w-0 px-2 py-1 rounded bg-[#202020] border border-gray-border/20 text-text-primary text-[11px] font-semibold focus:outline-hidden focus:border-brand-primary"
                             />
                           </div>
-                          <input
-                            autoFocus
-                            type="text"
-                            value={editingSubtaskTitle}
-                            onChange={(e) => setEditingSubtaskTitle(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Escape') {
-                                setEditingSubtaskId(null);
-                              }
-                            }}
-                            className="flex-1 min-w-0 px-2 py-1 rounded bg-[#202020] border border-gray-border/20 text-text-primary text-[11px] font-semibold focus:outline-hidden focus:border-brand-primary"
-                          />
-                        </div>
-                        <div className="flex items-center justify-end gap-1.5 shrink-0 self-end sm:self-auto">
-                          <button
-                            type="submit"
-                            className="p-1.5 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-lg cursor-pointer flex items-center justify-center shrink-0"
-                            aria-label="Save subtask"
-                          >
-                            <Check className="w-3 h-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEditingSubtaskId(null)}
-                            className="p-1.5 border border-gray-border hover:bg-white/5 text-text-secondary rounded-lg cursor-pointer flex items-center justify-center shrink-0"
-                            aria-label="Cancel"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </form>
-                    ) : (
-                      <>
-                        <div className="flex items-start gap-2.5 overflow-hidden flex-1 w-full">
-                          <button
-                            onClick={() => handleToggleSubtask(sub)}
-                            className={`w-4 h-4 rounded-md flex items-center justify-center border transition-all shrink-0 cursor-pointer mt-0.5 ${
-                              sub.priority === 'high'
-                                ? 'border-error bg-bg-secondary text-transparent hover:border-error/80'
-                                : sub.priority === 'medium'
-                                  ? 'border-warning bg-bg-secondary text-transparent hover:border-warning/80'
-                                  : 'border-gray-border bg-bg-secondary text-transparent hover:border-text-secondary'
-                            }`}
-                          >
-                            <Check className="w-2.5 h-2.5" />
-                          </button>
-                          <SubtaskTitleText title={sub.title} />
-                        </div>
+                          <div className="flex items-center justify-end gap-1.5 shrink-0 self-end sm:self-auto">
+                            <button
+                              type="submit"
+                              className="p-1.5 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-lg cursor-pointer flex items-center justify-center shrink-0"
+                              aria-label="Save subtask"
+                            >
+                              <Check className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingSubtaskId(null)}
+                              className="p-1.5 border border-gray-border hover:bg-white/5 text-text-secondary rounded-lg cursor-pointer flex items-center justify-center shrink-0"
+                              aria-label="Cancel"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <>
+                          <div className="flex items-start gap-2.5 overflow-hidden flex-1 w-full">
+                            <div className="p-1 -ml-1 text-text-secondary/30 group-hover:text-text-secondary/70 hover:bg-[#282828] rounded cursor-grab active:cursor-grabbing transition-colors shrink-0 mt-0.5" title="Drag to reorder">
+                              <GripVertical className="w-3 h-3" />
+                            </div>
+                            <button
+                              onClick={() => handleToggleSubtask(sub)}
+                              className={`w-4 h-4 rounded-md flex items-center justify-center border transition-all shrink-0 cursor-pointer mt-0.5 ${
+                                sub.priority === 'high'
+                                  ? 'border-error bg-bg-secondary text-transparent hover:border-error/80'
+                                  : sub.priority === 'medium'
+                                    ? 'border-warning bg-bg-secondary text-transparent hover:border-warning/80'
+                                    : 'border-gray-border bg-bg-secondary text-transparent hover:border-text-secondary'
+                              }`}
+                            >
+                              <Check className="w-2.5 h-2.5" />
+                            </button>
+                            <SubtaskTitleText title={sub.title} />
+                          </div>
 
-                        <div className="flex items-center justify-end gap-1 shrink-0 w-full sm:w-auto border-t border-gray-border/10 pt-2 sm:border-t-0 sm:pt-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigator.clipboard.writeText(sub.title);
-                              toast('Subtask copied to clipboard! 📋', 'success');
-                            }}
-                            className="p-1 hover:bg-[#282828] rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0"
-                            title="Copy subtask"
-                          >
-                            <Copy className="w-3 h-3" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingSubtaskId(sub.id);
-                              setEditingSubtaskTitle(sub.title);
-                              setEditingSubtaskPriority(sub.priority || 'low');
-                            }}
-                            className="p-1 hover:bg-[#282828] rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0"
-                            title="Edit subtask"
-                          >
-                            <Edit2 className="w-3 h-3" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteSubtask(sub.id);
-                            }}
-                            className="p-1 hover:bg-[#282828] rounded text-error transition-colors cursor-pointer shrink-0"
-                            title="Delete subtask"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </>
+                          <div className="flex items-center justify-end gap-1 shrink-0 w-full sm:w-auto border-t border-gray-border/10 pt-2 sm:border-t-0 sm:pt-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(sub.title);
+                                toast('Subtask copied to clipboard! 📋', 'success');
+                              }}
+                              className="p-1 hover:bg-[#282828] rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0"
+                              title="Copy subtask"
+                            >
+                              <Copy className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingSubtaskId(sub.id);
+                                setEditingSubtaskTitle(sub.title);
+                                setEditingSubtaskPriority(sub.priority || 'low');
+                              }}
+                              className="p-1 hover:bg-[#282828] rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0"
+                              title="Edit subtask"
+                            >
+                              <Edit2 className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteSubtask(sub.id);
+                              }}
+                              className="p-1 hover:bg-[#282828] rounded text-error transition-colors cursor-pointer shrink-0"
+                              title="Delete subtask"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {dragOverSubtaskId === sub.id && dropPosition === 'bottom' && draggedSubtaskId !== sub.id && (
+                      <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-brand-primary shadow-[0_0_8px_#6366f1] rounded-full z-50 pointer-events-none" />
                     )}
-                  </div>
+                  </Reorder.Item>
                 ))}
-              </div>
+              </Reorder.Group>
             ) : (
               <div className="flex flex-col items-center justify-center text-center py-6 text-text-secondary/40 gap-2 border border-dashed border-gray-border/50 rounded-2xl">
                 <AlertCircle className="w-8 h-8 opacity-40 text-brand-primary" />
