@@ -25,10 +25,10 @@ const initialState: TodoState = {
   subcollections: [],
   tasks: [],
   subtasks: [],
-  activeCollectionId: null,
-  activeSubcollectionId: null,
-  activeTaskId: null,
-  filter: 'all',
+  activeCollectionId: localStorage.getItem('todio_active_collection_id') || null,
+  activeSubcollectionId: localStorage.getItem('todio_active_subcollection_id') || null,
+  activeTaskId: localStorage.getItem('todio_active_task_id') || null,
+  filter: (localStorage.getItem('todio_active_filter') as TodoState['filter']) || 'active',
   searchQuery: '',
   sortBy: 'custom',
   soundEnabled: true,
@@ -176,15 +176,31 @@ const todoSlice = createSlice({
   reducers: {
     setActiveCollectionId: (state, action: PayloadAction<string | null>) => {
       state.activeCollectionId = action.payload;
+      if (action.payload) {
+        localStorage.setItem('todio_active_collection_id', action.payload);
+      } else {
+        localStorage.removeItem('todio_active_collection_id');
+        localStorage.removeItem('todio_active_subcollection_id');
+      }
       if (!action.payload) {
         state.activeSubcollectionId = null;
       }
     },
     setActiveSubcollectionId: (state, action: PayloadAction<string | null>) => {
       state.activeSubcollectionId = action.payload;
+      if (action.payload) {
+        localStorage.setItem('todio_active_subcollection_id', action.payload);
+      } else {
+        localStorage.removeItem('todio_active_subcollection_id');
+      }
     },
     setActiveTaskId: (state, action: PayloadAction<string | null>) => {
       state.activeTaskId = action.payload;
+      if (action.payload) {
+        localStorage.setItem('todio_active_task_id', action.payload);
+      } else {
+        localStorage.removeItem('todio_active_task_id');
+      }
       if (!action.payload) {
         state.isDetailsPaneExpanded = false;
       }
@@ -194,6 +210,7 @@ const todoSlice = createSlice({
     },
     setFilter: (state, action: PayloadAction<TodoState['filter']>) => {
       state.filter = action.payload;
+      localStorage.setItem('todio_active_filter', action.payload);
     },
     setSearchQuery: (state, action: PayloadAction<string>) => {
       state.searchQuery = action.payload;
@@ -213,6 +230,10 @@ const todoSlice = createSlice({
       state.activeSubcollectionId = null;
       state.activeTaskId = null;
       state.isDetailsPaneExpanded = false;
+      localStorage.removeItem('todio_active_collection_id');
+      localStorage.removeItem('todio_active_subcollection_id');
+      localStorage.removeItem('todio_active_task_id');
+      localStorage.removeItem('todio_active_filter');
     }
   },
   extraReducers: (builder) => {
@@ -248,6 +269,9 @@ const todoSlice = createSlice({
           state.activeCollectionId = null;
           state.activeSubcollectionId = null;
           state.activeTaskId = null;
+          localStorage.removeItem('todio_active_collection_id');
+          localStorage.removeItem('todio_active_subcollection_id');
+          localStorage.removeItem('todio_active_task_id');
         }
       })
       // Subcollections
@@ -265,6 +289,8 @@ const todoSlice = createSlice({
         if (state.activeSubcollectionId === action.payload) {
           state.activeSubcollectionId = null;
           state.activeTaskId = null;
+          localStorage.removeItem('todio_active_subcollection_id');
+          localStorage.removeItem('todio_active_task_id');
         }
       })
       // Tasks
@@ -281,6 +307,7 @@ const todoSlice = createSlice({
         state.tasks = state.tasks.filter(t => t.id !== action.payload);
         if (state.activeTaskId === action.payload) {
           state.activeTaskId = null;
+          localStorage.removeItem('todio_active_task_id');
         }
       })
       // Subtasks

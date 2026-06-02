@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  CheckSquare, Calendar, Folder, Plus, Check, X, Edit2, Trash2, LayoutList, ChevronDown, ChevronRight, Download
+  CheckSquare, Folder, Plus, Check, X, Edit2, Trash2, LayoutList, ChevronDown, ChevronRight, Download
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../../../hooks/useRedux';
 import { 
@@ -32,7 +32,33 @@ export const OrganizerSidebar = ({
   const { user } = useAppSelector((state) => state.auth);
 
   // Sidebar states
-  const [expandedCollections, setExpandedCollections] = useState<Record<string, boolean>>({});
+  const [expandedCollections, setExpandedCollections] = useState<Record<string, boolean>>(() => {
+    try {
+      const persisted = localStorage.getItem('todio_expanded_collections');
+      const parsed = persisted ? JSON.parse(persisted) : {};
+      if (activeCollectionId) {
+        parsed[activeCollectionId] = true;
+      }
+      return parsed;
+    } catch {
+      return activeCollectionId ? { [activeCollectionId]: true } : {};
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('todio_expanded_collections', JSON.stringify(expandedCollections));
+  }, [expandedCollections]);
+
+  // Auto-expand list when active collection ID changes (e.g. from Go shortcut)
+  useEffect(() => {
+    if (activeCollectionId) {
+      setExpandedCollections(prev => {
+        if (prev[activeCollectionId]) return prev;
+        return { ...prev, [activeCollectionId]: true };
+      });
+    }
+  }, [activeCollectionId]);
+
   const [isCreatingCollection, setIsCreatingCollection] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');
   const [isSavingCollection, setIsSavingCollection] = useState(false);

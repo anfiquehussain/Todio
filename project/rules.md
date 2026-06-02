@@ -358,3 +358,19 @@ export default Component;
 - **Productivity Synthesizer**: The application features a Web Audio API powered physical synthesizer that produces high-end bell resonances upon completing primary tasks or subtasks.
 - **Preferences**: Sound playback state is synced via Redux (`soundEnabled`) and saved to `localStorage` to respect user configurations.
 - **Toggles**: A segmented header option allows immediate muting/unmuting of synthesizer bells.
+
+---
+
+## 17. UI State & Navigation Persistence
+
+To ensure a seamless user experience, key workspace view state is persisted in `localStorage` so refreshing the browser maintains the user's active context instead of resetting the views:
+
+1.  **Landing View**:
+    *   On a fresh open (new browser session/clean slate), the application defaults to the **Today** smart view (`filter: 'active'`) for maximum starting productivity.
+2.  **State Preservation**:
+    *   `activeCollectionId`, `activeSubcollectionId`, `activeTaskId`, and `filter` are stored in `localStorage` in real-time. Page refreshes reload the exact collection, sublist, and active task the user was last working on.
+3.  **Sidebar Expansion Memory**:
+    *   The expand/collapse states of custom lists in the sidebar (`expandedCollections`) are synchronized with `localStorage`.
+    *   If a user navigates to a sublist or task context (such as via the "Go" shortcut), the parent list automatically expands to reveal the item.
+4.  **Cleanup**:
+    *   Wiping data or deleting active folders cleanly scrubs their stored keys to prevent stale or broken workspace references.
