@@ -14,6 +14,7 @@ export interface Task {
   userId: string;
   createdAt: string;
   position?: number;
+  imported?: boolean;
 }
 
 export interface Subtask {

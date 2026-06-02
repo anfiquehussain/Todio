@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Plus, Check, Trash2, ArrowUpDown, Smile, Edit2, X, Copy, ChevronDown, ChevronUp, GripVertical 
+  Plus, Check, Trash2, ArrowUpDown, Smile, Edit2, X, Copy, ChevronDown, ChevronUp, GripVertical, ArrowRight 
 } from 'lucide-react';
 import { Reorder } from 'framer-motion';
 import { useAppSelector, useAppDispatch } from '../../../hooks/useRedux';
 import { 
   createTaskAsync, updateTaskAsync, deleteTaskAsync, 
-  setActiveTaskId, setSortBy, updateTasksPositionsAsync
+  setActiveTaskId, setSortBy, updateTasksPositionsAsync,
+  setActiveCollectionId, setActiveSubcollectionId, setFilter
 } from '../../../store/slices/todoSlice';
 import { incrementXP, updateStreak } from '../../../store/slices/profileSlice';
 import { playCompletionSound } from '../../../lib/sound';
@@ -118,7 +119,7 @@ export const TaskList = () => {
     }
     switch (filter) {
       case 'active': return 'Today';
-      case 'all': return 'Next 7 Days';
+      case 'all': return 'Imported';
       case 'overdue': return 'Inbox';
       case 'completed': return 'Completed Archive';
       default: return 'Tasks Workspace';
@@ -128,7 +129,6 @@ export const TaskList = () => {
   // Filter Tasks list based on active dual-sidebar selectors
   const getFilteredTasks = () => {
     const today = new Date().setHours(0, 0, 0, 0);
-    const in7Days = new Date().setDate(new Date().getDate() + 7);
 
     return tasks.filter(t => {
       // 1. Workspace filters
@@ -144,9 +144,7 @@ export const TaskList = () => {
         return t.dueDate && new Date(t.dueDate).setHours(0, 0, 0, 0) === today;
       }
       if (filter === 'all') {
-        if (!t.dueDate) return true; // Inbox/none
-        const taskTime = new Date(t.dueDate).getTime();
-        return taskTime >= today && taskTime <= in7Days;
+        return t.imported === true || t.priority >= 4;
       }
       if (filter === 'overdue') {
         return !t.collectionId;
@@ -500,6 +498,24 @@ export const TaskList = () => {
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0">
+                          {/* Go to position button */}
+                          {!activeCollectionId && !activeSubcollectionId && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                dispatch(setActiveCollectionId(task.collectionId));
+                                dispatch(setActiveSubcollectionId(task.subcollectionId));
+                                dispatch(setActiveTaskId(task.id));
+                                dispatch(setFilter('all'));
+                                toast("Navigated to task's workspace location! 🧭", 'success');
+                              }}
+                              className="p-1 hover:bg-[#2e2e2e] rounded text-brand-primary hover:text-brand-primary/80 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
+                              title="Go to Task Position (List/Sublist)"
+                            >
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+
                           {/* Copy action only shown on hover */}
                           <button
                             onClick={(e) => {
@@ -682,6 +698,23 @@ export const TaskList = () => {
                       </div>
 
                       <div className="flex items-center gap-1 shrink-0">
+                        {/* Go to position button */}
+                        {!activeCollectionId && !activeSubcollectionId && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              dispatch(setActiveCollectionId(task.collectionId));
+                              dispatch(setActiveSubcollectionId(task.subcollectionId));
+                              dispatch(setActiveTaskId(task.id));
+                              dispatch(setFilter('all'));
+                              toast("Navigated to task's workspace location! 🧭", 'success');
+                            }}
+                            className="p-1 hover:bg-[#2e2e2e] rounded text-brand-primary hover:text-brand-primary/80 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
+                            title="Go to Task Position (List/Sublist)"
+                          >
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();

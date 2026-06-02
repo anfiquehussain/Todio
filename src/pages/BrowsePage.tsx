@@ -1,6 +1,7 @@
+import React, { useRef } from 'react';
 import { Download, Upload, Volume2, VolumeX } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../hooks/useRedux';
-import { setSoundEnabled } from '../store/slices/todoSlice';
+import { setSoundEnabled, createTaskAsync } from '../store/slices/todoSlice';
 import { PageHeader } from '../components/patterns/PageHeader';
 import { useToast } from '../hooks/useToast';
 import { playCompletionSound } from '../lib/sound';
@@ -9,6 +10,59 @@ export const BrowsePage = () => {
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const { soundEnabled, tasks } = useAppSelector((state) => state.todo);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleImportFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const json = JSON.parse(e.target?.result as string);
+        if (!Array.isArray(json)) {
+          toast('Invalid backup format: root element must be a JSON array.', 'error');
+          return;
+        }
+
+        let importCount = 0;
+        for (const rawTask of json) {
+          if (rawTask && typeof rawTask === 'object' && 'title' in rawTask) {
+            const task = {
+              id: rawTask.id || `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              title: String(rawTask.title),
+              overview: String(rawTask.overview || ''),
+              priority: Number(rawTask.priority ?? 1),
+              dueDate: String(rawTask.dueDate || ''),
+              completed: Boolean(rawTask.completed || false),
+              collectionId: rawTask.collectionId || null,
+              subcollectionId: rawTask.subcollectionId || null,
+              userId: rawTask.userId || 'mock-user-id',
+              createdAt: rawTask.createdAt || new Date().toISOString(),
+              imported: true,
+            };
+
+            await dispatch(createTaskAsync(task)).unwrap();
+            importCount++;
+          }
+        }
+
+        if (importCount > 0) {
+          toast(`Successfully imported ${importCount} tasks into database! 🚀`, 'success');
+        } else {
+          toast('No valid tasks found in JSON file to import.', 'info');
+        }
+      } catch (err) {
+        toast('Failed to parse backup JSON file.', 'error');
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  };
+
+  const handleTriggerImport = () => {
+    fileInputRef.current?.click();
+  };
 
   const handleToggleSound = () => {
     dispatch(setSoundEnabled(!soundEnabled));
@@ -84,12 +138,19 @@ export const BrowsePage = () => {
               <span>Export DB Backup</span>
             </button>
             <button
-              onClick={() => toast('JSON importer interface enabled below.', 'info')}
+              onClick={handleTriggerImport}
               className="flex items-center justify-center gap-2 py-3.5 px-4 rounded-2xl border border-gray-border bg-bg-secondary text-text-primary text-xs font-bold hover:bg-card/85 transition-colors cursor-pointer"
             >
               <Upload className="w-4 h-4" />
               <span>Import Database</span>
             </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImportFile}
+              accept=".json"
+              className="hidden"
+            />
           </div>
         </div>
       </div>

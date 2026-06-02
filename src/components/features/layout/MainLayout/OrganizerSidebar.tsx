@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  CheckSquare, Calendar, Folder, Plus, Check, X, Edit2, Trash2, LayoutList, ChevronDown, ChevronRight 
+  CheckSquare, Calendar, Folder, Plus, Check, X, Edit2, Trash2, LayoutList, ChevronDown, ChevronRight, Download
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../../../hooks/useRedux';
 import { 
@@ -166,7 +166,6 @@ export const OrganizerSidebar = ({
 
   const getSmartViewCount = (type: 'today' | 'week' | 'inbox') => {
     const today = new Date().setHours(0, 0, 0, 0);
-    const in7Days = new Date().setDate(new Date().getDate() + 7);
 
     return tasks.filter(t => {
       if (t.completed) return false;
@@ -174,9 +173,7 @@ export const OrganizerSidebar = ({
         return t.dueDate && new Date(t.dueDate).setHours(0, 0, 0, 0) === today;
       }
       if (type === 'week') {
-        if (!t.dueDate) return false;
-        const taskTime = new Date(t.dueDate).getTime();
-        return taskTime >= today && taskTime <= in7Days;
+        return t.imported === true || t.priority >= 4;
       }
       if (type === 'inbox') {
         return !t.collectionId;
@@ -227,8 +224,8 @@ export const OrganizerSidebar = ({
           }`}
         >
           <div className="flex items-center gap-2.5">
-            <Calendar className="w-4 h-4" />
-            <span>Next 7 Days</span>
+            <Download className="w-4 h-4" />
+            <span>Imported</span>
           </div>
           <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#202020] text-text-secondary">
             {getSmartViewCount('week')}
