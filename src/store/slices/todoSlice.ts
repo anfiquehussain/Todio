@@ -20,11 +20,20 @@ export interface TodoState {
   isDetailsPaneExpanded: boolean;
 }
 
+const loadFromLocalStorage = <T,>(key: string, defaultValue: T): T => {
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultValue;
+  } catch {
+    return defaultValue;
+  }
+};
+
 const initialState: TodoState = {
-  collections: [],
-  subcollections: [],
-  tasks: [],
-  subtasks: [],
+  collections: loadFromLocalStorage('todio_collections', []),
+  subcollections: loadFromLocalStorage('todio_subcollections', []),
+  tasks: loadFromLocalStorage('todio_tasks', []),
+  subtasks: loadFromLocalStorage('todio_subtasks', []),
   activeCollectionId: localStorage.getItem('todio_active_collection_id') || null,
   activeSubcollectionId: localStorage.getItem('todio_active_subcollection_id') || null,
   activeTaskId: localStorage.getItem('todio_active_task_id') || null,
@@ -294,6 +303,12 @@ const todoSlice = createSlice({
         }
       })
       // Tasks
+      .addCase(updateTaskAsync.pending, (state, action) => {
+        const index = state.tasks.findIndex(t => t.id === action.meta.arg.id);
+        if (index !== -1) {
+          state.tasks[index] = action.meta.arg;
+        }
+      })
       .addCase(createTaskAsync.fulfilled, (state, action) => {
         state.tasks.push(action.payload);
       })
@@ -311,6 +326,12 @@ const todoSlice = createSlice({
         }
       })
       // Subtasks
+      .addCase(updateSubtaskAsync.pending, (state, action) => {
+        const index = state.subtasks.findIndex(s => s.id === action.meta.arg.id);
+        if (index !== -1) {
+          state.subtasks[index] = action.meta.arg;
+        }
+      })
       .addCase(createSubtaskAsync.fulfilled, (state, action) => {
         state.subtasks.push(action.payload);
       })
