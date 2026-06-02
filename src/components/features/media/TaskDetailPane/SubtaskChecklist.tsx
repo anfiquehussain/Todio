@@ -32,10 +32,14 @@ const SubtaskTitleText = ({ title, lineClass = '' }: SubtaskTitleTextProps) => {
   const textRef = useRef<HTMLSpanElement | null>(null);
 
   useEffect(() => {
+    setIsExpanded(false); // Reset expand state when title changes
+
     const measure = () => {
       const el = textRef.current;
       if (el) {
-        setIsOverflowing(el.scrollHeight > el.clientHeight);
+        const hasVerticalOverflow = el.scrollHeight > el.clientHeight;
+        const hasHorizontalOverflow = el.scrollWidth > el.clientWidth;
+        setIsOverflowing(hasVerticalOverflow || hasHorizontalOverflow);
       }
     };
     
@@ -556,7 +560,7 @@ export const SubtaskChecklist = ({
                     )}
 
                     <div
-                      className={`group flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-2xl border transition-all ${
+                      className={`group flex flex-row items-center justify-between gap-3 p-3 rounded-2xl border transition-all ${
                         sub.priority === 'high'
                           ? 'bg-error/5 border-error/20 text-text-primary border-l-4 border-l-error'
                           : sub.priority === 'medium'
@@ -596,7 +600,7 @@ export const SubtaskChecklist = ({
                                 }`}
                                 title="Medium"
                                 aria-label="Set medium priority"
-                              />
+                               />
                               <button
                                 type="button"
                                 onClick={() => setEditingSubtaskPriority('high')}
@@ -661,7 +665,7 @@ export const SubtaskChecklist = ({
                             <SubtaskTitleText title={sub.title} />
                           </div>
 
-                          <div className="flex items-center justify-end gap-1 shrink-0 w-full sm:w-auto border-t border-gray-border/10 pt-2 sm:border-t-0 sm:pt-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center justify-end gap-1 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -737,7 +741,7 @@ export const SubtaskChecklist = ({
                 {sortedCompletedSubtasks.map(sub => (
                   <div
                     key={sub.id}
-                    className={`group flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-2xl border border-success/15 bg-success/5 text-text-secondary/50 transition-all hover:bg-success/10 border-l-4 ${
+                    className={`group flex flex-row items-center justify-between gap-3 p-3 rounded-2xl border border-success/15 bg-success/5 text-text-secondary/50 transition-all hover:bg-success/10 border-l-4 ${
                       sub.priority === 'high'
                         ? 'border-l-error/40'
                         : sub.priority === 'medium'
@@ -833,7 +837,7 @@ export const SubtaskChecklist = ({
                           <SubtaskTitleText title={sub.title} lineClass="line-through opacity-50" />
                         </div>
 
-                        <div className="flex items-center justify-end gap-1 shrink-0 w-full sm:w-auto border-t border-gray-border/10 pt-2 sm:border-t-0 sm:pt-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-1 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
