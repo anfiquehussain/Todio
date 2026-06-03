@@ -4,10 +4,12 @@ export const useToast = () => {
   const showToast = (
     message: string,
     type: 'success' | 'error' | 'warning' | 'info' = 'info',
-    description?: string
+    description?: string,
+    action?: { label: string; onClick: () => void }
   ) => {
     const options = {
       description,
+      action,
       style: {
         background: 'var(--color-bg-secondary)',
         color: 'var(--color-text-primary)',
@@ -18,17 +20,17 @@ export const useToast = () => {
 
     switch (type) {
       case 'success':
-        toast.success(message, { ...options, duration: 3000 });
+        toast.success(message, { ...options, duration: 4000 });
         break;
       case 'error':
-        toast.error(message, { ...options, duration: 4000 });
+        toast.error(message, { ...options, duration: 5000 });
         break;
       case 'warning':
-        toast.warning(message, { ...options, duration: 3500 });
+        toast.warning(message, { ...options, duration: 4500 });
         break;
       case 'info':
       default:
-        toast.info(message, { ...options, duration: 3000 });
+        toast.info(message, { ...options, duration: 4000 });
         break;
     }
   };

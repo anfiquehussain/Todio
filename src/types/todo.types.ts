@@ -16,6 +16,8 @@ export interface Task {
   position?: number;
   imported?: boolean;
   manuallyUnchecked?: boolean;
+  deleted?: boolean;
+  deletedAt?: string;
 }
 
 export interface Subtask {
@@ -27,4 +29,6 @@ export interface Subtask {
   createdAt: string;
   priority?: 'low' | 'medium' | 'high';
   position?: number;
+  deleted?: boolean;
+  deletedAt?: string;
 }

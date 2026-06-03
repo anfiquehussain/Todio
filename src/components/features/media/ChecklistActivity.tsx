@@ -9,6 +9,7 @@ import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import type { Subtask } from '../../../types';
 import { Button } from '../../ui/Button';
 import { IconButton } from '../../ui/IconButton';
+import { ConfirmationModal } from '../../patterns/ConfirmationModal';
 
 interface ChecklistActivityProps {
   taskId: string;
@@ -21,7 +22,8 @@ export const ChecklistActivity = ({
   const { toast } = useToast();
   const { checkAuth } = useAuthGuard();
   const { user } = useAppSelector((state) => state.auth);
-  const { subtasks, soundEnabled } = useAppSelector((state) => state.todo);
+  const { subtasks: allSubtasks, soundEnabled } = useAppSelector((state) => state.todo);
+  const subtasks = allSubtasks.filter(s => !s.deleted);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [newSubtaskPriority, setNewSubtaskPriority] = useState<'low' | 'medium' | 'high'>('low');
   const [isBulkMode, setIsBulkMode] = useState(false);
@@ -31,6 +33,7 @@ export const ChecklistActivity = ({
     const cached = localStorage.getItem('todo_subtask_sort_order');
     return (cached as 'default' | 'asc' | 'desc') || 'default';
   });
+  const [subtaskToDeleteId, setSubtaskToDeleteId] = useState<string | null>(null);
 
   // Load subtask expand/collapse memory from localStorage
   const [isActiveSubtasksOpen, setIsActiveSubtasksOpen] = useState(() => {
@@ -164,13 +167,27 @@ export const ChecklistActivity = ({
     }
   };
 
-  const handleDeleteSubtask = async (subtaskId: string) => {
+  const handleDeleteSubtask = (subtaskId: string) => {
     if (!checkAuth('delete subtasks')) return;
+    setSubtaskToDeleteId(subtaskId);
+  };
+
+  const handleConfirmDeleteSubtask = async () => {
+    if (!subtaskToDeleteId) return;
+    const deletedSubtask = subtasks.find(s => s.id === subtaskToDeleteId);
     try {
-      await dispatch(deleteSubtaskAsync(subtaskId));
-      toast('Subtask deleted.', 'info');
+      await dispatch(deleteSubtaskAsync(subtaskToDeleteId));
+      toast('Subtask deleted.', 'info', undefined, deletedSubtask ? {
+        label: 'Undo',
+        onClick: () => {
+          dispatch(createSubtaskAsync(deletedSubtask));
+          toast('Subtask restored.', 'success');
+        }
+      } : undefined);
     } catch (err) {
       toast('Failed to delete subtask.', 'error');
+    } finally {
+      setSubtaskToDeleteId(null);
     }
   };
 
@@ -464,6 +481,16 @@ export const ChecklistActivity = ({
           </div>
         )}
       </div>
+
+      <ConfirmationModal
+        isOpen={subtaskToDeleteId !== null}
+        onClose={() => setSubtaskToDeleteId(null)}
+        onConfirm={handleConfirmDeleteSubtask}
+        title="Delete Subtask?"
+        message={`Are you sure you want to permanently delete "${subtasks.find(s => s.id === subtaskToDeleteId)?.title || 'this subtask'}"?`}
+        confirmLabel="Delete"
+        isDanger={true}
+      />
     </div>
   );
 };

@@ -5,6 +5,8 @@ export interface Collection {
   icon: string;
   userId: string;
   createdAt: string;
+  deleted?: boolean;
+  deletedAt?: string;
 }
 
 export interface Subcollection {
@@ -15,4 +17,6 @@ export interface Subcollection {
   icon: string;
   userId: string;
   createdAt: string;
+  deleted?: boolean;
+  deletedAt?: string;
 }

@@ -12,6 +12,7 @@ import {
 import { incrementXP, updateStreak } from '../../../../store/slices/profileSlice';
 import { playCompletionSound } from '../../../../lib/sound';
 import type { Task, Subtask, UserProfile } from '../../../../types';
+import { ConfirmationModal } from '../../../patterns/ConfirmationModal';
 
 interface SubtaskChecklistProps {
   activeTask: Task;
@@ -19,7 +20,12 @@ interface SubtaskChecklistProps {
   user: UserProfile | null;
   soundEnabled: boolean;
   checkAuth: (action: string) => boolean;
-  toast: (msg: string, type: 'success' | 'error' | 'info') => void;
+  toast: (
+    message: string,
+    type?: 'success' | 'error' | 'warning' | 'info',
+    description?: string,
+    action?: { label: string; onClick: () => void }
+  ) => void;
   onTriggerExport: (mode: 'task' | 'subtask') => void;
 }
 
@@ -380,6 +386,7 @@ export const SubtaskChecklist = ({
     const cached = localStorage.getItem('todo_subtask_sort_order');
     return (cached as any) || 'default';
   });
+  const [subtaskToDeleteId, setSubtaskToDeleteId] = useState<string | null>(null);
 
 
 
@@ -553,13 +560,27 @@ export const SubtaskChecklist = ({
   };
 
   // Subtask Delete
-  const handleDeleteSubtask = async (id: string) => {
+  const handleDeleteSubtask = (id: string) => {
     if (!checkAuth('delete subtask')) return;
+    setSubtaskToDeleteId(id);
+  };
+
+  const handleConfirmDeleteSubtask = async () => {
+    if (!subtaskToDeleteId) return;
+    const deletedSubtask = subtasks.find(s => s.id === subtaskToDeleteId);
     try {
-      await dispatch(deleteSubtaskAsync(id)).unwrap();
-      toast('Subtask deleted.', 'info');
+      await dispatch(deleteSubtaskAsync(subtaskToDeleteId)).unwrap();
+      toast('Subtask deleted.', 'info', undefined, deletedSubtask ? {
+        label: 'Undo',
+        onClick: () => {
+          dispatch(createSubtaskAsync(deletedSubtask));
+          toast('Subtask restored.', 'success');
+        }
+      } : undefined);
     } catch {
       toast('Failed to remove subtask.', 'error');
+    } finally {
+      setSubtaskToDeleteId(null);
     }
   };
 
@@ -1042,6 +1063,16 @@ export const SubtaskChecklist = ({
           </div>
         )}
       </div>
+
+      <ConfirmationModal
+        isOpen={subtaskToDeleteId !== null}
+        onClose={() => setSubtaskToDeleteId(null)}
+        onConfirm={handleConfirmDeleteSubtask}
+        title="Delete Subtask?"
+        message={`Are you sure you want to permanently delete "${subtasks.find(s => s.id === subtaskToDeleteId)?.title || 'this subtask'}"?`}
+        confirmLabel="Delete"
+        isDanger={true}
+      />
     </div>
   );
 };

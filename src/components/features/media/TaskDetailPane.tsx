@@ -2,11 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { Folder, Type, Smile, CheckSquare, Calendar } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../../hooks/useRedux';
 import { 
-  updateTaskAsync, deleteTaskAsync, setActiveTaskId 
+  updateTaskAsync, deleteTaskAsync, setActiveTaskId, createTaskAsync
 } from '../../../store/slices/todoSlice';
 import { useToast } from '../../../hooks/useToast';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { TaskDetailHeader } from './TaskDetailPane/TaskDetailHeader';
+import { ConfirmationModal } from '../../patterns/ConfirmationModal';
 import { TaskDescription } from './TaskDetailPane/TaskDescription';
 import { SubtaskChecklist } from './TaskDetailPane/SubtaskChecklist';
 import { ExportModal } from './TaskDetailPane/ExportModal';
@@ -18,9 +19,11 @@ export const TaskDetailPane = () => {
   const { checkAuth } = useAuthGuard();
 
   const { 
-    tasks, collections, subcollections, subtasks, activeTaskId, soundEnabled, isDetailsPaneExpanded 
+    tasks, collections, subcollections, subtasks: allSubtasks, activeTaskId, soundEnabled, isDetailsPaneExpanded 
   } = useAppSelector((state) => state.todo);
   const { user } = useAppSelector((state) => state.auth);
+
+  const subtasks = allSubtasks.filter(s => !s.deleted);
 
   // Input ref for title
   const rightPanelTitleInputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -36,6 +39,7 @@ export const TaskDetailPane = () => {
   // Export Modal state managers
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportMode, setExportMode] = useState<'task' | 'subtask'>('task');
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   // Auto-grow Title Textarea height to prevent clipping
   useEffect(() => {
@@ -74,11 +78,23 @@ export const TaskDetailPane = () => {
     dispatch(updateTaskAsync(updated));
   };
 
-  const handleDeleteTask = async (id: string) => {
+  const handleDeleteTask = () => {
     if (!checkAuth('delete this task')) return;
+    setIsDeleteOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!activeTaskId) return;
+    const deletedTask = tasks.find(t => t.id === activeTaskId);
     try {
-      await dispatch(deleteTaskAsync(id)).unwrap();
-      toast('Task removed successfully.', 'info');
+      await dispatch(deleteTaskAsync(activeTaskId)).unwrap();
+      toast('Task removed successfully.', 'info', undefined, deletedTask ? {
+        label: 'Undo',
+        onClick: () => {
+          dispatch(createTaskAsync(deletedTask));
+          toast('Task restored.', 'success');
+        }
+      } : undefined);
     } catch {
       toast('Failed to delete task.', 'error');
     }
@@ -223,7 +239,8 @@ export const TaskDetailPane = () => {
               user={user}
               soundEnabled={soundEnabled}
               checkAuth={checkAuth}
-              toast={(msg, type) => toast(msg, type)}
+              toast={toast}
+
               onTriggerExport={(mode) => {
                 setExportMode(mode);
                 setIsExportModalOpen(true);
@@ -259,6 +276,16 @@ export const TaskDetailPane = () => {
             activeTask={activeTask}
             subtasks={subtasks}
             mode={exportMode}
+          />
+
+          <ConfirmationModal
+            isOpen={isDeleteOpen}
+            onClose={() => setIsDeleteOpen(false)}
+            onConfirm={handleConfirmDelete}
+            title="Delete Task?"
+            message={`Are you sure you want to permanently delete "${activeTask.title}"?`}
+            confirmLabel="Delete"
+            isDanger={true}
           />
         </div>
       ) : (

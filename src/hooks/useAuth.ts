@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from './useRedux';
 import { setUser, setLoading, setError } from '../store/slices/authSlice';
-import { fetchAllTodoData, wipeData } from '../store/slices/todoSlice';
+import { fetchAllTodoData, wipeData, cleanupExpiredTrashAsync } from '../store/slices/todoSlice';
 import { auth, onAuthStateChanged } from '../lib/firebase';
 import type { UserProfile } from '../types';
 
@@ -23,7 +23,9 @@ export const useAuth = () => {
             createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
           };
           dispatch(setUser(profile));
-          dispatch(fetchAllTodoData(profile.uid));
+          dispatch(fetchAllTodoData(profile.uid)).unwrap().then(() => {
+            dispatch(cleanupExpiredTrashAsync());
+          });
         } else {
           dispatch(setUser(null));
           dispatch(wipeData());

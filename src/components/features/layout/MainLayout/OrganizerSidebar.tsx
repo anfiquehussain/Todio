@@ -12,6 +12,7 @@ import {
 import type { Collection, Subcollection } from '../../../../types';
 import { useToast } from '../../../../hooks/useToast';
 import { useAuthGuard } from '../../../../hooks/useAuthGuard';
+import { ConfirmationModal } from '../../../patterns/ConfirmationModal';
 
 interface OrganizerSidebarProps {
   setIsMobileMenuOpen: (open: boolean) => void;
@@ -26,9 +27,14 @@ export const OrganizerSidebar = ({
   const { checkAuth } = useAuthGuard();
 
   const { 
-    collections, subcollections, tasks, activeCollectionId, 
+    collections: allCollections, subcollections: allSubcollections, tasks: allTasks, activeCollectionId, 
     activeSubcollectionId, filter 
   } = useAppSelector((state) => state.todo);
+
+  const collections = allCollections.filter(c => !c.deleted);
+  const subcollections = allSubcollections.filter(s => !s.deleted);
+  const tasks = allTasks.filter(t => !t.deleted);
+
   const { user } = useAppSelector((state) => state.auth);
 
   // Sidebar states
@@ -70,6 +76,7 @@ export const OrganizerSidebar = ({
   const [editingCollectionName, setEditingCollectionName] = useState('');
   const [editingSubcollectionId, setEditingSubcollectionId] = useState<string | null>(null);
   const [editingSubcollectionName, setEditingSubcollectionName] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; type: 'list' | 'sublist'; name: string } | null>(null);
 
   const handleCreateCollection = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,22 +145,18 @@ export const OrganizerSidebar = ({
   const handleDeleteCollection = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (!checkAuth('delete list')) return;
-    try {
-      await dispatch(deleteCollectionAsync(id));
-      toast('List deleted.', 'info');
-    } catch {
-      toast('Failed to delete list.', 'error');
+    const col = collections.find(c => c.id === id);
+    if (col) {
+      setDeleteTarget({ id, type: 'list', name: col.name });
     }
   };
 
   const handleDeleteSubcollection = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (!checkAuth('delete sublist')) return;
-    try {
-      await dispatch(deleteSubcollectionAsync(id));
-      toast('Sublist deleted.', 'info');
-    } catch {
-      toast('Failed to delete sublist.', 'error');
+    const sub = subcollections.find(s => s.id === id);
+    if (sub) {
+      setDeleteTarget({ id, type: 'sublist', name: sub.name });
     }
   };
 
@@ -613,10 +616,66 @@ export const OrganizerSidebar = ({
           <span>Completed</span>
         </button>
 
+        <button
+          onClick={() => {
+            dispatch(setActiveCollectionId(null));
+            dispatch(setActiveSubcollectionId(null));
+            dispatch(setFilter('trash'));
+            navigate('/');
+            setIsMobileMenuOpen(false);
+          }}
+          className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold select-none cursor-pointer transition-all ${
+            filter === 'trash' && !activeCollectionId
+              ? 'bg-[#242424] text-brand-primary font-bold animate-pulse'
+              : 'text-text-secondary hover:text-text-primary hover:bg-[#1a1a1a]'
+          }`}
+        >
+          <Trash2 className="w-4 h-4" />
+          <span>Trash Bin</span>
+        </button>
+
         <div className="text-[10px] text-text-secondary/40 font-medium px-3 mt-2 select-none">
           v1.3.0 • Premium 3-Column
         </div>
       </div>
+
+
+      <ConfirmationModal
+        isOpen={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+          try {
+            if (deleteTarget.type === 'list') {
+              const deletedCol = collections.find(c => c.id === deleteTarget.id);
+              await dispatch(deleteCollectionAsync(deleteTarget.id));
+              toast('List deleted.', 'info', undefined, deletedCol ? {
+                label: 'Undo',
+                onClick: () => {
+                  dispatch(createCollectionAsync(deletedCol));
+                  toast('List restored.', 'success');
+                }
+              } : undefined);
+            } else {
+              const deletedSub = subcollections.find(s => s.id === deleteTarget.id);
+              await dispatch(deleteSubcollectionAsync(deleteTarget.id));
+              toast('Sublist deleted.', 'info', undefined, deletedSub ? {
+                label: 'Undo',
+                onClick: () => {
+                  dispatch(createSubcollectionAsync(deletedSub));
+                  toast('Sublist restored.', 'success');
+                }
+              } : undefined);
+            }
+          } catch {
+            toast(`Failed to delete ${deleteTarget.type}.`, 'error');
+          }
+        }}
+        title={`Delete ${deleteTarget?.type === 'list' ? 'List' : 'Sublist'}?`}
+        message={`Are you sure you want to permanently delete "${deleteTarget?.name}"? All associated tasks will be affected.`}
+        confirmLabel="Delete"
+        isDanger={true}
+      />
     </div>
   );
 };

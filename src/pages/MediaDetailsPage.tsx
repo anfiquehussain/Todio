@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, Star, ChevronLeft, Trash2, Edit2 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../hooks/useRedux';
-import { updateTaskAsync, deleteTaskAsync } from '../store/slices/todoSlice';
+import { updateTaskAsync, deleteTaskAsync, createTaskAsync } from '../store/slices/todoSlice';
 import { incrementXP, updateStreak } from '../store/slices/profileSlice';
 import { playCompletionSound } from '../lib/sound';
 import { useToast } from '../hooks/useToast';
@@ -30,7 +30,7 @@ export const MediaDetailsPage: React.FC = () => {
   const [recommendations, setRecommendations] = useState<Task[]>([]);
   
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [taskToDeleteId, setTaskToDeleteId] = useState<string | null>(null);
   
   // Load description expand/collapse memory from localStorage
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(() => {
@@ -69,10 +69,20 @@ export const MediaDetailsPage: React.FC = () => {
   };
 
   const handleDelete = () => {
-    if (task) {
-      dispatch(deleteTaskAsync(task.id));
-      toast('Task card deleted.', 'info');
-      navigate('/');
+    if (taskToDeleteId) {
+      const deletedTask = tasks.find(t => t.id === taskToDeleteId);
+      dispatch(deleteTaskAsync(taskToDeleteId));
+      toast('Task card deleted.', 'info', undefined, deletedTask ? {
+        label: 'Undo',
+        onClick: () => {
+          dispatch(createTaskAsync(deletedTask));
+          toast('Task restored.', 'success');
+        }
+      } : undefined);
+      if (taskToDeleteId === task?.id) {
+        navigate('/');
+      }
+      setTaskToDeleteId(null);
     }
   };
 
@@ -114,7 +124,7 @@ export const MediaDetailsPage: React.FC = () => {
             variant="ghost"
             size="sm"
             onClick={() => {
-              if (checkAuth('delete this task')) setIsDeleteOpen(true);
+              if (checkAuth('delete this task')) setTaskToDeleteId(task.id);
             }}
             title="Wipe out task"
           >
@@ -243,8 +253,7 @@ export const MediaDetailsPage: React.FC = () => {
                       }
                     }}
                     onDelete={(id) => {
-                      if (!checkAuth('delete this task')) return;
-                      dispatch(deleteTaskAsync(id));
+                      if (checkAuth('delete this task')) setTaskToDeleteId(id);
                     }}
                   />
                 </div>
@@ -262,10 +271,17 @@ export const MediaDetailsPage: React.FC = () => {
       />
 
       <ConfirmationModal
-        isOpen={isDeleteOpen}
-        onClose={() => setIsDeleteOpen(false)}
+        isOpen={taskToDeleteId !== null}
+        onClose={() => setTaskToDeleteId(null)}
         onConfirm={handleDelete}
-        message="This operation will permanently delete the task and its associated subtask logs."
+        title="Delete Task?"
+        message={
+          taskToDeleteId === task.id
+            ? "This operation will permanently delete the task and its associated subtask logs."
+            : `Are you sure you want to permanently delete "${tasks.find(t => t.id === taskToDeleteId)?.title || 'this task'}"?`
+        }
+        confirmLabel="Delete"
+        isDanger={true}
       />
     </div>
   );

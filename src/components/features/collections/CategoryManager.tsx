@@ -9,6 +9,7 @@ import {
 import { useToast } from '../../../hooks/useToast';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { IconButton } from '../../ui/IconButton';
+import { ConfirmationModal } from '../../patterns/ConfirmationModal';
 
 interface CategoryManagerProps {
   selectedCollectionId: string | null;
@@ -27,7 +28,9 @@ export const CategoryManager = ({
   const { toast } = useToast();
   const { checkAuth } = useAuthGuard();
 
-  const { collections, subcollections } = useAppSelector((state) => state.todo);
+  const { collections: allCollections, subcollections: allSubcollections } = useAppSelector((state) => state.todo);
+  const collections = allCollections.filter(c => !c.deleted);
+  const subcollections = allSubcollections.filter(s => !s.deleted);
   const { user } = useAppSelector((state) => state.auth);
 
   const [expandedCollections, setExpandedCollections] = useState<Record<string, boolean>>({});
@@ -38,6 +41,7 @@ export const CategoryManager = ({
   const [creatingSubcollectionFor, setCreatingSubcollectionFor] = useState<string | null>(null);
   const [newSubcollectionName, setNewSubcollectionName] = useState('');
   const [isSavingSubcollection, setIsSavingSubcollection] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; type: 'collection' | 'subcollection'; name: string } | null>(null);
 
   const toggleCollection = (id: string) => {
     setExpandedCollections(prev => ({ ...prev, [id]: !prev[id] }));
@@ -95,25 +99,19 @@ export const CategoryManager = ({
     }
   };
 
-  const handleDeleteCollection = async (id: string) => {
+  const handleDeleteCollection = (id: string) => {
     if (!checkAuth('delete collection')) return;
-    try {
-      await dispatch(deleteCollectionAsync(id));
-      if (selectedCollectionId === id) setSelectedCollectionId(null);
-      toast('Collection deleted', 'info');
-    } catch {
-      toast('Failed to delete collection', 'error');
+    const col = collections.find(c => c.id === id);
+    if (col) {
+      setDeleteTarget({ id, type: 'collection', name: col.name });
     }
   };
 
-  const handleDeleteSubcollection = async (id: string) => {
+  const handleDeleteSubcollection = (id: string) => {
     if (!checkAuth('delete subcollection')) return;
-    try {
-      await dispatch(deleteSubcollectionAsync(id));
-      if (selectedSubcollectionId === id) setSelectedSubcollectionId(null);
-      toast('Subcollection deleted', 'info');
-    } catch {
-      toast('Failed to delete subcollection', 'error');
+    const sub = subcollections.find(s => s.id === id);
+    if (sub) {
+      setDeleteTarget({ id, type: 'subcollection', name: sub.name });
     }
   };
 
@@ -300,6 +298,45 @@ export const CategoryManager = ({
           );
         })}
       </div>
+
+      <ConfirmationModal
+        isOpen={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+          try {
+            if (deleteTarget.type === 'collection') {
+              const deletedCol = collections.find(c => c.id === deleteTarget.id);
+              await dispatch(deleteCollectionAsync(deleteTarget.id));
+              if (selectedCollectionId === deleteTarget.id) setSelectedCollectionId(null);
+              toast('Collection deleted', 'info', undefined, deletedCol ? {
+                label: 'Undo',
+                onClick: () => {
+                  dispatch(createCollectionAsync(deletedCol));
+                  toast('Collection restored', 'success');
+                }
+              } : undefined);
+            } else {
+              const deletedSub = subcollections.find(s => s.id === deleteTarget.id);
+              await dispatch(deleteSubcollectionAsync(deleteTarget.id));
+              if (selectedSubcollectionId === deleteTarget.id) setSelectedSubcollectionId(null);
+              toast('Subcollection deleted', 'info', undefined, deletedSub ? {
+                label: 'Undo',
+                onClick: () => {
+                  dispatch(createSubcollectionAsync(deletedSub));
+                  toast('Subcollection restored', 'success');
+                }
+              } : undefined);
+            }
+          } catch {
+            toast(`Failed to delete ${deleteTarget.type}`, 'error');
+          }
+        }}
+        title={`Delete ${deleteTarget?.type === 'collection' ? 'Collection' : 'Subcollection'}?`}
+        message={`Are you sure you want to permanently delete "${deleteTarget?.name}"?`}
+        confirmLabel="Delete"
+        isDanger={true}
+      />
     </div>
   );
 };

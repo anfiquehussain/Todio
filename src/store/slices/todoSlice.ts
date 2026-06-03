@@ -11,7 +11,7 @@ export interface TodoState {
   activeCollectionId: string | null;
   activeSubcollectionId: string | null;
   activeTaskId: string | null;
-  filter: 'all' | 'active' | 'completed' | 'overdue';
+  filter: 'all' | 'active' | 'completed' | 'overdue' | 'trash';
   searchQuery: string;
   sortBy: 'custom' | 'priority-desc' | 'priority-asc' | 'dueDate-asc' | 'dueDate-desc' | 'title-asc' | 'title-desc' | 'createdAt-desc' | 'createdAt-asc';
   soundEnabled: boolean;
@@ -77,9 +77,93 @@ export const updateCollectionAsync = createAsyncThunk(
 
 export const deleteCollectionAsync = createAsyncThunk(
   'todo/deleteCollection',
-  async (id: string) => {
+  async (id: string, { getState }) => {
+    const state = getState() as { todo: TodoState };
+    const timestamp = new Date().toISOString();
+    const collection = state.todo.collections.find(c => c.id === id);
+    if (collection) {
+      const updatedCollection = { ...collection, deleted: true, deletedAt: timestamp };
+      await firestoreService.createCollection(updatedCollection);
+
+      // Cascading soft-delete child subcollections
+      const childSubs = state.todo.subcollections.filter(s => s.collectionId === id);
+      await Promise.all(childSubs.map(s => {
+        const updatedSub = { ...s, deleted: true, deletedAt: timestamp };
+        return firestoreService.createSubcollection(updatedSub);
+      }));
+
+      // Cascading soft-delete child tasks
+      const childTasks = state.todo.tasks.filter(t => t.collectionId === id);
+      await Promise.all(childTasks.map(t => {
+        const updatedTask = { ...t, deleted: true, deletedAt: timestamp };
+        return firestoreService.updateTask(updatedTask);
+      }));
+
+      return {
+        collectionId: id,
+        timestamp,
+        subcollectionIds: childSubs.map(s => s.id),
+        taskIds: childTasks.map(t => t.id)
+      };
+    }
+    return { collectionId: id, timestamp: '', subcollectionIds: [], taskIds: [] };
+  }
+);
+
+export const restoreCollectionAsync = createAsyncThunk(
+  'todo/restoreCollection',
+  async (id: string, { getState }) => {
+    const state = getState() as { todo: TodoState };
+    const collection = state.todo.collections.find(c => c.id === id);
+    if (collection) {
+      const deletedAtTime = collection.deletedAt;
+      const { deletedAt, ...restCol } = collection;
+      const updatedCollection = { ...restCol, deleted: false };
+      await firestoreService.createCollection(updatedCollection);
+
+      // Restore child subcollections deleted in the same batch
+      const childSubs = state.todo.subcollections.filter(s => s.collectionId === id && s.deleted && s.deletedAt === deletedAtTime);
+      await Promise.all(childSubs.map(s => {
+        const { deletedAt: d, ...restSub } = s;
+        const restoredSub = { ...restSub, deleted: false };
+        return firestoreService.createSubcollection(restoredSub);
+      }));
+
+      // Restore child tasks deleted in the same batch
+      const childTasks = state.todo.tasks.filter(t => t.collectionId === id && t.deleted && t.deletedAt === deletedAtTime);
+      await Promise.all(childTasks.map(t => {
+        const { deletedAt: d, ...restTask } = t;
+        const restoredTask = { ...restTask, deleted: false };
+        return firestoreService.updateTask(restoredTask);
+      }));
+
+      return {
+        collectionId: id,
+        subcollectionIds: childSubs.map(s => s.id),
+        taskIds: childTasks.map(t => t.id)
+      };
+    }
+    return { collectionId: id, subcollectionIds: [], taskIds: [] };
+  }
+);
+
+export const deleteCollectionPermanentAsync = createAsyncThunk(
+  'todo/deleteCollectionPermanent',
+  async (id: string, { getState }) => {
+    const state = getState() as { todo: TodoState };
     await firestoreService.deleteCollection(id);
-    return id;
+
+    const childSubs = state.todo.subcollections.filter(s => s.collectionId === id);
+    await Promise.all(childSubs.map(s => firestoreService.deleteSubcollection(s.id)));
+
+    const childTasks = state.todo.tasks.filter(t => t.collectionId === id);
+    await Promise.all(childTasks.map(t => firestoreService.deleteTask(t.id)));
+
+    return {
+      collectionId: id,
+      subcollectionIds: childSubs.map(s => s.id),
+      taskIds: childTasks.map(t => t.id)
+    };
   }
 );
 
@@ -101,9 +185,70 @@ export const updateSubcollectionAsync = createAsyncThunk(
 
 export const deleteSubcollectionAsync = createAsyncThunk(
   'todo/deleteSubcollection',
-  async (id: string) => {
+  async (id: string, { getState }) => {
+    const state = getState() as { todo: TodoState };
+    const timestamp = new Date().toISOString();
+    const subcollection = state.todo.subcollections.find(s => s.id === id);
+    if (subcollection) {
+      const updatedSub = { ...subcollection, deleted: true, deletedAt: timestamp };
+      await firestoreService.createSubcollection(updatedSub);
+
+      const childTasks = state.todo.tasks.filter(t => t.subcollectionId === id);
+      await Promise.all(childTasks.map(t => {
+        const updatedTask = { ...t, deleted: true, deletedAt: timestamp };
+        return firestoreService.updateTask(updatedTask);
+      }));
+
+      return {
+        subcollectionId: id,
+        timestamp,
+        taskIds: childTasks.map(t => t.id)
+      };
+    }
+    return { subcollectionId: id, timestamp: '', taskIds: [] };
+  }
+);
+
+export const restoreSubcollectionAsync = createAsyncThunk(
+  'todo/restoreSubcollection',
+  async (id: string, { getState }) => {
+    const state = getState() as { todo: TodoState };
+    const subcollection = state.todo.subcollections.find(s => s.id === id);
+    if (subcollection) {
+      const deletedAtTime = subcollection.deletedAt;
+      const { deletedAt, ...restSub } = subcollection;
+      const restoredSub = { ...restSub, deleted: false };
+      await firestoreService.createSubcollection(restoredSub);
+
+      const childTasks = state.todo.tasks.filter(t => t.subcollectionId === id && t.deleted && t.deletedAt === deletedAtTime);
+      await Promise.all(childTasks.map(t => {
+        const { deletedAt: d, ...restTask } = t;
+        const restoredTask = { ...restTask, deleted: false };
+        return firestoreService.updateTask(restoredTask);
+      }));
+
+      return {
+        subcollectionId: id,
+        taskIds: childTasks.map(t => t.id)
+      };
+    }
+    return { subcollectionId: id, taskIds: [] };
+  }
+);
+
+export const deleteSubcollectionPermanentAsync = createAsyncThunk(
+  'todo/deleteSubcollectionPermanent',
+  async (id: string, { getState }) => {
+    const state = getState() as { todo: TodoState };
     await firestoreService.deleteSubcollection(id);
-    return id;
+
+    const childTasks = state.todo.tasks.filter(t => t.subcollectionId === id);
+    await Promise.all(childTasks.map(t => firestoreService.deleteTask(t.id)));
+
+    return {
+      subcollectionId: id,
+      taskIds: childTasks.map(t => t.id)
+    };
   }
 );
 
@@ -125,9 +270,72 @@ export const updateTaskAsync = createAsyncThunk(
 
 export const deleteTaskAsync = createAsyncThunk(
   'todo/deleteTask',
-  async (id: string) => {
+  async (id: string, { getState }) => {
+    const state = getState() as { todo: TodoState };
+    const timestamp = new Date().toISOString();
+    const task = state.todo.tasks.find(t => t.id === id);
+    if (task) {
+      const updatedTask = { ...task, deleted: true, deletedAt: timestamp };
+      await firestoreService.updateTask(updatedTask);
+
+      // Cascading soft-delete associated subtasks
+      const childSubtasks = state.todo.subtasks.filter(s => s.taskId === id);
+      await Promise.all(childSubtasks.map(s => {
+        const updatedSubtask = { ...s, deleted: true, deletedAt: timestamp };
+        return firestoreService.createSubtask(updatedSubtask);
+      }));
+
+      return {
+        taskId: id,
+        timestamp,
+        subtaskIds: childSubtasks.map(s => s.id)
+      };
+    }
+    return { taskId: id, timestamp: '', subtaskIds: [] };
+  }
+);
+
+export const restoreTaskAsync = createAsyncThunk(
+  'todo/restoreTask',
+  async (id: string, { getState }) => {
+    const state = getState() as { todo: TodoState };
+    const task = state.todo.tasks.find(t => t.id === id);
+    if (task) {
+      const deletedAtTime = task.deletedAt;
+      const { deletedAt, ...restTask } = task;
+      const restoredTask = { ...restTask, deleted: false };
+      await firestoreService.updateTask(restoredTask);
+
+      // Restore child subtasks deleted in the same batch
+      const childSubtasks = state.todo.subtasks.filter(s => s.taskId === id && s.deleted && s.deletedAt === deletedAtTime);
+      await Promise.all(childSubtasks.map(s => {
+        const { deletedAt: d, ...restSub } = s;
+        const restoredSubtask = { ...restSub, deleted: false };
+        return firestoreService.createSubtask(restoredSubtask);
+      }));
+
+      return {
+        taskId: id,
+        subtaskIds: childSubtasks.map(s => s.id)
+      };
+    }
+    return { taskId: id, subtaskIds: [] };
+  }
+);
+
+export const deleteTaskPermanentAsync = createAsyncThunk(
+  'todo/deleteTaskPermanent',
+  async (id: string, { getState }) => {
+    const state = getState() as { todo: TodoState };
     await firestoreService.deleteTask(id);
-    return id;
+
+    const childSubtasks = state.todo.subtasks.filter(s => s.taskId === id);
+    await Promise.all(childSubtasks.map(s => firestoreService.deleteSubtask(s.id)));
+
+    return {
+      taskId: id,
+      subtaskIds: childSubtasks.map(s => s.id)
+    };
   }
 );
 
@@ -149,11 +357,90 @@ export const updateSubtaskAsync = createAsyncThunk(
 
 export const deleteSubtaskAsync = createAsyncThunk(
   'todo/deleteSubtask',
+  async (id: string, { getState }) => {
+    const state = getState() as { todo: TodoState };
+    const timestamp = new Date().toISOString();
+    const subtask = state.todo.subtasks.find(s => s.id === id);
+    if (subtask) {
+      const updated = { ...subtask, deleted: true, deletedAt: timestamp };
+      await firestoreService.createSubtask(updated);
+      return updated;
+    }
+    return id;
+  }
+);
+
+export const restoreSubtaskAsync = createAsyncThunk(
+  'todo/restoreSubtask',
+  async (id: string, { getState }) => {
+    const state = getState() as { todo: TodoState };
+    const subtask = state.todo.subtasks.find(s => s.id === id);
+    if (subtask) {
+      const { deletedAt, ...restSub } = subtask;
+      const restored = { ...restSub, deleted: false };
+      await firestoreService.createSubtask(restored);
+      return restored;
+    }
+    return id;
+  }
+);
+
+export const deleteSubtaskPermanentAsync = createAsyncThunk(
+  'todo/deleteSubtaskPermanent',
   async (id: string) => {
     await firestoreService.deleteSubtask(id);
     return id;
   }
 );
+
+export const cleanupExpiredTrashAsync = createAsyncThunk(
+  'todo/cleanupExpiredTrash',
+  async (_, { getState, dispatch }) => {
+    const state = getState() as { todo: TodoState };
+    const now = new Date();
+    const threshold = 30 * 24 * 60 * 60 * 1000; // 30 days in ms
+
+    const expiredTasks = state.todo.tasks.filter(t => 
+      t.deleted && t.deletedAt && (now.getTime() - new Date(t.deletedAt).getTime() > threshold)
+    );
+    const expiredCols = state.todo.collections.filter(c => 
+      c.deleted && c.deletedAt && (now.getTime() - new Date(c.deletedAt).getTime() > threshold)
+    );
+    const expiredSubs = state.todo.subcollections.filter(s => 
+      s.deleted && s.deletedAt && (now.getTime() - new Date(s.deletedAt).getTime() > threshold)
+    );
+    const expiredSubtasks = state.todo.subtasks.filter(s => 
+      s.deleted && s.deletedAt && (now.getTime() - new Date(s.deletedAt).getTime() > threshold)
+    );
+
+    await Promise.all([
+      ...expiredTasks.map(t => dispatch(deleteTaskPermanentAsync(t.id))),
+      ...expiredCols.map(c => dispatch(deleteCollectionPermanentAsync(c.id))),
+      ...expiredSubs.map(s => dispatch(deleteSubcollectionPermanentAsync(s.id))),
+      ...expiredSubtasks.map(s => dispatch(deleteSubtaskPermanentAsync(s.id)))
+    ]);
+  }
+);
+
+export const emptyTrashAsync = createAsyncThunk(
+  'todo/emptyTrash',
+  async (_, { getState, dispatch }) => {
+    const state = getState() as { todo: TodoState };
+
+    const deletedTasks = state.todo.tasks.filter(t => t.deleted);
+    const deletedCols = state.todo.collections.filter(c => c.deleted);
+    const deletedSubs = state.todo.subcollections.filter(s => s.deleted);
+    const deletedSubtasks = state.todo.subtasks.filter(s => s.deleted);
+
+    await Promise.all([
+      ...deletedTasks.map(t => dispatch(deleteTaskPermanentAsync(t.id))),
+      ...deletedCols.map(c => dispatch(deleteCollectionPermanentAsync(c.id))),
+      ...deletedSubs.map(s => dispatch(deleteSubcollectionPermanentAsync(s.id))),
+      ...deletedSubtasks.map(s => dispatch(deleteSubtaskPermanentAsync(s.id)))
+    ]);
+  }
+);
+
 
 export const createSubtasksBulkAsync = createAsyncThunk(
   'todo/createSubtasksBulk',
@@ -273,8 +560,17 @@ const todoSlice = createSlice({
         }
       })
       .addCase(deleteCollectionAsync.fulfilled, (state, action) => {
-        state.collections = state.collections.filter(c => c.id !== action.payload);
-        if (state.activeCollectionId === action.payload) {
+        const { collectionId, timestamp, subcollectionIds, taskIds } = action.payload;
+        state.collections = state.collections.map(c => 
+          c.id === collectionId ? { ...c, deleted: true, deletedAt: timestamp } : c
+        );
+        state.subcollections = state.subcollections.map(s => 
+          subcollectionIds.includes(s.id) ? { ...s, deleted: true, deletedAt: timestamp } : s
+        );
+        state.tasks = state.tasks.map(t => 
+          taskIds.includes(t.id) ? { ...t, deleted: true, deletedAt: timestamp } : t
+        );
+        if (state.activeCollectionId === collectionId) {
           state.activeCollectionId = null;
           state.activeSubcollectionId = null;
           state.activeTaskId = null;
@@ -294,8 +590,14 @@ const todoSlice = createSlice({
         }
       })
       .addCase(deleteSubcollectionAsync.fulfilled, (state, action) => {
-        state.subcollections = state.subcollections.filter(s => s.id !== action.payload);
-        if (state.activeSubcollectionId === action.payload) {
+        const { subcollectionId, timestamp, taskIds } = action.payload;
+        state.subcollections = state.subcollections.map(s => 
+          s.id === subcollectionId ? { ...s, deleted: true, deletedAt: timestamp } : s
+        );
+        state.tasks = state.tasks.map(t => 
+          taskIds.includes(t.id) ? { ...t, deleted: true, deletedAt: timestamp } : t
+        );
+        if (state.activeSubcollectionId === subcollectionId) {
           state.activeSubcollectionId = null;
           state.activeTaskId = null;
           localStorage.removeItem('todio_active_subcollection_id');
@@ -319,8 +621,14 @@ const todoSlice = createSlice({
         }
       })
       .addCase(deleteTaskAsync.fulfilled, (state, action) => {
-        state.tasks = state.tasks.filter(t => t.id !== action.payload);
-        if (state.activeTaskId === action.payload) {
+        const { taskId, timestamp, subtaskIds } = action.payload;
+        state.tasks = state.tasks.map(t => 
+          t.id === taskId ? { ...t, deleted: true, deletedAt: timestamp } : t
+        );
+        state.subtasks = state.subtasks.map(s => 
+          subtaskIds.includes(s.id) ? { ...s, deleted: true, deletedAt: timestamp } : s
+        );
+        if (state.activeTaskId === taskId) {
           state.activeTaskId = null;
           localStorage.removeItem('todio_active_task_id');
         }
@@ -345,8 +653,81 @@ const todoSlice = createSlice({
         }
       })
       .addCase(deleteSubtaskAsync.fulfilled, (state, action) => {
+        const payload = action.payload;
+        if (payload && typeof payload === 'object' && 'id' in payload) {
+          const index = state.subtasks.findIndex(s => s.id === payload.id);
+          if (index !== -1) {
+            state.subtasks[index] = payload as any;
+          }
+        }
+      })
+      // Restore Collection
+      .addCase(restoreCollectionAsync.fulfilled, (state, action) => {
+        const { collectionId, subcollectionIds, taskIds } = action.payload;
+        state.collections = state.collections.map(c => 
+          c.id === collectionId ? { ...c, deleted: false, deletedAt: undefined } : c
+        );
+        state.subcollections = state.subcollections.map(s => 
+          subcollectionIds.includes(s.id) ? { ...s, deleted: false, deletedAt: undefined } : s
+        );
+        state.tasks = state.tasks.map(t => 
+          taskIds.includes(t.id) ? { ...t, deleted: false, deletedAt: undefined } : t
+        );
+      })
+      // Restore Subcollection
+      .addCase(restoreSubcollectionAsync.fulfilled, (state, action) => {
+        const { subcollectionId, taskIds } = action.payload;
+        state.subcollections = state.subcollections.map(s => 
+          s.id === subcollectionId ? { ...s, deleted: false, deletedAt: undefined } : s
+        );
+        state.tasks = state.tasks.map(t => 
+          taskIds.includes(t.id) ? { ...t, deleted: false, deletedAt: undefined } : t
+        );
+      })
+      // Restore Task
+      .addCase(restoreTaskAsync.fulfilled, (state, action) => {
+        const { taskId, subtaskIds } = action.payload;
+        state.tasks = state.tasks.map(t => 
+          t.id === taskId ? { ...t, deleted: false, deletedAt: undefined } : t
+        );
+        state.subtasks = state.subtasks.map(s => 
+          subtaskIds.includes(s.id) ? { ...s, deleted: false, deletedAt: undefined } : s
+        );
+      })
+      // Restore Subtask
+      .addCase(restoreSubtaskAsync.fulfilled, (state, action) => {
+        const payload = action.payload;
+        if (payload && typeof payload === 'object' && 'id' in payload) {
+          const index = state.subtasks.findIndex(s => s.id === payload.id);
+          if (index !== -1) {
+            state.subtasks[index] = payload as any;
+          }
+        }
+      })
+      // Permanent Delete Collection
+      .addCase(deleteCollectionPermanentAsync.fulfilled, (state, action) => {
+        const { collectionId, subcollectionIds, taskIds } = action.payload;
+        state.collections = state.collections.filter(c => c.id !== collectionId);
+        state.subcollections = state.subcollections.filter(s => !subcollectionIds.includes(s.id));
+        state.tasks = state.tasks.filter(t => !taskIds.includes(t.id));
+      })
+      // Permanent Delete Subcollection
+      .addCase(deleteSubcollectionPermanentAsync.fulfilled, (state, action) => {
+        const { subcollectionId, taskIds } = action.payload;
+        state.subcollections = state.subcollections.filter(s => s.id !== subcollectionId);
+        state.tasks = state.tasks.filter(t => !taskIds.includes(t.id));
+      })
+      // Permanent Delete Task
+      .addCase(deleteTaskPermanentAsync.fulfilled, (state, action) => {
+        const { taskId, subtaskIds } = action.payload;
+        state.tasks = state.tasks.filter(t => t.id !== taskId);
+        state.subtasks = state.subtasks.filter(s => !subtaskIds.includes(s.id));
+      })
+      // Permanent Delete Subtask
+      .addCase(deleteSubtaskPermanentAsync.fulfilled, (state, action) => {
         state.subtasks = state.subtasks.filter(s => s.id !== action.payload);
       })
+
       .addCase(updateTasksPositionsAsync.fulfilled, (state, action) => {
         action.payload.forEach(updatedTask => {
           const idx = state.tasks.findIndex(t => t.id === updatedTask.id);
