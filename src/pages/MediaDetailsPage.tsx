@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, Star, ChevronLeft, Trash2, Edit2 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../hooks/useRedux';
-import { updateTaskAsync, deleteTaskAsync, createTaskAsync, restoreTaskAsync } from '../store/slices/todoSlice';
+import { updateTaskAsync, deleteTaskAsync, restoreTaskAsync } from '../store/slices/todoSlice';
 import { incrementXP, updateStreak } from '../store/slices/profileSlice';
 import { playCompletionSound } from '../lib/sound';
 import { useToast } from '../hooks/useToast';

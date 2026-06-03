@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Folder, Type, Smile, CheckSquare, Calendar } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../../hooks/useRedux';
 import { 
-  updateTaskAsync, deleteTaskAsync, setActiveTaskId, createTaskAsync, restoreTaskAsync
+  updateTaskAsync, deleteTaskAsync, setActiveTaskId, restoreTaskAsync
 } from '../../../store/slices/todoSlice';
 import { useToast } from '../../../hooks/useToast';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
