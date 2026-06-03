@@ -214,6 +214,18 @@ export const OrganizerSidebar = ({
 
   return (
     <div className="flex flex-col h-full bg-bg-secondary border-r border-gray-border pt-4 px-4 pb-12 md:pb-4 w-60 shrink-0 select-none">
+      {/* Mobile-only Header */}
+      <div className="flex md:hidden items-center justify-between px-3 py-2 mb-4 border-b border-gray-border/20">
+        <span className="text-xs font-bold uppercase tracking-widest text-text-secondary/50">Workspace</span>
+        <button
+          onClick={() => setIsMobileMenuOpen(false)}
+          className="p-1.5 hover:bg-[#222] active:scale-95 rounded-lg text-text-secondary hover:text-text-primary transition-all cursor-pointer"
+          aria-label="Close menu"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
       {/* Smart views section */}
       <div className="flex flex-col gap-1 mb-6">
         <button
