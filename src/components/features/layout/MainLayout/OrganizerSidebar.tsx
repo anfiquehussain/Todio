@@ -7,7 +7,8 @@ import { useAppSelector, useAppDispatch } from '../../../../hooks/useRedux';
 import { 
   setActiveCollectionId, setActiveSubcollectionId, setFilter, 
   createCollectionAsync, deleteCollectionAsync, createSubcollectionAsync, deleteSubcollectionAsync,
-  updateCollectionAsync, updateSubcollectionAsync 
+  updateCollectionAsync, updateSubcollectionAsync,
+  restoreCollectionAsync, restoreSubcollectionAsync
 } from '../../../../store/slices/todoSlice';
 import type { Collection, Subcollection } from '../../../../types';
 import { useToast } from '../../../../hooks/useToast';
@@ -652,7 +653,7 @@ export const OrganizerSidebar = ({
               toast('List deleted.', 'info', undefined, deletedCol ? {
                 label: 'Undo',
                 onClick: () => {
-                  dispatch(createCollectionAsync(deletedCol));
+                  dispatch(restoreCollectionAsync(deletedCol.id));
                   toast('List restored.', 'success');
                 }
               } : undefined);
@@ -662,7 +663,7 @@ export const OrganizerSidebar = ({
               toast('Sublist deleted.', 'info', undefined, deletedSub ? {
                 label: 'Undo',
                 onClick: () => {
-                  dispatch(createSubcollectionAsync(deletedSub));
+                  dispatch(restoreSubcollectionAsync(deletedSub.id));
                   toast('Sublist restored.', 'success');
                 }
               } : undefined);

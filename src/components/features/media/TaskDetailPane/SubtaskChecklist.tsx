@@ -7,7 +7,7 @@ import { Reorder, useDragControls } from 'framer-motion';
 import { useAppDispatch } from '../../../../hooks/useRedux';
 import { 
   createSubtaskAsync, updateSubtaskAsync, deleteSubtaskAsync, createSubtasksBulkAsync, updateSubtasksPositionsAsync,
-  updateTaskAsync
+  updateTaskAsync, restoreSubtaskAsync
 } from '../../../../store/slices/todoSlice';
 import { incrementXP, updateStreak } from '../../../../store/slices/profileSlice';
 import { playCompletionSound } from '../../../../lib/sound';
@@ -573,7 +573,7 @@ export const SubtaskChecklist = ({
       toast('Subtask deleted.', 'info', undefined, deletedSubtask ? {
         label: 'Undo',
         onClick: () => {
-          dispatch(createSubtaskAsync(deletedSubtask));
+          dispatch(restoreSubtaskAsync(deletedSubtask.id));
           toast('Subtask restored.', 'success');
         }
       } : undefined);

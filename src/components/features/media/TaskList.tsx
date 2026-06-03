@@ -1088,7 +1088,7 @@ export const TaskList = () => {
       toast('Task removed successfully.', 'info', undefined, deletedTask ? {
         label: 'Undo',
         onClick: () => {
-          dispatch(createTaskAsync(deletedTask));
+          dispatch(restoreTaskAsync(deletedTask.id));
           toast('Task restored.', 'success');
         }
       } : undefined);

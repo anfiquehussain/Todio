@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus, Check, Trash2, ShieldAlert } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../../hooks/useRedux';
-import { createSubtaskAsync, updateSubtaskAsync, deleteSubtaskAsync, createSubtasksBulkAsync } from '../../../store/slices/todoSlice';
+import { createSubtaskAsync, updateSubtaskAsync, deleteSubtaskAsync, createSubtasksBulkAsync, restoreSubtaskAsync } from '../../../store/slices/todoSlice';
 import { incrementXP, updateStreak } from '../../../store/slices/profileSlice';
 import { playCompletionSound } from '../../../lib/sound';
 import { useToast } from '../../../hooks/useToast';
@@ -180,7 +180,7 @@ export const ChecklistActivity = ({
       toast('Subtask deleted.', 'info', undefined, deletedSubtask ? {
         label: 'Undo',
         onClick: () => {
-          dispatch(createSubtaskAsync(deletedSubtask));
+          dispatch(restoreSubtaskAsync(deletedSubtask.id));
           toast('Subtask restored.', 'success');
         }
       } : undefined);

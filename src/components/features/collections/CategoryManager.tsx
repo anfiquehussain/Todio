@@ -4,7 +4,8 @@ import {
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../../hooks/useRedux';
 import { 
-  createCollectionAsync, deleteCollectionAsync, createSubcollectionAsync, deleteSubcollectionAsync 
+  createCollectionAsync, deleteCollectionAsync, createSubcollectionAsync, deleteSubcollectionAsync,
+  restoreCollectionAsync, restoreSubcollectionAsync
 } from '../../../store/slices/todoSlice';
 import { useToast } from '../../../hooks/useToast';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
@@ -312,7 +313,7 @@ export const CategoryManager = ({
               toast('Collection deleted', 'info', undefined, deletedCol ? {
                 label: 'Undo',
                 onClick: () => {
-                  dispatch(createCollectionAsync(deletedCol));
+                  dispatch(restoreCollectionAsync(deletedCol.id));
                   toast('Collection restored', 'success');
                 }
               } : undefined);
@@ -323,7 +324,7 @@ export const CategoryManager = ({
               toast('Subcollection deleted', 'info', undefined, deletedSub ? {
                 label: 'Undo',
                 onClick: () => {
-                  dispatch(createSubcollectionAsync(deletedSub));
+                  dispatch(restoreSubcollectionAsync(deletedSub.id));
                   toast('Subcollection restored', 'success');
                 }
               } : undefined);

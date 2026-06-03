@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Folder, Type, Smile, CheckSquare, Calendar } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../../hooks/useRedux';
 import { 
-  updateTaskAsync, deleteTaskAsync, setActiveTaskId, createTaskAsync
+  updateTaskAsync, deleteTaskAsync, setActiveTaskId, createTaskAsync, restoreTaskAsync
 } from '../../../store/slices/todoSlice';
 import { useToast } from '../../../hooks/useToast';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
@@ -91,7 +91,7 @@ export const TaskDetailPane = () => {
       toast('Task removed successfully.', 'info', undefined, deletedTask ? {
         label: 'Undo',
         onClick: () => {
-          dispatch(createTaskAsync(deletedTask));
+          dispatch(restoreTaskAsync(deletedTask.id));
           toast('Task restored.', 'success');
         }
       } : undefined);
