@@ -1,14 +1,22 @@
 import { configureStore } from '@reduxjs/toolkit';
+import type { Middleware } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
 import profileReducer from './slices/profileSlice';
 import todoReducer from './slices/todoSlice';
 import settingsReducer from './slices/settingsSlice';
 
-const localStorageMiddleware = (store: any) => (next: any) => (action: any) => {
+const localStorageMiddleware: Middleware = (store) => (next) => (action) => {
   const result = next(action);
   
-  if (action.type && action.type.startsWith('todo/')) {
-    const todoState = store.getState().todo;
+  if (
+    action && 
+    typeof action === 'object' && 
+    'type' in action && 
+    typeof action.type === 'string' && 
+    action.type.startsWith('todo/')
+  ) {
+    const state = store.getState() as { todo: { collections: unknown[]; subcollections: unknown[]; tasks: unknown[]; subtasks: unknown[] } };
+    const todoState = state.todo;
     try {
       localStorage.setItem('todio_collections', JSON.stringify(todoState.collections));
       localStorage.setItem('todio_subcollections', JSON.stringify(todoState.subcollections));

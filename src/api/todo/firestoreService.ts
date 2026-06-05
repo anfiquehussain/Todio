@@ -1,4 +1,5 @@
 import { collection, doc, setDoc, getDocs, deleteDoc, query, where } from 'firebase/firestore';
+import type { Firestore } from 'firebase/firestore';
 import { db, isMock } from '../../lib/firebase';
 import type { Collection, Subcollection, Task, Subtask } from '../../types';
 
@@ -20,7 +21,7 @@ export const firestoreService = {
       const all = mockDb.get<Collection>('mock_db_collections');
       return all.filter(item => item.userId === userId);
     }
-    const q = query(collection(db, 'collections'), where('userId', '==', userId));
+    const q = query(collection(db as Firestore, 'collections'), where('userId', '==', userId));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => doc.data() as Collection);
   },
@@ -36,7 +37,7 @@ export const firestoreService = {
       mockDb.set('mock_db_collections', all);
       return;
     }
-    await setDoc(doc(db, 'collections', data.id), data);
+    await setDoc(doc(db as Firestore, 'collections', data.id), data);
   },
   async deleteCollection(id: string): Promise<void> {
     if (isMock) {
@@ -44,7 +45,7 @@ export const firestoreService = {
       mockDb.set('mock_db_collections', all.filter(item => item.id !== id));
       return;
     }
-    await deleteDoc(doc(db, 'collections', id));
+    await deleteDoc(doc(db as Firestore, 'collections', id));
   },
 
   // Subcollections
@@ -53,7 +54,7 @@ export const firestoreService = {
       const all = mockDb.get<Subcollection>('mock_db_subcollections');
       return all.filter(item => item.userId === userId);
     }
-    const q = query(collection(db, 'subcollections'), where('userId', '==', userId));
+    const q = query(collection(db as Firestore, 'subcollections'), where('userId', '==', userId));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => doc.data() as Subcollection);
   },
@@ -69,7 +70,7 @@ export const firestoreService = {
       mockDb.set('mock_db_subcollections', all);
       return;
     }
-    await setDoc(doc(db, 'subcollections', data.id), data);
+    await setDoc(doc(db as Firestore, 'subcollections', data.id), data);
   },
   async deleteSubcollection(id: string): Promise<void> {
     if (isMock) {
@@ -77,7 +78,7 @@ export const firestoreService = {
       mockDb.set('mock_db_subcollections', all.filter(item => item.id !== id));
       return;
     }
-    await deleteDoc(doc(db, 'subcollections', id));
+    await deleteDoc(doc(db as Firestore, 'subcollections', id));
   },
 
   // Tasks
@@ -86,7 +87,7 @@ export const firestoreService = {
       const all = mockDb.get<Task>('mock_db_tasks');
       return all.filter(item => item.userId === userId);
     }
-    const q = query(collection(db, 'tasks'), where('userId', '==', userId));
+    const q = query(collection(db as Firestore, 'tasks'), where('userId', '==', userId));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => doc.data() as Task);
   },
@@ -102,7 +103,7 @@ export const firestoreService = {
       mockDb.set('mock_db_tasks', all);
       return;
     }
-    await setDoc(doc(db, 'tasks', data.id), data);
+    await setDoc(doc(db as Firestore, 'tasks', data.id), data);
   },
   async updateTask(data: Task): Promise<void> {
     if (isMock) {
@@ -114,7 +115,7 @@ export const firestoreService = {
       }
       return;
     }
-    await setDoc(doc(db, 'tasks', data.id), data);
+    await setDoc(doc(db as Firestore, 'tasks', data.id), data);
   },
   async deleteTask(id: string): Promise<void> {
     if (isMock) {
@@ -122,7 +123,7 @@ export const firestoreService = {
       mockDb.set('mock_db_tasks', all.filter(item => item.id !== id));
       return;
     }
-    await deleteDoc(doc(db, 'tasks', id));
+    await deleteDoc(doc(db as Firestore, 'tasks', id));
   },
 
   // Subtasks
@@ -131,7 +132,7 @@ export const firestoreService = {
       const all = mockDb.get<Subtask>('mock_db_subtasks');
       return all.filter(item => item.userId === userId);
     }
-    const q = query(collection(db, 'subtasks'), where('userId', '==', userId));
+    const q = query(collection(db as Firestore, 'subtasks'), where('userId', '==', userId));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => doc.data() as Subtask);
   },
@@ -147,7 +148,7 @@ export const firestoreService = {
       mockDb.set('mock_db_subtasks', all);
       return;
     }
-    await setDoc(doc(db, 'subtasks', data.id), data);
+    await setDoc(doc(db as Firestore, 'subtasks', data.id), data);
   },
   async updateSubtask(data: Subtask): Promise<void> {
     if (isMock) {
@@ -159,7 +160,7 @@ export const firestoreService = {
       }
       return;
     }
-    await setDoc(doc(db, 'subtasks', data.id), data);
+    await setDoc(doc(db as Firestore, 'subtasks', data.id), data);
   },
   async deleteSubtask(id: string): Promise<void> {
     if (isMock) {
@@ -167,6 +168,6 @@ export const firestoreService = {
       mockDb.set('mock_db_subtasks', all.filter(item => item.id !== id));
       return;
     }
-    await deleteDoc(doc(db, 'subtasks', id));
+    await deleteDoc(doc(db as Firestore, 'subtasks', id));
   }
 };

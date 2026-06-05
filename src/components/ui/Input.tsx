@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -12,7 +12,8 @@ export const Input = ({
   id,
   ...props
 }: InputProps) => {
-  const inputId = id || `input-${Math.random().toString(36).substring(2, 11)}`;
+  const reactId = useId();
+  const inputId = id || reactId;
 
 
   return (

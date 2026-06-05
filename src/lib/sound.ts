@@ -1,7 +1,7 @@
 export const playCompletionSound = (enabled: boolean) => {
   if (!enabled) return;
   try {
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!AudioContextClass) return;
     
     const audioCtx = new AudioContextClass();

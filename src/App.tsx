@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { RouterProvider } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { router } from './routes';
 import { useAuth } from './hooks/useAuth';
 import { useAppSelector } from './hooks/useRedux';
 
-const App: React.FC = () => {
+const App = () => {
   useAuth(); // Initialize auth listener
   const { fontFamily, fontSize } = useAppSelector((state) => state.settings);
 

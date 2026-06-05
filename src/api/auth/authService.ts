@@ -1,4 +1,6 @@
-import { auth } from '../../lib/firebase';
+import { auth, isMock } from '../../lib/firebase';
+import type { MockAuth } from '../../lib/firebase';
+import type { Auth } from 'firebase/auth';
 import { sleep } from '../base';
 import type { UserProfile } from '../../types';
 import {
@@ -13,8 +15,12 @@ import {
 export const authService = {
   async loginWithEmail(email: string, password?: string): Promise<UserProfile> {
     await sleep();
-    if (auth && 'mockSignIn' in auth) {
-      const user = await auth.mockSignIn(email);
+    if (!auth) {
+      throw new Error('Authentication is not initialized.');
+    }
+    
+    if (isMock) {
+      const user = await (auth as unknown as MockAuth).mockSignIn(email);
       return {
         uid: user.uid,
         email: user.email,
@@ -28,7 +34,7 @@ export const authService = {
       throw new Error('Password is required for email authentication.');
     }
 
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const userCredential = await signInWithEmailAndPassword(auth as Auth, email, password);
     const user = userCredential.user;
     return {
       uid: user.uid,
@@ -41,8 +47,12 @@ export const authService = {
 
   async signUpWithEmail(email: string, password?: string, displayName?: string): Promise<UserProfile> {
     await sleep();
-    if (auth && 'mockSignIn' in auth) {
-      const user = await auth.mockSignIn(email);
+    if (!auth) {
+      throw new Error('Authentication is not initialized.');
+    }
+
+    if (isMock) {
+      const user = await (auth as unknown as MockAuth).mockSignIn(email);
       if (displayName) {
         user.displayName = displayName;
       }
@@ -59,7 +69,7 @@ export const authService = {
       throw new Error('Password is required for creating an account.');
     }
 
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const userCredential = await createUserWithEmailAndPassword(auth as Auth, email, password);
     if (displayName) {
       await updateProfile(userCredential.user, { displayName });
     }
@@ -77,8 +87,12 @@ export const authService = {
 
   async loginWithGoogle(): Promise<UserProfile> {
     await sleep();
-    if (auth && 'mockSignIn' in auth) {
-      const user = await auth.mockSignIn('google-user@gmail.com');
+    if (!auth) {
+      throw new Error('Authentication is not initialized.');
+    }
+
+    if (isMock) {
+      const user = await (auth as unknown as MockAuth).mockSignIn('google-user@gmail.com');
       return {
         uid: "google-" + user.uid,
         email: "google-user@gmail.com",
@@ -92,7 +106,7 @@ export const authService = {
     // Prompt Google accounts popup
     provider.setCustomParameters({ prompt: 'select_account' });
     
-    const userCredential = await signInWithPopup(auth, provider);
+    const userCredential = await signInWithPopup(auth as Auth, provider);
     const user = userCredential.user;
     return {
       uid: user.uid,
@@ -105,10 +119,14 @@ export const authService = {
 
   async logout(): Promise<void> {
     await sleep();
-    if (auth && 'mockSignOut' in auth) {
-      await auth.mockSignOut();
+    if (!auth) {
       return;
     }
-    await signOut(auth);
+
+    if (isMock) {
+      await (auth as unknown as MockAuth).mockSignOut();
+      return;
+    }
+    await signOut(auth as Auth);
   }
 };

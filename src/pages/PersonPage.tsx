@@ -1,8 +1,7 @@
-import React from 'react';
 import { Heart, Terminal, Award, Cpu, Code2 } from 'lucide-react';
 import { PageHeader } from '../components/patterns/PageHeader';
 
-export const PersonPage: React.FC = () => {
+export const PersonPage = () => {
   const developers = [
     {
       name: 'Productivity Architect',

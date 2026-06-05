@@ -1,11 +1,10 @@
-import React from 'react';
 import { Award, Flame, CheckSquare, Sparkles, TrendingUp } from 'lucide-react';
 import { useAppSelector } from '../hooks/useRedux';
 import { PageHeader } from '../components/patterns/PageHeader';
 import { StreakFlame } from '../components/features/profile/StreakFlame';
 import { XPProgress } from '../components/features/profile/XPProgress';
 
-export const ProfilePage: React.FC = () => {
+export const ProfilePage = () => {
   const { streak, xp } = useAppSelector((state) => state.profile);
   const { tasks } = useAppSelector((state) => state.todo);
 

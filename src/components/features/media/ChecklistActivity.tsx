@@ -91,7 +91,7 @@ export const ChecklistActivity = ({
       setNewSubtaskTitle('');
       setNewSubtaskPriority('low'); // Reset to default low
       toast('Drafted checklist subtask successfully! 🧱', 'success');
-    } catch (err) {
+    } catch {
       toast('Failed to append subtask checklist.', 'error');
     } finally {
       setIsSubmitting(false);
@@ -139,7 +139,7 @@ export const ChecklistActivity = ({
       setIsBulkMode(false);
       setNewSubtaskPriority('low'); // Reset to default low
       toast(`Successfully imported ${newSubtasks.length} checklist items! 🧱`, 'success');
-    } catch (err) {
+    } catch {
       toast('Failed to bulk import subtasks.', 'error');
     } finally {
       setIsSubmitting(false);
@@ -162,7 +162,7 @@ export const ChecklistActivity = ({
       } else {
         toast('Subtask reverted to active.', 'info');
       }
-    } catch (err) {
+    } catch {
       toast('Failed to mutate checklist state.', 'error');
     }
   };
@@ -184,7 +184,7 @@ export const ChecklistActivity = ({
           toast('Subtask restored.', 'success');
         }
       } : undefined);
-    } catch (err) {
+    } catch {
       toast('Failed to delete subtask.', 'error');
     } finally {
       setSubtaskToDeleteId(null);

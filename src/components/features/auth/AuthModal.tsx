@@ -54,9 +54,10 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
 
       dispatch(setUser(userProfile));
       onClose();
-    } catch (err: any) {
-      dispatch(setError(err.message));
-      toast(err.message || 'Authentication failed.', 'error');
+        } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Authentication failed.';
+      dispatch(setError(errorMessage));
+      toast(errorMessage, 'error');
     } finally {
       setIsSubmitting(false);
       dispatch(setLoading(false));
@@ -71,10 +72,12 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
       dispatch(setUser(userProfile));
       toast(`Successfully synced via Google as ${userProfile.displayName}! 🚀`, 'success');
       onClose();
-    } catch (err: any) {
-      if (err.code !== 'auth/popup-closed-by-user') {
-        dispatch(setError(err.message));
-        toast(err.message || 'Google Sign-In failed.', 'error');
+    } catch (err: unknown) {
+      const error = err as { code?: string; message?: string };
+      if (error.code !== 'auth/popup-closed-by-user') {
+        const errorMessage = error.message || 'Google Sign-In failed.';
+        dispatch(setError(errorMessage));
+        toast(errorMessage, 'error');
       }
     } finally {
       setIsSubmitting(false);

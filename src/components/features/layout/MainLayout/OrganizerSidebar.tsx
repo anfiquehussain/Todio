@@ -57,6 +57,7 @@ export const OrganizerSidebar = ({
   }, [expandedCollections]);
 
   // Auto-expand list when active collection ID changes (e.g. from Go shortcut)
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (activeCollectionId) {
       setExpandedCollections(prev => {
@@ -65,6 +66,7 @@ export const OrganizerSidebar = ({
       });
     }
   }, [activeCollectionId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const [isCreatingCollection, setIsCreatingCollection] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');

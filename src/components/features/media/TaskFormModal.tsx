@@ -15,14 +15,14 @@ interface TaskFormModalProps {
   defaultSubcollectionId?: string | null;
 }
 
-export const TaskFormModal: React.FC<TaskFormModalProps> = ({
+export const TaskFormModal = ({
   isOpen,
   onClose,
   onSubmit,
   editingTask,
   defaultCollectionId,
   defaultSubcollectionId,
-}) => {
+}: TaskFormModalProps) => {
   const { collections, subcollections } = useAppSelector((state) => state.todo);
   const { user } = useAppSelector((state) => state.auth);
   const [title, setTitle] = useState('');
@@ -32,6 +32,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
   const [priority, setPriority] = useState(3);
   const [dueDate, setDueDate] = useState('');
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (editingTask) {
       setTitle(editingTask.title || '');
@@ -49,6 +50,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
       setDueDate(new Date().toISOString().split('T')[0]);
     }
   }, [editingTask, isOpen, collections, defaultCollectionId, defaultSubcollectionId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

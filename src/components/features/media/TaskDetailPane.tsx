@@ -53,6 +53,7 @@ export const TaskDetailPane = () => {
   const activeTask = tasks.find(t => t.id === activeTaskId) || null;
 
   // Sync details pane inputs with active task
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (activeTask) {
       setDetailTitle(activeTask.title);
@@ -70,6 +71,7 @@ export const TaskDetailPane = () => {
       setDetailSubcollectionId(null);
     }
   }, [activeTaskId, activeTask]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Auto-save logic
   const handleUpdateActiveTask = (fields: Partial<Task>) => {

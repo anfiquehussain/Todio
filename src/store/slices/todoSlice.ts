@@ -117,6 +117,7 @@ export const restoreCollectionAsync = createAsyncThunk(
     const collection = state.todo.collections.find(c => c.id === id);
     if (collection) {
       const deletedAtTime = collection.deletedAt;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { deletedAt, ...restCol } = collection;
       const updatedCollection = { ...restCol, deleted: false };
       await firestoreService.createCollection(updatedCollection);
@@ -124,6 +125,7 @@ export const restoreCollectionAsync = createAsyncThunk(
       // Restore child subcollections deleted in the same batch
       const childSubs = state.todo.subcollections.filter(s => s.collectionId === id && s.deleted && s.deletedAt === deletedAtTime);
       await Promise.all(childSubs.map(s => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { deletedAt: d, ...restSub } = s;
         const restoredSub = { ...restSub, deleted: false };
         return firestoreService.createSubcollection(restoredSub);
@@ -132,6 +134,7 @@ export const restoreCollectionAsync = createAsyncThunk(
       // Restore child tasks deleted in the same batch
       const childTasks = state.todo.tasks.filter(t => t.collectionId === id && t.deleted && t.deletedAt === deletedAtTime);
       await Promise.all(childTasks.map(t => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { deletedAt: d, ...restTask } = t;
         const restoredTask = { ...restTask, deleted: false };
         return firestoreService.updateTask(restoredTask);
@@ -216,12 +219,14 @@ export const restoreSubcollectionAsync = createAsyncThunk(
     const subcollection = state.todo.subcollections.find(s => s.id === id);
     if (subcollection) {
       const deletedAtTime = subcollection.deletedAt;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { deletedAt, ...restSub } = subcollection;
       const restoredSub = { ...restSub, deleted: false };
       await firestoreService.createSubcollection(restoredSub);
 
       const childTasks = state.todo.tasks.filter(t => t.subcollectionId === id && t.deleted && t.deletedAt === deletedAtTime);
       await Promise.all(childTasks.map(t => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { deletedAt: d, ...restTask } = t;
         const restoredTask = { ...restTask, deleted: false };
         return firestoreService.updateTask(restoredTask);
@@ -302,6 +307,7 @@ export const restoreTaskAsync = createAsyncThunk(
     const task = state.todo.tasks.find(t => t.id === id);
     if (task) {
       const deletedAtTime = task.deletedAt;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { deletedAt, ...restTask } = task;
       const restoredTask = { ...restTask, deleted: false };
       await firestoreService.updateTask(restoredTask);
@@ -309,6 +315,7 @@ export const restoreTaskAsync = createAsyncThunk(
       // Restore child subtasks deleted in the same batch
       const childSubtasks = state.todo.subtasks.filter(s => s.taskId === id && s.deleted && s.deletedAt === deletedAtTime);
       await Promise.all(childSubtasks.map(s => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { deletedAt: d, ...restSub } = s;
         const restoredSubtask = { ...restSub, deleted: false };
         return firestoreService.createSubtask(restoredSubtask);
@@ -376,6 +383,7 @@ export const restoreSubtaskAsync = createAsyncThunk(
     const state = getState() as { todo: TodoState };
     const subtask = state.todo.subtasks.find(s => s.id === id);
     if (subtask) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { deletedAt, ...restSub } = subtask;
       const restored = { ...restSub, deleted: false };
       await firestoreService.createSubtask(restored);
@@ -657,7 +665,7 @@ const todoSlice = createSlice({
         if (payload && typeof payload === 'object' && 'id' in payload) {
           const index = state.subtasks.findIndex(s => s.id === payload.id);
           if (index !== -1) {
-            state.subtasks[index] = payload as any;
+            state.subtasks[index] = payload as Subtask;
           }
         }
       })
@@ -700,7 +708,7 @@ const todoSlice = createSlice({
         if (payload && typeof payload === 'object' && 'id' in payload) {
           const index = state.subtasks.findIndex(s => s.id === payload.id);
           if (index !== -1) {
-            state.subtasks[index] = payload as any;
+            state.subtasks[index] = payload as Subtask;
           }
         }
       })

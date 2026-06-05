@@ -20,7 +20,7 @@ src/
 ├── assets/             # Static assets (images, logos)
 ├── components/         # UI Components (3-Layer Architecture)
 │   ├── ui/             # [Layer 1] Primitives (Button.tsx, IconButton.tsx, Input.tsx, Rating.tsx, Skeleton.tsx)
-│   ├── patterns/       # [Layer 2] Reusable Patterns (Modal, ConfirmationModal, PageHeader, MediaScroll, MediaCard, StatusBadge, SearchBar, ProtectedRoute, BackToTopButton)
+│   ├── patterns/       # [Layer 2] Reusable Patterns (Modal, ConfirmationModal, PageHeader, MediaScroll, MediaCard, StatusBadge, SearchBar, ProtectedRoute, BackToTopButton, ExpandableText)
 │   └── features/       # [Layer 3] Feature Components (Grouped by domain)
 │       ├── auth/       # Authentication (AuthModal.tsx)
 │       ├── layout/     # Global structure features
@@ -31,6 +31,10 @@ src/
 │       │       └── OrganizerSidebar.tsx # Smart views and completed sidebar
 │       ├── media/      # Task-specific feature components
 │       │   ├── TaskList.tsx # Tasks list manager, inline quick-adds, & filters
+│       │   ├── TaskList/   # Encapsulated task list building blocks
+│       │   │   ├── SubtaskProgress.tsx # Circular subtask completion gauge
+│       │   │   ├── ActiveTaskItem.tsx # Individual task row component
+│       │   │   └── TrashQueueView.tsx # Soft-deleted items workspace queue
 │       │   ├── TaskDetailPane.tsx # Task details coordinator wrapper
 │       │   ├── ChecklistActivity.tsx # Standard task details checklist timeline
 │       │   ├── TaskFormModal.tsx # Task add/edit configuration modal
@@ -38,6 +42,8 @@ src/
 │       │       ├── TaskDetailHeader.tsx # Header details toolbar
 │       │       ├── TaskDescription.tsx # Description textarea
 │       │       ├── SubtaskChecklist.tsx # Subtask checklists
+│       │       ├── SubtaskChecklist/ # Encapsulated subtask checklist elements
+│       │       │   └── ActiveSubtaskItem.tsx # Individual subtask row component
 │       │       └── ExportModal.tsx # Interactive task & subtask configurations exporter
 │       ├── profile/    # Profile & analytics components
 │       │   ├── StreakFlame.tsx # Gold/silver streak SVG gauge meters
@@ -46,14 +52,17 @@ src/
 │       │   └── CategoryManager.tsx # Workspace list tag manager
 │       └── settings/   # Customization features
 │           ├── FontCustomizer.tsx # Typography and size multipliers
-│           └── SandboxPreview.tsx # UI sandbox mockup preview
+│           ├── SandboxPreview.tsx # UI sandbox mockup preview
+│           ├── BackupManager.tsx # JSON import/export database manager
+│           └── SoundManager.tsx # Audio synthesizer bell settings toggle
 ├── hooks/              # Reusable global hooks
 │   ├── useAuth.ts      # Auth logic and state sync with Redux
 │   ├── useAuthGuard.ts # Action security cloud lock validation
 │   ├── useRedux.ts     # Pre-typed useAppDispatch & useAppSelector
 │   ├── useToast.ts     # Typed toast notification hook (Sonner wrapper)
 │   ├── usePWA.ts       # PWA installer prompt and state manager hook
-│   └── useIntersectionObserver.ts # Observer hook for infinite scroll loading
+│   ├── useIntersectionObserver.ts # Observer hook for infinite scroll loading
+│   └── useTaskDetailsPage.ts # State/action coordinator for MediaDetailsPage.tsx
 ├── lib/                # Third-party library configs
 │   ├── firebase.ts     # Firebase config credentials initialization
 │   └── sound.ts        # Web Audio API Synthesizer bell sounds

@@ -26,7 +26,7 @@ export const usePWA = () => {
       let isRelatedAppInstalled = false;
       if ('getInstalledRelatedApps' in navigator) {
         try {
-          const relatedApps = await (navigator as any).getInstalledRelatedApps();
+          const relatedApps = await (navigator as unknown as { getInstalledRelatedApps: () => Promise<unknown[]> }).getInstalledRelatedApps();
           isRelatedAppInstalled = relatedApps.length > 0;
         } catch (e) {
           console.warn('Failed to query installed related apps:', e);
