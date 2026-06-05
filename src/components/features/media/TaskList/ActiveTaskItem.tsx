@@ -1,6 +1,6 @@
-import { Reorder, useDragControls } from 'framer-motion';
+import { Reorder, useDragControls, AnimatePresence, motion } from 'framer-motion';
 import { 
-  Check, GripVertical, Folder, LayoutList, ArrowRight, Copy, Edit2, Trash2, X
+  Check, GripVertical, Folder, LayoutList, ArrowRight, Copy, Edit2, Trash2, X, ChevronDown
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../../../hooks/useRedux';
 import { 
@@ -39,6 +39,8 @@ interface ActiveTaskItemProps {
   setDropPosition: (pos: 'top' | 'bottom' | null) => void;
   activeQueue: Task[];
   sortBy: string;
+  manuallyExpandedTaskIds: Record<string, boolean>;
+  setManuallyExpandedTaskIds: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
 }
 
 export const ActiveTaskItem = ({
@@ -65,30 +67,35 @@ export const ActiveTaskItem = ({
   setDropPosition,
   activeQueue,
   sortBy,
+  manuallyExpandedTaskIds,
+  setManuallyExpandedTaskIds,
 }: ActiveTaskItemProps) => {
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const dragControls = useDragControls();
   const { checkAuth } = useAuthGuard();
 
-  const { showSubtasksInline, showListBadges } = useAppSelector((state) => state.settings);
+  const { showListBadges, subtaskFilter } = useAppSelector((state) => state.settings);
   const { collections, subcollections, subtasks: allSubtasks, soundEnabled } = useAppSelector((state) => state.todo);
 
   const col = collections.find(c => c.id === task.collectionId);
   const sub = subcollections.find(s => s.id === task.subcollectionId);
 
   const taskSubtasks = allSubtasks.filter(s => s.taskId === task.id && !s.deleted);
+
+  const isExpanded = manuallyExpandedTaskIds[task.id] === true;
+
   const inlineSubtasks = taskSubtasks.filter(s => {
-    if (showSubtasksInline === 'all') return true;
-    if (showSubtasksInline === 'imported-priority') {
+    if (s.completed) return false;
+    if (subtaskFilter === 'priority') {
       return (
-        s.priority === 'high' || 
-        s.priority === 'medium' || 
-        task.imported === true || 
+        s.priority === 'high' ||
+        s.priority === 'medium' ||
+        task.imported === true ||
         task.priority >= 4
       );
     }
-    return false;
+    return true;
   });
 
   const handleToggleSubtaskInline = async (subtaskItem: Subtask) => {
@@ -292,6 +299,24 @@ export const ActiveTaskItem = ({
             >
               <GripVertical className="w-3.5 h-3.5" />
             </div>
+            {taskSubtasks.length > 0 ? (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setManuallyExpandedTaskIds(prev => ({
+                    ...prev,
+                    [task.id]: !isExpanded
+                  }));
+                }}
+                className="p-1 -ml-1 text-text-secondary/50 hover:text-text-primary hover:bg-[#282828] rounded transition-colors shrink-0 mt-0.5 cursor-pointer flex items-center justify-center"
+                title={isExpanded ? "Collapse subtasks" : "Expand subtasks"}
+                aria-label={isExpanded ? "Collapse subtasks" : "Expand subtasks"}
+              >
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`} />
+              </button>
+            ) : (
+              <div className="w-5.5 h-5.5 shrink-0" />
+            )}
             <button
               onClick={(e) => { e.stopPropagation(); handleToggleComplete(task); }}
               className={`w-4.5 h-4.5 rounded-full border bg-bg-secondary flex items-center justify-center text-transparent transition-all shrink-0 cursor-pointer mt-0.5 ${
@@ -386,60 +411,57 @@ export const ActiveTaskItem = ({
       )}
 
       {/* Inline Subtasks List */}
-      {showSubtasksInline !== 'none' && inlineSubtasks.length > 0 && !editingTaskId && (
-        <div className="mt-0.5 mb-1.5 ml-8 mr-2 flex flex-col gap-1.5 pl-3 border-l border-gray-border/40 select-none animate-slide-in">
-          {inlineSubtasks.map(subtaskItem => (
-             <div 
-               key={subtaskItem.id} 
-               onClick={(e) => e.stopPropagation()} 
-               className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border text-[10px] font-bold transition-all bg-[#1a1a1a]/40 ${
-                 subtaskItem.completed
-                   ? 'border-success/20 border-l-2 border-l-success opacity-60 bg-success/5'
-                   : subtaskItem.priority === 'high'
-                     ? 'border-error/20 border-l-2 border-l-error bg-error/5 hover:bg-error/10'
-                     : subtaskItem.priority === 'medium'
-                       ? 'border-warning/20 border-l-2 border-l-warning bg-warning/5 hover:bg-warning/10'
-                       : 'border-gray-border/60 border-l-2 border-l-success bg-[#121212]/40 hover:bg-[#151515]/50'
-               }`}
-             >
-               <div className="flex items-center gap-2 overflow-hidden flex-1">
-                 <button
-                   onClick={(e) => {
-                     e.stopPropagation();
-                     handleToggleSubtaskInline(subtaskItem);
-                   }}
-                   className={`w-3.5 h-3.5 rounded-md flex items-center justify-center border transition-all shrink-0 cursor-pointer ${
-                     subtaskItem.completed
-                       ? 'bg-success border-success text-white'
-                       : subtaskItem.priority === 'high'
-                         ? 'border-error hover:border-error/80'
-                         : subtaskItem.priority === 'medium'
-                           ? 'border-warning hover:border-warning/80'
-                           : 'border-gray-border hover:border-text-secondary'
-                   }`}
-                   aria-label="Toggle subtask completion"
-                 >
-                   {subtaskItem.completed && <Check className="w-2.5 h-2.5 text-white" />}
-                 </button>
-                 <span className={`truncate text-left ${subtaskItem.completed ? 'text-text-secondary line-through opacity-60' : 'text-text-primary'}`}>
-                   {subtaskItem.title}
-                 </span>
+      <AnimatePresence initial={false}>
+        {isExpanded && inlineSubtasks.length > 0 && !editingTaskId && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            className="mt-0.5 mb-1.5 ml-8 mr-2 flex flex-col gap-1.5 pl-3 border-l border-gray-border/40 select-none overflow-hidden"
+          >
+            {inlineSubtasks.map(subtaskItem => (
+               <div 
+                 key={subtaskItem.id} 
+                 onClick={(e) => e.stopPropagation()} 
+                 className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border text-[10px] font-bold transition-all bg-[#1a1a1a]/40 ${
+                   subtaskItem.completed
+                     ? 'border-success/20 border-l-2 border-l-success opacity-60 bg-success/5'
+                     : subtaskItem.priority === 'high'
+                       ? 'border-error/20 border-l-2 border-l-error bg-error/5 hover:bg-error/10'
+                       : subtaskItem.priority === 'medium'
+                         ? 'border-warning/20 border-l-2 border-l-warning bg-warning/5 hover:bg-warning/10'
+                         : 'border-gray-border/60 border-l-2 border-l-success bg-[#121212]/40 hover:bg-[#151515]/50'
+                 }`}
+               >
+                 <div className="flex items-center gap-2 overflow-hidden flex-1">
+                   <button
+                     onClick={(e) => {
+                       e.stopPropagation();
+                       handleToggleSubtaskInline(subtaskItem);
+                     }}
+                     className={`w-3.5 h-3.5 rounded-md flex items-center justify-center border transition-all shrink-0 cursor-pointer ${
+                       subtaskItem.completed
+                         ? 'bg-success border-success text-white'
+                         : subtaskItem.priority === 'high'
+                           ? 'border-error hover:border-error/80'
+                           : subtaskItem.priority === 'medium'
+                             ? 'border-warning hover:border-warning/80'
+                             : 'border-gray-border hover:border-text-secondary'
+                     }`}
+                     aria-label="Toggle subtask completion"
+                   >
+                     {subtaskItem.completed && <Check className="w-2.5 h-2.5 text-white" />}
+                   </button>
+                   <span className={`truncate text-left ${subtaskItem.completed ? 'text-text-secondary line-through opacity-60' : 'text-text-primary'}`}>
+                     {subtaskItem.title}
+                   </span>
+                 </div>
                </div>
-               {subtaskItem.priority && (
-                 <span className={`text-[8px] font-black uppercase px-1 py-0.5 rounded-sm shrink-0 ${
-                   subtaskItem.priority === 'high'
-                     ? 'bg-error/10 text-error'
-                     : subtaskItem.priority === 'medium'
-                       ? 'bg-warning/10 text-warning'
-                       : 'bg-success/10 text-success'
-                 }`}>
-                   {subtaskItem.priority}
-                 </span>
-               )}
-             </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {dragOverTaskId === task.id && dropPosition === 'bottom' && draggedTaskId !== task.id && (
         <div className="absolute bottom-0 left-0 right-0 h-[4px] bg-brand-primary shadow-[0_0_10px_#6366f1] rounded-full z-50 pointer-events-none" />

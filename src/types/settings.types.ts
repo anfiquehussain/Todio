@@ -4,6 +4,6 @@ export type SettingsFontSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 export interface SettingsState {
   fontFamily: SettingsFontFamily;
   fontSize: SettingsFontSize;
-  showSubtasksInline: 'none' | 'all' | 'imported-priority';
+  subtaskFilter: 'all' | 'priority';
   showListBadges: boolean;
 }

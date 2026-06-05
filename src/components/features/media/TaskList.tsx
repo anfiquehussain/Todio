@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { 
   Plus, Check, Trash2, Smile, Edit2, X, Copy, GripVertical, ArrowRight,
-  ArrowDown, ArrowUp, ArrowDownAZ, ArrowDownZA, Clock, Calendar, Folder, LayoutList
+  ArrowDown, ArrowUp, ArrowDownAZ, ArrowDownZA, Clock, Calendar, Folder, LayoutList, ChevronDown,
+  ListFilter, ChevronsUpDown
 } from 'lucide-react';
-import { Reorder } from 'framer-motion';
+import { Reorder, AnimatePresence, motion } from 'framer-motion';
 import { useAppSelector, useAppDispatch } from '../../../hooks/useRedux';
 import { 
   createTaskAsync, updateTaskAsync, deleteTaskAsync, 
@@ -13,7 +14,7 @@ import {
 } from '../../../store/slices/todoSlice';
 import { incrementXP, updateStreak } from '../../../store/slices/profileSlice';
 import { playCompletionSound } from '../../../lib/sound';
-import { setShowSubtasksInline, setShowListBadges } from '../../../store/slices/settingsSlice';
+import { setShowListBadges, setSubtaskFilter } from '../../../store/slices/settingsSlice';
 import { useToast } from '../../../hooks/useToast';
 import { useAuthGuard } from '../../../hooks/useAuthGuard';
 import { Modal } from '../../patterns/Modal';
@@ -35,7 +36,7 @@ export const TaskList = () => {
     tasks: allTasks, collections: allCollections, subcollections: allSubcollections, activeCollectionId, 
     activeSubcollectionId, activeTaskId, filter, sortBy, soundEnabled, subtasks: allSubtasks
   } = useAppSelector((state) => state.todo);
-  const { showSubtasksInline, showListBadges } = useAppSelector((state) => state.settings);
+  const { showListBadges, subtaskFilter } = useAppSelector((state) => state.settings);
 
   const collections = allCollections.filter(c => !c.deleted);
   const subcollections = allSubcollections.filter(s => !s.deleted);
@@ -46,6 +47,7 @@ export const TaskList = () => {
 
   const [newTitle, setNewTitle] = useState('');
   const [expandedCompleted, setExpandedCompleted] = useState(false);
+  const [manuallyExpandedTaskIds, setManuallyExpandedTaskIds] = useState<Record<string, boolean>>({});
 
   const taskSortOptions = {
     custom: { label: 'Manual Order', icon: GripVertical },
@@ -185,6 +187,24 @@ export const TaskList = () => {
 
   const activeQueue = sortedTasks.filter(t => !t.completed);
   const completedQueue = sortedTasks.filter(t => t.completed);
+
+  const visibleTasks = getFilteredTasks();
+  const anyExpanded = visibleTasks.some(t => manuallyExpandedTaskIds[t.id] === true);
+
+  const handleToggleExpandAll = () => {
+    if (anyExpanded) {
+      setManuallyExpandedTaskIds({});
+    } else {
+      const newExpanded: Record<string, boolean> = {};
+      visibleTasks.forEach(t => {
+        const hasSubtasks = subtasks.some(s => s.taskId === t.id && !s.deleted);
+        if (hasSubtasks) {
+          newExpanded[t.id] = true;
+        }
+      });
+      setManuallyExpandedTaskIds(newExpanded);
+    }
+  };
 
   // Quick Add Task Form Submit
   const handleQuickAddTask = async (e: React.FormEvent) => {
@@ -409,52 +429,39 @@ export const TaskList = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          {/* Subtasks inline toggle button */}
+          {/* Expand/Collapse All Button */}
           <button
             onClick={() => {
-              const modes: Array<'none' | 'all' | 'imported-priority'> = ['none', 'all', 'imported-priority'];
-              const idx = modes.indexOf(showSubtasksInline);
-              const nextMode = modes[(idx + 1) % modes.length];
-              dispatch(setShowSubtasksInline(nextMode));
+              handleToggleExpandAll();
               playCompletionSound(soundEnabled);
-              toast(
-                nextMode === 'none'
-                  ? 'Inline subtasks hidden.'
-                  : nextMode === 'all'
-                  ? 'Showing all inline subtasks!'
-                  : 'Showing priority/imported inline subtasks!',
-                'success'
-              );
             }}
-            className={`flex items-center justify-center p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border transition-all cursor-pointer text-[10px] font-bold shadow-sm ${
-              showSubtasksInline === 'none'
+            className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all cursor-pointer shadow-sm ${
+              !anyExpanded
                 ? 'border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525]'
-                : showSubtasksInline === 'all'
-                  ? 'border-brand-primary/40 bg-brand-primary/10 text-brand-primary shadow-[0_0_10px_rgba(99,102,241,0.15)]'
-                  : 'border-brand-secondary/40 bg-brand-secondary/10 text-brand-secondary shadow-[0_0_10px_rgba(6,182,212,0.15)]'
+                : 'border-brand-primary/40 bg-brand-primary/10 text-brand-primary shadow-[0_0_10px_rgba(99,102,241,0.15)]'
             }`}
-            title={`Inline Subtasks: ${
-              showSubtasksInline === 'none' 
-                ? 'Hidden' 
-                : showSubtasksInline === 'all' 
-                  ? 'All' 
-                  : 'Priority/Imported'
-            } (Click to cycle)`}
-            aria-label="Cycle inline subtasks options"
+            title={anyExpanded ? 'Collapse All Tasks' : 'Expand All Tasks'}
+            aria-label="Toggle expand all tasks"
           >
-            <LayoutList className={`w-4 h-4 sm:w-3.5 sm:h-3.5 ${
-              showSubtasksInline === 'none'
-                ? 'text-text-secondary'
-                : showSubtasksInline === 'all'
-                  ? 'text-brand-primary'
-                  : 'text-brand-secondary'
-            }`} />
-            <div className="hidden sm:flex items-center gap-1">
-              <span className="text-[8px] font-black uppercase tracking-wider text-text-secondary/50 select-none">Subtasks:</span>
-              <span className="text-text-primary text-[10px] font-extrabold">
-                {showSubtasksInline === 'none' ? 'Hide' : showSubtasksInline === 'all' ? 'All' : 'Priority'}
-              </span>
-            </div>
+            <ChevronsUpDown className="w-4 h-4 text-inherit" />
+          </button>
+
+          {/* Subtasks Filter Button */}
+          <button
+            onClick={() => {
+              const nextFilter = subtaskFilter === 'all' ? 'priority' : 'all';
+              dispatch(setSubtaskFilter(nextFilter));
+              playCompletionSound(soundEnabled);
+            }}
+            className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all cursor-pointer shadow-sm ${
+              subtaskFilter === 'all'
+                ? 'border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525]'
+                : 'border-brand-primary/40 bg-brand-primary/10 text-brand-primary shadow-[0_0_10px_rgba(99,102,241,0.15)]'
+            }`}
+            title={`Subtask Filter: ${subtaskFilter === 'all' ? 'All Active' : 'Priority Only'}`}
+            aria-label="Toggle subtask filter"
+          >
+            <ListFilter className="w-4 h-4 text-inherit" />
           </button>
 
           {/* List badges toggle button */}
@@ -462,23 +469,19 @@ export const TaskList = () => {
             onClick={() => {
               dispatch(setShowListBadges(!showListBadges));
               playCompletionSound(soundEnabled);
-              toast(!showListBadges ? 'Workspace list badges visible!' : 'Workspace list badges hidden.', 'success');
             }}
-            className={`flex items-center justify-center p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border transition-all cursor-pointer text-[10px] font-bold shadow-sm ${
+            className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all cursor-pointer shadow-sm ${
               !showListBadges
                 ? 'border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525]'
                 : 'border-brand-primary/40 bg-brand-primary/10 text-brand-primary shadow-[0_0_10px_rgba(99,102,241,0.15)]'
             }`}
-            title={`Workspace Badges: ${showListBadges ? 'Visible' : 'Hidden'} (Click to toggle)`}
+            title={`Workspace Badges: ${showListBadges ? 'Visible' : 'Hidden'}`}
             aria-label="Toggle workspace badges"
           >
-            <Folder className={`w-4 h-4 sm:w-3.5 sm:h-3.5 ${showListBadges ? 'text-brand-primary' : 'text-text-secondary'}`} />
-            <div className="hidden sm:flex items-center gap-1">
-              <span className="text-[8px] font-black uppercase tracking-wider text-text-secondary/50 select-none">Badges:</span>
-              <span className="text-text-primary text-[10px] font-extrabold">{showListBadges ? 'On' : 'Off'}</span>
-            </div>
+            <Folder className="w-4 h-4 text-inherit" />
           </button>
 
+          {/* Sort Button */}
           <button
             onClick={() => {
               const order: Array<
@@ -489,9 +492,8 @@ export const TaskList = () => {
               const idx = order.indexOf(sortBy);
               const nextSort = order[(idx + 1) % order.length];
               dispatch(setSortBy(nextSort));
-              toast(`Sorted by: ${taskSortOptions[nextSort]?.label || 'Manual Order'} 🔄`, 'info');
             }}
-            className={`flex items-center justify-center p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border transition-all cursor-pointer text-[10px] font-bold shadow-sm ${
+            className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all cursor-pointer shadow-sm ${
               sortBy === 'custom'
                 ? 'border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525]'
                 : 'border-brand-primary/40 bg-brand-primary/10 text-brand-primary shadow-[0_0_10px_rgba(99,102,241,0.15)]'
@@ -499,11 +501,7 @@ export const TaskList = () => {
             title={`Active Sort: ${currentSort.label} (Click to cycle)`}
             aria-label="Cycle sorting options"
           >
-            <ActiveSortIcon className={`w-4 h-4 sm:w-3.5 sm:h-3.5 ${sortBy === 'custom' ? 'text-text-secondary' : 'text-brand-primary'}`} />
-            <div className="hidden sm:flex items-center gap-1">
-              <span className="text-[8px] font-black uppercase tracking-wider text-text-secondary/50 select-none">Sort:</span>
-              <span className="text-text-primary text-[10px] font-extrabold">{currentSort.label}</span>
-            </div>
+            <ActiveSortIcon className="w-4 h-4 text-inherit" />
           </button>
         </div>
       </div>
@@ -580,6 +578,8 @@ export const TaskList = () => {
                   setDropPosition={setDropPosition}
                   activeQueue={activeQueue}
                   sortBy={sortBy}
+                  manuallyExpandedTaskIds={manuallyExpandedTaskIds}
+                  setManuallyExpandedTaskIds={setManuallyExpandedTaskIds}
                 />
               ))}
             </Reorder.Group>
@@ -612,17 +612,18 @@ export const TaskList = () => {
                   const sub = subcollections.find(s => s.id === task.subcollectionId);
 
                   const taskSubtasks = subtasks.filter(s => s.taskId === task.id);
+                  const isExpanded = manuallyExpandedTaskIds[task.id] === true;
                   const inlineSubtasks = taskSubtasks.filter(s => {
-                    if (showSubtasksInline === 'all') return true;
-                    if (showSubtasksInline === 'imported-priority') {
+                    if (s.completed) return false;
+                    if (subtaskFilter === 'priority') {
                       return (
-                        s.priority === 'high' || 
-                        s.priority === 'medium' || 
-                        task.imported === true || 
+                        s.priority === 'high' ||
+                        s.priority === 'medium' ||
+                        task.imported === true ||
                         task.priority >= 4
                       );
                     }
-                    return false;
+                    return true;
                   });
 
                   return editingTaskId === task.id ? (
@@ -733,6 +734,25 @@ export const TaskList = () => {
                             <Check className="w-3.5 h-3.5" />
                           </button>
                           
+                          {taskSubtasks.length > 0 ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setManuallyExpandedTaskIds(prev => ({
+                                  ...prev,
+                                  [task.id]: !isExpanded
+                                }));
+                              }}
+                              className="p-1 -ml-1 text-text-secondary/50 hover:text-text-primary hover:bg-[#282828] rounded transition-colors shrink-0 mt-0.5 cursor-pointer flex items-center justify-center"
+                              title={isExpanded ? "Collapse subtasks" : "Expand subtasks"}
+                              aria-label={isExpanded ? "Collapse subtasks" : "Expand subtasks"}
+                            >
+                              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`} />
+                            </button>
+                          ) : (
+                            <div className="w-5.5 h-5.5 shrink-0" />
+                          )}
+                          
                           <div className="flex-1 min-w-0 flex flex-col gap-1 justify-center">
                             <ExpandableText text={task.title} lineClass="text-text-secondary line-through opacity-60" />
                             {showListBadges && (col || sub) && (
@@ -809,49 +829,57 @@ export const TaskList = () => {
                       </div>
 
                       {/* Inline Subtasks List for Completed Task */}
-                      {showSubtasksInline !== 'none' && inlineSubtasks.length > 0 && (
-                        <div className="mt-0.5 mb-1.5 ml-8 mr-2 flex flex-col gap-1.5 pl-3 border-l border-gray-border/40 select-none animate-slide-in">
-                          {inlineSubtasks.map(subtaskItem => (
-                            <div 
-                              key={subtaskItem.id} 
-                              onClick={(e) => e.stopPropagation()} 
-                              className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border text-[10px] font-bold transition-all bg-[#1a1a1a]/40 ${
-                                subtaskItem.completed
-                                  ? 'border-success/20 border-l-2 border-l-success opacity-60 bg-success/5'
-                                  : subtaskItem.priority === 'high'
-                                    ? 'border-error/20 border-l-2 border-l-error bg-error/5'
-                                    : subtaskItem.priority === 'medium'
-                                      ? 'border-warning/20 border-l-2 border-l-warning bg-warning/5'
-                                      : 'border-gray-border/60 border-l-2 border-l-success bg-[#121212]/40'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2 overflow-hidden flex-1">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleToggleSubtaskInline(subtaskItem, task);
-                                  }}
-                                  className={`w-3.5 h-3.5 rounded-md flex items-center justify-center border transition-all shrink-0 cursor-pointer ${
-                                    subtaskItem.completed
-                                      ? 'bg-success border-success text-white'
-                                      : subtaskItem.priority === 'high'
-                                        ? 'border-error hover:border-error/80'
-                                        : subtaskItem.priority === 'medium'
-                                          ? 'border-warning hover:border-warning/80'
-                                          : 'border-gray-border hover:border-text-secondary'
-                                  }`}
-                                  aria-label="Toggle subtask completion"
-                                >
-                                  {subtaskItem.completed && <Check className="w-2.5 h-2.5 text-white" />}
-                                </button>
-                                <span className={`truncate text-left ${subtaskItem.completed ? 'text-text-secondary line-through opacity-60' : 'text-text-primary'}`}>
-                                  {subtaskItem.title}
-                                </span>
+                      <AnimatePresence initial={false}>
+                        {isExpanded && inlineSubtasks.length > 0 && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2, ease: 'easeInOut' }}
+                            className="mt-0.5 mb-1.5 ml-8 mr-2 flex flex-col gap-1.5 pl-3 border-l border-gray-border/40 select-none overflow-hidden"
+                          >
+                            {inlineSubtasks.map(subtaskItem => (
+                              <div 
+                                key={subtaskItem.id} 
+                                onClick={(e) => e.stopPropagation()} 
+                                className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border text-[10px] font-bold transition-all bg-[#1a1a1a]/40 ${
+                                  subtaskItem.completed
+                                    ? 'border-success/20 border-l-2 border-l-success opacity-60 bg-success/5'
+                                    : subtaskItem.priority === 'high'
+                                      ? 'border-error/20 border-l-2 border-l-error bg-error/5'
+                                      : subtaskItem.priority === 'medium'
+                                        ? 'border-warning/20 border-l-2 border-l-warning bg-warning/5'
+                                        : 'border-gray-border/60 border-l-2 border-l-success bg-[#121212]/40'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 overflow-hidden flex-1">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleToggleSubtaskInline(subtaskItem, task);
+                                    }}
+                                    className={`w-3.5 h-3.5 rounded-md flex items-center justify-center border transition-all shrink-0 cursor-pointer ${
+                                      subtaskItem.completed
+                                        ? 'bg-success border-success text-white'
+                                        : subtaskItem.priority === 'high'
+                                          ? 'border-error hover:border-error/80'
+                                          : subtaskItem.priority === 'medium'
+                                            ? 'border-warning hover:border-warning/80'
+                                            : 'border-gray-border hover:border-text-secondary'
+                                    }`}
+                                    aria-label="Toggle subtask completion"
+                                  >
+                                    {subtaskItem.completed && <Check className="w-2.5 h-2.5 text-white" />}
+                                  </button>
+                                  <span className={`truncate text-left ${subtaskItem.completed ? 'text-text-secondary line-through opacity-60' : 'text-text-primary'}`}>
+                                    {subtaskItem.title}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   );
                 })}
