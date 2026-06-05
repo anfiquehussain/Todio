@@ -34,7 +34,8 @@ src/
 │       │   ├── TaskList/   # Encapsulated task list building blocks
 │       │   │   ├── SubtaskProgress.tsx # Circular subtask completion gauge
 │       │   │   ├── ActiveTaskItem.tsx # Individual task row component
-│       │   │   └── TrashQueueView.tsx # Soft-deleted items workspace queue
+│       │   │   ├── TrashQueueView.tsx # Soft-deleted items workspace queue
+│       │   │   └── BulkImportModal.tsx # Hierarchical bulk task importer modal
 │       │   ├── TaskDetailPane.tsx # Task details coordinator wrapper
 │       │   ├── ChecklistActivity.tsx # Standard task details checklist timeline
 │       │   ├── TaskFormModal.tsx # Task add/edit configuration modal

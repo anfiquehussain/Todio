@@ -458,6 +458,17 @@ export const createSubtasksBulkAsync = createAsyncThunk(
   }
 );
 
+export const createTasksBulkAsync = createAsyncThunk(
+  'todo/createTasksBulk',
+  async (payload: { tasks: Task[]; subtasks: Subtask[] }) => {
+    await Promise.all([
+      ...payload.tasks.map(t => firestoreService.createTask(t)),
+      ...payload.subtasks.map(s => firestoreService.createSubtask(s))
+    ]);
+    return payload;
+  }
+);
+
 export const updateTasksPositionsAsync = createAsyncThunk(
   'todo/updateTasksPositions',
   async (tasks: Task[]) => {
@@ -653,6 +664,10 @@ const todoSlice = createSlice({
       })
       .addCase(createSubtasksBulkAsync.fulfilled, (state, action) => {
         state.subtasks.push(...action.payload);
+      })
+      .addCase(createTasksBulkAsync.fulfilled, (state, action) => {
+        state.tasks.push(...action.payload.tasks);
+        state.subtasks.push(...action.payload.subtasks);
       })
       .addCase(updateSubtaskAsync.fulfilled, (state, action) => {
         const index = state.subtasks.findIndex(s => s.id === action.payload.id);

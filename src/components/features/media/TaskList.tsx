@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Plus, Check, Trash2, Smile, Edit2, X, Copy, GripVertical, ArrowRight,
   ArrowDown, ArrowUp, ArrowDownAZ, ArrowDownZA, Clock, Calendar, Folder, LayoutList, ChevronDown,
-  ListFilter, ChevronsUpDown
+  ListFilter, ChevronsUpDown, Upload
 } from 'lucide-react';
 import { Reorder, AnimatePresence, motion } from 'framer-motion';
 import { useAppSelector, useAppDispatch } from '../../../hooks/useRedux';
@@ -26,6 +26,7 @@ import { ExpandableText } from '../../patterns/ExpandableText';
 import { ActiveTaskItem } from './TaskList/ActiveTaskItem';
 import { TrashQueueView } from './TaskList/TrashQueueView';
 import { SubtaskProgress } from './TaskList/SubtaskProgress';
+import { BulkImportModal } from './TaskList/BulkImportModal';
 
 export const TaskList = () => {
   const dispatch = useAppDispatch();
@@ -69,11 +70,11 @@ export const TaskList = () => {
   const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
   const [dropPosition, setDropPosition] = useState<'top' | 'bottom' | null>(null);
 
-  // Task Editing Inline State
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTaskTitle, setEditingTaskTitle] = useState('');
   const [editingTaskPriority, setEditingTaskPriority] = useState<number>(1);
   const [taskToDeleteId, setTaskToDeleteId] = useState<string | null>(null);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
 
   const handleUpdateTaskInline = async (task: Task) => {
     if (!editingTaskTitle.trim()) return;
@@ -480,6 +481,21 @@ export const TaskList = () => {
           >
             <Folder className="w-4 h-4 text-inherit" />
           </button>
+
+          {/* Bulk Import Button */}
+          {filter !== 'trash' && (
+            <button
+              onClick={() => {
+                setIsBulkImportOpen(true);
+                playCompletionSound(soundEnabled);
+              }}
+              className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525] transition-all cursor-pointer shadow-sm"
+              title="Bulk Import Tasks"
+              aria-label="Bulk Import Tasks"
+            >
+              <Upload className="w-4 h-4 text-inherit" />
+            </button>
+          )}
 
           {/* Sort Button */}
           <button
@@ -975,6 +991,14 @@ export const TaskList = () => {
         message={`Are you sure you want to permanently delete "${tasks.find(t => t.id === taskToDeleteId)?.title || 'this task'}"?`}
         confirmLabel="Delete"
         isDanger={true}
+      />
+
+      <BulkImportModal
+        isOpen={isBulkImportOpen}
+        onClose={() => setIsBulkImportOpen(false)}
+        activeCollectionId={activeCollectionId}
+        activeSubcollectionId={activeSubcollectionId}
+        user={user}
       />
     </div>
   );
