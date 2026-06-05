@@ -485,6 +485,142 @@ export const updateSubtasksPositionsAsync = createAsyncThunk(
   }
 );
 
+export const deleteTasksBulkAsync = createAsyncThunk(
+  'todo/deleteTasksBulk',
+  async (ids: string[], { getState }) => {
+    const state = getState() as { todo: TodoState };
+    const timestamp = new Date().toISOString();
+    const results: { taskId: string; timestamp: string; subtaskIds: string[] }[] = [];
+
+    await Promise.all(ids.map(async (id) => {
+      const task = state.todo.tasks.find(t => t.id === id);
+      if (task) {
+        const updatedTask = { ...task, deleted: true, deletedAt: timestamp };
+        await firestoreService.updateTask(updatedTask);
+
+        const childSubtasks = state.todo.subtasks.filter(s => s.taskId === id);
+        await Promise.all(childSubtasks.map(s => {
+          const updatedSubtask = { ...s, deleted: true, deletedAt: timestamp };
+          return firestoreService.createSubtask(updatedSubtask);
+        }));
+
+        results.push({
+          taskId: id,
+          timestamp,
+          subtaskIds: childSubtasks.map(s => s.id)
+        });
+      }
+    }));
+
+    return results;
+  }
+);
+
+export const restoreTasksBulkAsync = createAsyncThunk(
+  'todo/restoreTasksBulk',
+  async (ids: string[], { getState }) => {
+    const state = getState() as { todo: TodoState };
+    const results: { taskId: string; subtaskIds: string[] }[] = [];
+
+    await Promise.all(ids.map(async (id) => {
+      const task = state.todo.tasks.find(t => t.id === id);
+      if (task) {
+        const deletedAtTime = task.deletedAt;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { deletedAt, ...restTask } = task;
+        const restoredTask = { ...restTask, deleted: false };
+        await firestoreService.updateTask(restoredTask);
+
+        const childSubtasks = state.todo.subtasks.filter(s => s.taskId === id && s.deleted && s.deletedAt === deletedAtTime);
+        await Promise.all(childSubtasks.map(s => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { deletedAt: d, ...restSub } = s;
+          const restoredSubtask = { ...restSub, deleted: false };
+          return firestoreService.createSubtask(restoredSubtask);
+        }));
+
+        results.push({
+          taskId: id,
+          subtaskIds: childSubtasks.map(s => s.id)
+        });
+      }
+    }));
+
+    return results;
+  }
+);
+
+export const deleteTasksPermanentBulkAsync = createAsyncThunk(
+  'todo/deleteTasksPermanentBulk',
+  async (ids: string[], { getState }) => {
+    const state = getState() as { todo: TodoState };
+    const results: { taskId: string; subtaskIds: string[] }[] = [];
+
+    await Promise.all(ids.map(async (id) => {
+      await firestoreService.deleteTask(id);
+
+      const childSubtasks = state.todo.subtasks.filter(s => s.taskId === id);
+      await Promise.all(childSubtasks.map(s => firestoreService.deleteSubtask(s.id)));
+
+      results.push({
+        taskId: id,
+        subtaskIds: childSubtasks.map(s => s.id)
+      });
+    }));
+
+    return results;
+  }
+);
+
+export const deleteSubtasksBulkAsync = createAsyncThunk(
+  'todo/deleteSubtasksBulk',
+  async (ids: string[], { getState }) => {
+    const state = getState() as { todo: TodoState };
+    const timestamp = new Date().toISOString();
+    const results: Subtask[] = [];
+
+    await Promise.all(ids.map(async (id) => {
+      const subtask = state.todo.subtasks.find(s => s.id === id);
+      if (subtask) {
+        const updated = { ...subtask, deleted: true, deletedAt: timestamp };
+        await firestoreService.createSubtask(updated);
+        results.push(updated);
+      }
+    }));
+
+    return results;
+  }
+);
+
+export const restoreSubtasksBulkAsync = createAsyncThunk(
+  'todo/restoreSubtasksBulk',
+  async (ids: string[], { getState }) => {
+    const state = getState() as { todo: TodoState };
+    const results: Subtask[] = [];
+
+    await Promise.all(ids.map(async (id) => {
+      const subtask = state.todo.subtasks.find(s => s.id === id);
+      if (subtask) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { deletedAt, ...restSub } = subtask;
+        const restored = { ...restSub, deleted: false };
+        await firestoreService.createSubtask(restored);
+        results.push(restored);
+      }
+    }));
+
+    return results;
+  }
+);
+
+export const deleteSubtasksPermanentBulkAsync = createAsyncThunk(
+  'todo/deleteSubtasksPermanentBulk',
+  async (ids: string[]) => {
+    await Promise.all(ids.map(id => firestoreService.deleteSubtask(id)));
+    return ids;
+  }
+);
+
 const todoSlice = createSlice({
   name: 'todo',
   initialState,
@@ -766,6 +902,59 @@ const todoSlice = createSlice({
             state.subtasks[idx] = updatedSubtask;
           }
         });
+      })
+      .addCase(deleteTasksBulkAsync.fulfilled, (state, action) => {
+        action.payload.forEach(({ taskId, timestamp, subtaskIds }) => {
+          state.tasks = state.tasks.map(t => 
+            t.id === taskId ? { ...t, deleted: true, deletedAt: timestamp } : t
+          );
+          state.subtasks = state.subtasks.map(s => 
+            subtaskIds.includes(s.id) ? { ...s, deleted: true, deletedAt: timestamp } : s
+          );
+          if (state.activeTaskId === taskId) {
+            state.activeTaskId = null;
+          }
+        });
+        localStorage.removeItem('todio_active_task_id');
+      })
+      .addCase(restoreTasksBulkAsync.fulfilled, (state, action) => {
+        action.payload.forEach(({ taskId, subtaskIds }) => {
+          state.tasks = state.tasks.map(t => 
+            t.id === taskId ? { ...t, deleted: false, deletedAt: undefined } : t
+          );
+          state.subtasks = state.subtasks.map(s => 
+            subtaskIds.includes(s.id) ? { ...s, deleted: false, deletedAt: undefined } : s
+          );
+        });
+      })
+      .addCase(deleteTasksPermanentBulkAsync.fulfilled, (state, action) => {
+        const deletedTaskIds = action.payload.map(r => r.taskId);
+        const allDeletedSubtaskIds = action.payload.flatMap(r => r.subtaskIds);
+        state.tasks = state.tasks.filter(t => !deletedTaskIds.includes(t.id));
+        state.subtasks = state.subtasks.filter(s => !allDeletedSubtaskIds.includes(s.id));
+        if (state.activeTaskId && deletedTaskIds.includes(state.activeTaskId)) {
+          state.activeTaskId = null;
+          localStorage.removeItem('todio_active_task_id');
+        }
+      })
+      .addCase(deleteSubtasksBulkAsync.fulfilled, (state, action) => {
+        action.payload.forEach(payload => {
+          const index = state.subtasks.findIndex(s => s.id === payload.id);
+          if (index !== -1) {
+            state.subtasks[index] = payload;
+          }
+        });
+      })
+      .addCase(restoreSubtasksBulkAsync.fulfilled, (state, action) => {
+        action.payload.forEach(payload => {
+          const index = state.subtasks.findIndex(s => s.id === payload.id);
+          if (index !== -1) {
+            state.subtasks[index] = payload;
+          }
+        });
+      })
+      .addCase(deleteSubtasksPermanentBulkAsync.fulfilled, (state, action) => {
+        state.subtasks = state.subtasks.filter(s => !action.payload.includes(s.id));
       });
   }
 });

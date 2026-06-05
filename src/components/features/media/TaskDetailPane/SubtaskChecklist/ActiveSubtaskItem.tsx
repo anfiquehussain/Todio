@@ -28,6 +28,9 @@ interface ActiveSubtaskItemProps {
   sortedActiveSubtasks: Subtask[];
   subtaskSortOrder: string;
   setSubtaskSortOrder: (order: 'default' | 'priority-desc' | 'priority-asc' | 'title-asc' | 'title-desc' | 'date-desc' | 'date-asc') => void;
+  isSelectionMode: boolean;
+  isSelectedForBulk: boolean;
+  onToggleSelect: (id: string) => void;
 }
 
 export const ActiveSubtaskItem = ({
@@ -51,6 +54,9 @@ export const ActiveSubtaskItem = ({
   sortedActiveSubtasks,
   subtaskSortOrder,
   setSubtaskSortOrder,
+  isSelectionMode,
+  isSelectedForBulk,
+  onToggleSelect,
 }: ActiveSubtaskItemProps) => {
   const dispatch = useAppDispatch();
   const dragControls = useDragControls();
@@ -62,11 +68,12 @@ export const ActiveSubtaskItem = ({
       dragControls={dragControls}
       dragListener={false}
       className="w-full focus:outline-hidden relative"
-      draggable={editingSubtaskId !== sub.id}
+      draggable={editingSubtaskId !== sub.id && !isSelectionMode}
       onDragStart={() => {
-        setDraggedSubtaskId(sub.id);
+        if (!isSelectionMode) setDraggedSubtaskId(sub.id);
       }}
       onDragOver={(e) => {
+        if (isSelectionMode) return;
         e.preventDefault();
         const rect = e.currentTarget.getBoundingClientRect();
         const relativeY = e.clientY - rect.top;
@@ -75,15 +82,18 @@ export const ActiveSubtaskItem = ({
         setDropPosition(isTop ? 'top' : 'bottom');
       }}
       onDragLeave={() => {
+        if (isSelectionMode) return;
         setDragOverSubtaskId(null);
         setDropPosition(null);
       }}
       onDragEnd={() => {
+        if (isSelectionMode) return;
         setDraggedSubtaskId(null);
         setDragOverSubtaskId(null);
         setDropPosition(null);
       }}
       onDrop={(e) => {
+        if (isSelectionMode) return;
         e.preventDefault();
         if (draggedSubtaskId && draggedSubtaskId !== sub.id) {
           const updatedSubtasks = [...sortedActiveSubtasks];
@@ -119,12 +129,21 @@ export const ActiveSubtaskItem = ({
       )}
 
       <div
+        onClick={() => {
+          if (isSelectionMode) {
+            onToggleSelect(sub.id);
+          }
+        }}
         className={`group flex flex-row items-center justify-between gap-3 p-3 rounded-2xl border transition-all ${
-          sub.priority === 'high'
-            ? 'bg-error/5 border-error/20 text-text-primary border-l-4 border-l-error'
-            : sub.priority === 'medium'
-              ? 'bg-warning/5 border-warning/20 text-text-primary border-l-4 border-l-warning'
-              : 'bg-bg-primary border-gray-border text-text-primary border-l-4 border-l-success'
+          isSelectionMode ? 'cursor-pointer' : ''
+        } ${
+          isSelectedForBulk
+            ? 'bg-brand-primary/10 border-brand-primary/40 text-text-primary border-l-4 border-l-brand-primary shadow-[0_0_10px_rgba(99,102,241,0.1)]'
+            : sub.priority === 'high'
+              ? 'bg-error/5 border-error/20 text-text-primary border-l-4 border-l-error hover:bg-error/10'
+              : sub.priority === 'medium'
+                ? 'bg-warning/5 border-warning/20 text-text-primary border-l-4 border-l-warning hover:bg-warning/10'
+                : 'bg-bg-primary border-gray-border text-text-primary border-l-4 border-l-success hover:bg-white/5'
         }`}
       >
         {editingSubtaskId === sub.id ? (
@@ -206,66 +225,83 @@ export const ActiveSubtaskItem = ({
         ) : (
           <>
             <div className="flex items-start gap-2.5 overflow-hidden flex-1 w-full">
-              <div
-                onPointerDown={(e) => {
-                  dragControls.start(e);
-                }}
-                className="p-1 -ml-1 text-text-secondary/30 group-hover:text-text-secondary/70 hover:bg-[#282828] rounded cursor-grab active:cursor-grabbing transition-colors shrink-0 mt-0.5 touch-none"
-                title="Drag to reorder"
-              >
-                <GripVertical className="w-3 h-3" />
-              </div>
-              <button
-                onClick={() => handleToggleSubtask(sub)}
-                className={`w-4 h-4 rounded-md flex items-center justify-center border transition-all shrink-0 cursor-pointer mt-0.5 ${
-                  sub.priority === 'high'
-                    ? 'border-error bg-bg-secondary text-transparent hover:border-error/80'
-                    : sub.priority === 'medium'
-                      ? 'border-warning bg-bg-secondary text-transparent hover:border-warning/80'
-                      : 'border-gray-border bg-bg-secondary text-transparent hover:border-text-secondary'
-                }`}
-                aria-label="Toggle subtask completion"
-              >
-                <Check className="w-2.5 h-2.5 hover:text-text-secondary" />
-              </button>
+              {isSelectionMode ? (
+                <input
+                  type="checkbox"
+                  checked={isSelectedForBulk}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    onToggleSelect(sub.id);
+                  }}
+                  className="w-4 h-4 rounded border-gray-border bg-[#202020] text-brand-primary focus:ring-brand-primary shrink-0 mt-1 cursor-pointer accent-brand-primary"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <>
+                  <div
+                    onPointerDown={(e) => {
+                      dragControls.start(e);
+                    }}
+                    className="p-1 -ml-1 text-text-secondary/30 group-hover:text-text-secondary/70 hover:bg-[#282828] rounded cursor-grab active:cursor-grabbing transition-colors shrink-0 mt-0.5 touch-none"
+                    title="Drag to reorder"
+                  >
+                    <GripVertical className="w-3 h-3" />
+                  </div>
+                  <button
+                    onClick={() => handleToggleSubtask(sub)}
+                    className={`w-4 h-4 rounded-md flex items-center justify-center border transition-all shrink-0 cursor-pointer mt-0.5 ${
+                      sub.priority === 'high'
+                        ? 'border-error bg-bg-secondary text-transparent hover:border-error/80'
+                        : sub.priority === 'medium'
+                          ? 'border-warning bg-bg-secondary text-transparent hover:border-warning/80'
+                          : 'border-gray-border bg-bg-secondary text-transparent hover:border-text-secondary'
+                    }`}
+                    aria-label="Toggle subtask completion"
+                  >
+                    <Check className="w-2.5 h-2.5 hover:text-text-secondary" />
+                  </button>
+                </>
+              )}
               <ExpandableText text={sub.title} textSize="text-[11px]" />
             </div>
 
-            <div className="flex items-center justify-end gap-1 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigator.clipboard.writeText(sub.title);
-                  toast('Subtask copied to clipboard! 📋', 'success');
-                }}
-                className="p-1 hover:bg-[#282828] rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0"
-                title="Copy subtask"
-              >
-                <Copy className="w-3 h-3" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setEditingSubtaskId(sub.id);
-                  setEditingSubtaskTitle(sub.title);
-                  setEditingSubtaskPriority(sub.priority || 'low');
-                }}
-                className="p-1 hover:bg-[#282828] rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0"
-                title="Edit subtask"
-              >
-                <Edit2 className="w-3 h-3" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteSubtask(sub.id);
-                }}
-                className="p-1 hover:bg-[#282828] rounded text-error transition-colors cursor-pointer shrink-0"
-                title="Delete subtask"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            {!isSelectionMode && (
+              <div className="flex items-center justify-end gap-1 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(sub.title);
+                    toast('Subtask copied to clipboard! 📋', 'success');
+                  }}
+                  className="p-1 hover:bg-[#282828] rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0"
+                  title="Copy subtask"
+                >
+                  <Copy className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingSubtaskId(sub.id);
+                    setEditingSubtaskTitle(sub.title);
+                    setEditingSubtaskPriority(sub.priority || 'low');
+                  }}
+                  className="p-1 hover:bg-[#282828] rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0"
+                  title="Edit subtask"
+                >
+                  <Edit2 className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteSubtask(sub.id);
+                  }}
+                  className="p-1 hover:bg-[#282828] rounded text-error transition-colors cursor-pointer shrink-0"
+                  title="Delete subtask"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>

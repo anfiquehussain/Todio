@@ -41,6 +41,9 @@ interface ActiveTaskItemProps {
   sortBy: string;
   manuallyExpandedTaskIds: Record<string, boolean>;
   setManuallyExpandedTaskIds: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  isSelectionMode?: boolean;
+  isSelectedForBulk?: boolean;
+  onToggleSelect?: (id: string) => void;
 }
 
 export const ActiveTaskItem = ({
@@ -69,6 +72,9 @@ export const ActiveTaskItem = ({
   sortBy,
   manuallyExpandedTaskIds,
   setManuallyExpandedTaskIds,
+  isSelectionMode = false,
+  isSelectedForBulk = false,
+  onToggleSelect,
 }: ActiveTaskItemProps) => {
   const dispatch = useAppDispatch();
   const { toast } = useToast();
@@ -139,11 +145,12 @@ export const ActiveTaskItem = ({
       dragControls={dragControls}
       dragListener={false}
       className="w-full focus:outline-hidden relative flex flex-col gap-1.5"
-      draggable={editingTaskId !== task.id}
+      draggable={editingTaskId !== task.id && !isSelectionMode}
       onDragStart={() => {
-        setDraggedTaskId(task.id);
+        if (!isSelectionMode) setDraggedTaskId(task.id);
       }}
       onDragOver={(e) => {
+        if (isSelectionMode) return;
         e.preventDefault();
         const rect = e.currentTarget.getBoundingClientRect();
         const relativeY = e.clientY - rect.top;
@@ -152,15 +159,18 @@ export const ActiveTaskItem = ({
         setDropPosition(isTop ? 'top' : 'bottom');
       }}
       onDragLeave={() => {
+        if (isSelectionMode) return;
         setDragOverTaskId(null);
         setDropPosition(null);
       }}
       onDragEnd={() => {
+        if (isSelectionMode) return;
         setDraggedTaskId(null);
         setDragOverTaskId(null);
         setDropPosition(null);
       }}
       onDrop={(e) => {
+        if (isSelectionMode) return;
         e.preventDefault();
         if (draggedTaskId && draggedTaskId !== task.id) {
           const updatedTasks = [...activeQueue];
@@ -280,7 +290,13 @@ export const ActiveTaskItem = ({
         </form>
       ) : (
         <div
-          onClick={() => dispatch(setActiveTaskId(task.id))}
+          onClick={() => {
+            if (isSelectionMode) {
+              onToggleSelect?.(task.id);
+            } else {
+              dispatch(setActiveTaskId(task.id));
+            }
+          }}
           className={`group flex items-center justify-between px-3.5 py-3 rounded-2xl border border-l-4 cursor-pointer select-none transition-all ${
             task.priority >= 4
               ? `${isSelected ? 'bg-error/10 border-[#383838]' : 'bg-error/5 border-error/20 hover:bg-error/10'} border-l-error`
@@ -290,48 +306,63 @@ export const ActiveTaskItem = ({
           } ${isSelected ? 'shadow-md shadow-brand-primary/5' : ''}`}
         >
           <div className="flex items-start gap-3 overflow-hidden flex-1">
-            <div
-              onPointerDown={(e) => {
-                dragControls.start(e);
-              }}
-              className="p-1 -ml-1 text-text-secondary/30 group-hover:text-text-secondary/70 hover:bg-[#282828] rounded cursor-grab active:cursor-grabbing transition-colors shrink-0 mt-0.5 touch-none"
-              title="Drag to reorder"
-            >
-              <GripVertical className="w-3.5 h-3.5" />
-            </div>
-            {taskSubtasks.length > 0 ? (
-              <button
-                onClick={(e) => {
+            {isSelectionMode ? (
+              <input
+                type="checkbox"
+                checked={isSelectedForBulk}
+                onChange={(e) => {
                   e.stopPropagation();
-                  setManuallyExpandedTaskIds(prev => ({
-                    ...prev,
-                    [task.id]: !isExpanded
-                  }));
+                  onToggleSelect?.(task.id);
                 }}
-                className="p-1 -ml-1 text-text-secondary/50 hover:text-text-primary hover:bg-[#282828] rounded transition-colors shrink-0 mt-0.5 cursor-pointer flex items-center justify-center"
-                title={isExpanded ? "Collapse subtasks" : "Expand subtasks"}
-                aria-label={isExpanded ? "Collapse subtasks" : "Expand subtasks"}
-              >
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`} />
-              </button>
+                className="w-4 h-4 rounded border-gray-border bg-[#202020] text-brand-primary focus:ring-brand-primary shrink-0 mt-1.5 cursor-pointer accent-brand-primary"
+                onClick={(e) => e.stopPropagation()}
+              />
             ) : (
-              <div className="w-5.5 h-5.5 shrink-0" />
+              <>
+                <div
+                  onPointerDown={(e) => {
+                    dragControls.start(e);
+                  }}
+                  className="p-1 -ml-1 text-text-secondary/30 group-hover:text-text-secondary/70 hover:bg-[#282828] rounded cursor-grab active:cursor-grabbing transition-colors shrink-0 mt-0.5 touch-none"
+                  title="Drag to reorder"
+                >
+                  <GripVertical className="w-3.5 h-3.5" />
+                </div>
+                {taskSubtasks.length > 0 ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setManuallyExpandedTaskIds(prev => ({
+                        ...prev,
+                        [task.id]: !isExpanded
+                      }));
+                    }}
+                    className="p-1 -ml-1 text-text-secondary/50 hover:text-text-primary hover:bg-[#282828] rounded transition-colors shrink-0 mt-0.5 cursor-pointer flex items-center justify-center"
+                    title={isExpanded ? "Collapse subtasks" : "Expand subtasks"}
+                    aria-label={isExpanded ? "Collapse subtasks" : "Expand subtasks"}
+                  >
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`} />
+                  </button>
+                ) : (
+                  <div className="w-5.5 h-5.5 shrink-0" />
+                )}
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleToggleComplete(task); }}
+                  className={`w-4.5 h-4.5 rounded-full border bg-bg-secondary flex items-center justify-center text-transparent transition-all shrink-0 cursor-pointer mt-0.5 ${
+                    task.priority >= 4
+                      ? 'border-error hover:border-error/80'
+                      : task.priority >= 2
+                        ? 'border-warning hover:border-warning/80'
+                        : 'border-text-secondary/40 hover:border-brand-primary/80'
+                  }`}
+                  aria-label="Mark task completed"
+                >
+                  <Check className={`w-3 h-3 ${
+                    task.priority >= 4 ? 'hover:text-error' : task.priority >= 2 ? 'hover:text-warning' : 'hover:text-brand-primary'
+                  }`} />
+                </button>
+              </>
             )}
-            <button
-              onClick={(e) => { e.stopPropagation(); handleToggleComplete(task); }}
-              className={`w-4.5 h-4.5 rounded-full border bg-bg-secondary flex items-center justify-center text-transparent transition-all shrink-0 cursor-pointer mt-0.5 ${
-                task.priority >= 4
-                  ? 'border-error hover:border-error/80'
-                  : task.priority >= 2
-                    ? 'border-warning hover:border-warning/80'
-                    : 'border-text-secondary/40 hover:border-brand-primary/80'
-              }`}
-              aria-label="Mark task completed"
-            >
-              <Check className={`w-3 h-3 ${
-                task.priority >= 4 ? 'hover:text-error' : task.priority >= 2 ? 'hover:text-warning' : 'hover:text-brand-primary'
-              }`} />
-            </button>
             <div className="flex-1 min-w-0 flex flex-col gap-1 justify-center">
               <ExpandableText text={task.title} lineClass="text-text-primary" />
               {showListBadges && (col || sub) && (
@@ -358,7 +389,7 @@ export const ActiveTaskItem = ({
 
           <div className="flex items-center gap-2 shrink-0">
             <SubtaskProgress taskId={task.id} subtasks={subtasksSummary} />
-            {!activeCollectionId && !activeSubcollectionId && (
+            {!activeCollectionId && !activeSubcollectionId && !isSelectionMode && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -375,37 +406,41 @@ export const ActiveTaskItem = ({
               </button>
             )}
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleCopyTask(task);
-              }}
-              className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
-              title="Copy Task"
-            >
-              <Copy className="w-3.5 h-3.5" />
-            </button>
+            {!isSelectionMode && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCopyTask(task);
+                  }}
+                  className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
+                  title="Copy Task"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setEditingTaskId(task.id);
-                setEditingTaskTitle(task.title);
-                setEditingTaskPriority(task.priority || 1);
-              }}
-              className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
-              title="Edit Task"
-            >
-              <Edit2 className="w-3.5 h-3.5" />
-            </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingTaskId(task.id);
+                    setEditingTaskTitle(task.title);
+                    setEditingTaskPriority(task.priority || 1);
+                  }}
+                  className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
+                  title="Edit Task"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
 
-            <button
-              onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
-              className="p-1 hover:bg-[#2e2e2e] rounded text-error/70 hover:text-error opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
-              title="Delete Task"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
+                  className="p-1 hover:bg-[#2e2e2e] rounded text-error/70 hover:text-error opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
+                  title="Delete Task"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

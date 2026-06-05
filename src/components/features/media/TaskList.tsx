@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Plus, Check, Trash2, Smile, Edit2, X, Copy, GripVertical, ArrowRight,
   ArrowDown, ArrowUp, ArrowDownAZ, ArrowDownZA, Clock, Calendar, Folder, LayoutList, ChevronDown,
-  ListFilter, ChevronsUpDown, Upload
+  ListFilter, ChevronsUpDown, Upload, CheckSquare
 } from 'lucide-react';
 import { Reorder, AnimatePresence, motion } from 'framer-motion';
 import { useAppSelector, useAppDispatch } from '../../../hooks/useRedux';
@@ -10,7 +10,8 @@ import {
   createTaskAsync, updateTaskAsync, deleteTaskAsync, 
   setActiveTaskId, setSortBy, updateTasksPositionsAsync,
   setActiveCollectionId, setActiveSubcollectionId, setFilter,
-  restoreTaskAsync, updateSubtaskAsync, updateSubtasksPositionsAsync
+  restoreTaskAsync, updateSubtaskAsync, updateSubtasksPositionsAsync,
+  deleteTasksBulkAsync, restoreTasksBulkAsync
 } from '../../../store/slices/todoSlice';
 import { incrementXP, updateStreak } from '../../../store/slices/profileSlice';
 import { playCompletionSound } from '../../../lib/sound';
@@ -75,6 +76,10 @@ export const TaskList = () => {
   const [editingTaskPriority, setEditingTaskPriority] = useState<number>(1);
   const [taskToDeleteId, setTaskToDeleteId] = useState<string | null>(null);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Record<string, boolean>>({});
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const handleUpdateTaskInline = async (task: Task) => {
     if (!editingTaskTitle.trim()) return;
@@ -376,6 +381,57 @@ export const TaskList = () => {
     }
   };
 
+  const handleToggleSelectTask = (id: string) => {
+    setSelectedTaskIds(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  const handleSelectAll = () => {
+    const nextSelected: Record<string, boolean> = {};
+    sortedTasks.forEach(t => {
+      nextSelected[t.id] = true;
+    });
+    setSelectedTaskIds(nextSelected);
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedTaskIds({});
+  };
+
+  const selectedTaskCount = Object.values(selectedTaskIds).filter(Boolean).length;
+
+  const handleBulkDeleteClick = () => {
+    if (selectedTaskCount === 0) return;
+    if (!checkAuth('delete tasks')) return;
+    setIsBulkDeleteModalOpen(true);
+  };
+
+  const handleConfirmBulkDelete = async () => {
+    const idsToDelete = Object.keys(selectedTaskIds).filter(id => selectedTaskIds[id]);
+    if (idsToDelete.length === 0) return;
+
+    setIsBulkDeleting(true);
+    try {
+      await dispatch(deleteTasksBulkAsync(idsToDelete)).unwrap();
+      toast(`Successfully deleted ${idsToDelete.length} tasks.`, 'info', undefined, {
+        label: 'Undo',
+        onClick: () => {
+          dispatch(restoreTasksBulkAsync(idsToDelete));
+          toast(`Restored ${idsToDelete.length} tasks.`, 'success');
+        }
+      });
+      setSelectedTaskIds({});
+      setIsSelectionMode(false);
+    } catch {
+      toast('Failed to delete selected tasks.', 'error');
+    } finally {
+      setIsBulkDeleting(false);
+      setIsBulkDeleteModalOpen(false);
+    }
+  };
+
   // Task Copy to Clipboard Handler
   const handleCopyTask = (task: Task) => {
     const text = task.overview ? `${task.title}\n\nDescription:\n${task.overview}` : task.title;
@@ -421,15 +477,15 @@ export const TaskList = () => {
     <div className={`flex-1 flex flex-col h-full border-r border-gray-border overflow-hidden ${activeTaskId ? 'hidden lg:flex' : 'flex'}`}>
       
       {/* Header Action Strip */}
-      <div className="flex items-center justify-between px-6 py-4.5 border-b border-gray-border/50 bg-[#161616]/40 select-none">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-6 py-4.5 border-b border-gray-border/50 bg-[#161616]/40 select-none">
         <div className="flex items-center gap-2">
-          <h1 className="text-lg font-black tracking-tight text-text-primary">{getHeaderTitle()}</h1>
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-border/30 text-text-secondary">
+          <h1 className="text-lg font-black tracking-tight text-text-primary truncate max-w-[200px] xs:max-w-[280px] sm:max-w-none">{getHeaderTitle()}</h1>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-border/30 text-text-secondary tabular-nums">
             {activeQueue.length}
           </span>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 flex-wrap justify-start sm:justify-end">
           {/* Expand/Collapse All Button */}
           <button
             onClick={() => {
@@ -494,6 +550,26 @@ export const TaskList = () => {
               aria-label="Bulk Import Tasks"
             >
               <Upload className="w-4 h-4 text-inherit" />
+            </button>
+          )}
+
+          {/* Multi-Select Toggle Button */}
+          {filter !== 'trash' && (
+            <button
+              onClick={() => {
+                setIsSelectionMode(!isSelectionMode);
+                setSelectedTaskIds({});
+                playCompletionSound(soundEnabled);
+              }}
+              className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all cursor-pointer shadow-sm ${
+                isSelectionMode
+                  ? 'border-brand-primary/40 bg-brand-primary/10 text-brand-primary shadow-[0_0_10px_rgba(99,102,241,0.15)]'
+                  : 'border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525]'
+              }`}
+              title={isSelectionMode ? 'Exit Selection Mode' : 'Select Multiple Tasks'}
+              aria-label="Toggle multi-select mode"
+            >
+              <CheckSquare className="w-4 h-4 text-inherit" />
             </button>
           )}
 
@@ -596,6 +672,9 @@ export const TaskList = () => {
                   sortBy={sortBy}
                   manuallyExpandedTaskIds={manuallyExpandedTaskIds}
                   setManuallyExpandedTaskIds={setManuallyExpandedTaskIds}
+                  isSelectionMode={isSelectionMode}
+                  isSelectedForBulk={!!selectedTaskIds[task.id]}
+                  onToggleSelect={handleToggleSelectTask}
                 />
               ))}
             </Reorder.Group>
@@ -732,7 +811,13 @@ export const TaskList = () => {
                   ) : (
                     <div key={task.id} className="flex flex-col gap-1.5">
                       <div
-                        onClick={() => dispatch(setActiveTaskId(task.id))}
+                        onClick={() => {
+                          if (isSelectionMode) {
+                            handleToggleSelectTask(task.id);
+                          } else {
+                            dispatch(setActiveTaskId(task.id));
+                          }
+                        }}
                         className={`group flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-success/15 bg-success/5 opacity-60 select-none cursor-pointer transition-all border-l-4 ${
                           task.priority >= 4
                             ? 'border-l-error/40'
@@ -742,15 +827,28 @@ export const TaskList = () => {
                         } ${isSelected ? 'bg-[#222] border-[#383838] opacity-100' : 'hover:opacity-100'}`}
                       >
                         <div className="flex items-start gap-3 overflow-hidden flex-1">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleToggleComplete(task); }}
-                            className="w-4.5 h-4.5 rounded-full border border-success bg-success text-white flex items-center justify-center shrink-0 cursor-pointer mt-0.5"
-                            aria-label="Revert task active"
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                          </button>
+                          {isSelectionMode ? (
+                            <input
+                              type="checkbox"
+                              checked={!!selectedTaskIds[task.id]}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                handleToggleSelectTask(task.id);
+                              }}
+                              className="w-4 h-4 rounded border-gray-border bg-[#202020] text-brand-primary focus:ring-brand-primary shrink-0 mt-1.5 cursor-pointer accent-brand-primary"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          ) : (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleToggleComplete(task); }}
+                              className="w-4.5 h-4.5 rounded-full border border-success bg-success text-white flex items-center justify-center shrink-0 cursor-pointer mt-0.5"
+                              aria-label="Revert task active"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           
-                          {taskSubtasks.length > 0 ? (
+                          {taskSubtasks.length > 0 && !isSelectionMode ? (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -766,7 +864,7 @@ export const TaskList = () => {
                               <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`} />
                             </button>
                           ) : (
-                            <div className="w-5.5 h-5.5 shrink-0" />
+                            taskSubtasks.length > 0 && isSelectionMode ? null : <div className="w-5.5 h-5.5 shrink-0" />
                           )}
                           
                           <div className="flex-1 min-w-0 flex flex-col gap-1 justify-center">
@@ -796,7 +894,7 @@ export const TaskList = () => {
                         <div className="flex items-center gap-1 shrink-0">
                           <SubtaskProgress taskId={task.id} subtasks={subtasks} />
                           {/* Go to position button */}
-                          {!activeCollectionId && !activeSubcollectionId && (
+                          {!activeCollectionId && !activeSubcollectionId && !isSelectionMode && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -812,35 +910,39 @@ export const TaskList = () => {
                               <ArrowRight className="w-3.5 h-3.5" />
                             </button>
                           )}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCopyTask(task);
-                            }}
-                            className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
-                            title="Copy Task"
-                          >
-                            <Copy className="w-3 h-3" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingTaskId(task.id);
-                              setEditingTaskTitle(task.title);
-                              setEditingTaskPriority(task.priority || 1);
-                            }}
-                            className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
-                            title="Edit Task"
-                          >
-                            <Edit2 className="w-3 h-3" />
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
-                            className="p-1 hover:bg-[#2e2e2e] rounded text-error/60 hover:text-error opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
-                            title="Delete Task"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
+                          {!isSelectionMode && (
+                            <>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCopyTask(task);
+                                }}
+                                className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
+                                title="Copy Task"
+                              >
+                                <Copy className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingTaskId(task.id);
+                                  setEditingTaskTitle(task.title);
+                                  setEditingTaskPriority(task.priority || 1);
+                                }}
+                                className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
+                                title="Edit Task"
+                              >
+                                <Edit2 className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
+                                className="p-1 hover:bg-[#2e2e2e] rounded text-error/60 hover:text-error opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+                                title="Delete Task"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
 
@@ -993,6 +1095,19 @@ export const TaskList = () => {
         isDanger={true}
       />
 
+      <ConfirmationModal
+        isOpen={isBulkDeleteModalOpen}
+        onClose={() => {
+          if (!isBulkDeleting) setIsBulkDeleteModalOpen(false);
+        }}
+        onConfirm={handleConfirmBulkDelete}
+        title={`Delete ${selectedTaskCount} Tasks?`}
+        message={`Are you sure you want to delete the ${selectedTaskCount} selected tasks and move them to the trash?`}
+        confirmLabel="Delete Tasks"
+        isDanger={true}
+        isLoading={isBulkDeleting}
+      />
+
       <BulkImportModal
         isOpen={isBulkImportOpen}
         onClose={() => setIsBulkImportOpen(false)}
@@ -1000,6 +1115,76 @@ export const TaskList = () => {
         activeSubcollectionId={activeSubcollectionId}
         user={user}
       />
+
+      {/* Floating Action Bar for Bulk Task Operations */}
+      <AnimatePresence>
+        {isSelectionMode && selectedTaskCount > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 50, scale: 0.95 }}
+            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#181818]/95 backdrop-blur-md border border-brand-primary/20 shadow-[0_10px_30px_rgba(0,0,0,0.6),0_0_15px_rgba(99,102,241,0.15)] rounded-2xl px-4 py-2.5 flex flex-col sm:flex-row items-center gap-3 sm:gap-4 z-50 select-none w-[calc(100%-2rem)] sm:w-auto max-w-md sm:max-w-none"
+          >
+            <div className="flex items-center justify-between w-full sm:w-auto gap-2">
+              <span className="text-[11px] font-black text-text-primary uppercase tracking-widest tabular-nums shrink-0">
+                {selectedTaskCount} {selectedTaskCount === 1 ? 'task' : 'tasks'} selected
+              </span>
+              <button
+                onClick={() => {
+                  setIsSelectionMode(false);
+                  setSelectedTaskIds({});
+                }}
+                className="p-1 hover:bg-[#282828] rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0 sm:hidden"
+                aria-label="Cancel Selection"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="hidden sm:block h-4 w-px bg-gray-border/40 shrink-0" />
+            
+            <div className="flex flex-wrap items-center justify-center gap-1.5 w-full sm:w-auto">
+              <Button
+                variant="primary"
+                size="sm"
+                className="font-bold select-none cursor-pointer flex-1 sm:flex-initial text-[10px] sm:text-xs py-1.5 px-3"
+                onClick={handleSelectAll}
+              >
+                Select All
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="font-bold select-none cursor-pointer text-text-secondary hover:text-text-primary flex-1 sm:flex-initial text-[10px] sm:text-xs py-1.5 px-3"
+                onClick={handleDeselectAll}
+              >
+                Deselect
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                className="font-bold select-none cursor-pointer flex-1 sm:flex-initial text-[10px] sm:text-xs py-1.5 px-3"
+                onClick={handleBulkDeleteClick}
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1" />
+                Delete
+              </Button>
+            </div>
+            
+            <button
+              onClick={() => {
+                setIsSelectionMode(false);
+                setSelectedTaskIds({});
+              }}
+              className="hidden sm:block p-1 hover:bg-[#282828] rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0"
+              aria-label="Cancel Selection"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
