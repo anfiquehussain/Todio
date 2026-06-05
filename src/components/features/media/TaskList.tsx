@@ -13,8 +13,9 @@ import {
   restoreCollectionAsync, deleteCollectionPermanentAsync,
   restoreSubcollectionAsync, deleteSubcollectionPermanentAsync,
   restoreSubtaskAsync, deleteSubtaskPermanentAsync,
-  emptyTrashAsync
+  emptyTrashAsync, updateSubtaskAsync
 } from '../../../store/slices/todoSlice';
+import { setShowSubtasksInline, setShowListBadges } from '../../../store/slices/settingsSlice';
 import { incrementXP, updateStreak } from '../../../store/slices/profileSlice';
 import { playCompletionSound } from '../../../lib/sound';
 import { useToast } from '../../../hooks/useToast';
@@ -158,7 +159,7 @@ interface ActiveTaskItemProps {
 const ActiveTaskItem = ({
   task,
   isSelected,
-  subtasks,
+  subtasks: subtasksSummary,
   editingTaskId,
   setEditingTaskId,
   editingTaskTitle,
@@ -183,6 +184,61 @@ const ActiveTaskItem = ({
   toast,
 }: ActiveTaskItemProps) => {
   const dragControls = useDragControls();
+  const { checkAuth } = useAuthGuard();
+
+  const { showSubtasksInline, showListBadges } = useAppSelector((state) => state.settings);
+  const { collections, subcollections, subtasks: allSubtasks, soundEnabled } = useAppSelector((state) => state.todo);
+
+  const col = collections.find(c => c.id === task.collectionId);
+  const sub = subcollections.find(s => s.id === task.subcollectionId);
+
+  const taskSubtasks = allSubtasks.filter(s => s.taskId === task.id && !s.deleted);
+  const inlineSubtasks = taskSubtasks.filter(s => {
+    if (showSubtasksInline === 'all') return true;
+    if (showSubtasksInline === 'imported-priority') {
+      return (
+        s.priority === 'high' || 
+        s.priority === 'medium' || 
+        task.imported === true || 
+        task.priority >= 4
+      );
+    }
+    return false;
+  });
+
+  const handleToggleSubtaskInline = async (subtaskItem: Subtask) => {
+    if (!checkAuth('toggle subtask')) return;
+    const completedState = !subtaskItem.completed;
+
+    try {
+      await dispatch(updateSubtaskAsync({ ...subtaskItem, completed: completedState })).unwrap();
+      
+      // Auto-update parent task completion status based on subtasks
+      const updatedSubtasks = taskSubtasks.map(s => s.id === subtaskItem.id ? { ...s, completed: completedState } : s);
+      const allCompleted = updatedSubtasks.every(s => s.completed);
+
+      if (allCompleted && !task.completed && !task.manuallyUnchecked) {
+        await dispatch(updateTaskAsync({ ...task, completed: true })).unwrap();
+        dispatch(incrementXP(50));
+        playCompletionSound(soundEnabled);
+        toast('All subtasks completed! Task automatically completed! +50 XP Score! 🏆🔔', 'success');
+      } else if (!allCompleted && task.completed) {
+        await dispatch(updateTaskAsync({ ...task, completed: false })).unwrap();
+        toast('Incomplete subtasks found! Task reverted to active queue. 🧭', 'info');
+      }
+
+      if (completedState) {
+        dispatch(incrementXP(35));
+        dispatch(updateStreak());
+        playCompletionSound(soundEnabled);
+        toast('Subtask completed! +35 XP Score! 🔔', 'success');
+      } else {
+        toast('Subtask reverted to active.', 'info');
+      }
+    } catch {
+      toast('Failed to toggle subtask.', 'error');
+    }
+  };
 
   return (
     <Reorder.Item
@@ -190,7 +246,7 @@ const ActiveTaskItem = ({
       value={task}
       dragControls={dragControls}
       dragListener={false}
-      className="w-full focus:outline-hidden relative"
+      className="w-full focus:outline-hidden relative flex flex-col gap-1.5"
       draggable={editingTaskId !== task.id}
       onDragStart={() => {
         setDraggedTaskId(task.id);
@@ -366,11 +422,32 @@ const ActiveTaskItem = ({
                 task.priority >= 4 ? 'hover:text-error' : task.priority >= 2 ? 'hover:text-warning' : 'hover:text-brand-primary'
               }`} />
             </button>
-            <TaskTitleText title={task.title} lineClass="text-text-primary" />
+            <div className="flex-1 min-w-0 flex flex-col gap-1 justify-center">
+              <TaskTitleText title={task.title} lineClass="text-text-primary" />
+              {showListBadges && (col || sub) && (
+                <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                  {col && (
+                    <span 
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-[#202020] border border-gray-border/50 text-text-secondary select-none"
+                      style={{ borderColor: `${col.color}33`, color: col.color }}
+                    >
+                      <Folder className="w-2.5 h-2.5" style={{ color: col.color }} />
+                      <span>{col.name}</span>
+                    </span>
+                  )}
+                  {sub && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-[#202020] border border-gray-border/50 text-text-secondary select-none">
+                      <LayoutList className="w-2.5 h-2.5 text-brand-secondary" />
+                      <span>{sub.name}</span>
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <SubtaskProgress taskId={task.id} subtasks={subtasks} />
+            <SubtaskProgress taskId={task.id} subtasks={subtasksSummary} />
             {!activeCollectionId && !activeSubcollectionId && (
               <button
                 onClick={(e) => {
@@ -420,6 +497,62 @@ const ActiveTaskItem = ({
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Inline Subtasks List */}
+      {showSubtasksInline !== 'none' && inlineSubtasks.length > 0 && !editingTaskId && (
+        <div className="mt-0.5 mb-1.5 ml-8 mr-2 flex flex-col gap-1.5 pl-3 border-l border-gray-border/40 select-none animate-slide-in">
+          {inlineSubtasks.map(subtaskItem => (
+             <div 
+               key={subtaskItem.id} 
+               onClick={(e) => e.stopPropagation()} 
+               className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border text-[10px] font-bold transition-all bg-[#1a1a1a]/40 ${
+                 subtaskItem.completed
+                   ? 'border-success/20 border-l-2 border-l-success opacity-60 bg-success/5'
+                   : subtaskItem.priority === 'high'
+                     ? 'border-error/20 border-l-2 border-l-error bg-error/5 hover:bg-error/10'
+                     : subtaskItem.priority === 'medium'
+                       ? 'border-warning/20 border-l-2 border-l-warning bg-warning/5 hover:bg-warning/10'
+                       : 'border-gray-border/60 border-l-2 border-l-success bg-[#121212]/40 hover:bg-[#151515]/50'
+               }`}
+             >
+               <div className="flex items-center gap-2 overflow-hidden flex-1">
+                 <button
+                   onClick={(e) => {
+                     e.stopPropagation();
+                     handleToggleSubtaskInline(subtaskItem);
+                   }}
+                   className={`w-3.5 h-3.5 rounded-md flex items-center justify-center border transition-all shrink-0 cursor-pointer ${
+                     subtaskItem.completed
+                       ? 'bg-success border-success text-white'
+                       : subtaskItem.priority === 'high'
+                         ? 'border-error hover:border-error/80'
+                         : subtaskItem.priority === 'medium'
+                           ? 'border-warning hover:border-warning/80'
+                           : 'border-gray-border hover:border-text-secondary'
+                   }`}
+                   aria-label="Toggle subtask completion"
+                 >
+                   {subtaskItem.completed && <Check className="w-2.5 h-2.5 text-white" />}
+                 </button>
+                 <span className={`truncate text-left ${subtaskItem.completed ? 'text-text-secondary line-through opacity-60' : 'text-text-primary'}`}>
+                   {subtaskItem.title}
+                 </span>
+               </div>
+               {subtaskItem.priority && (
+                 <span className={`text-[8px] font-black uppercase px-1 py-0.5 rounded-sm shrink-0 ${
+                   subtaskItem.priority === 'high'
+                     ? 'bg-error/10 text-error'
+                     : subtaskItem.priority === 'medium'
+                       ? 'bg-warning/10 text-warning'
+                       : 'bg-success/10 text-success'
+                 }`}>
+                   {subtaskItem.priority}
+                 </span>
+               )}
+             </div>
+          ))}
         </div>
       )}
 
@@ -780,6 +913,7 @@ export const TaskList = () => {
     tasks: allTasks, collections: allCollections, subcollections: allSubcollections, activeCollectionId, 
     activeSubcollectionId, activeTaskId, filter, sortBy, soundEnabled, subtasks: allSubtasks
   } = useAppSelector((state) => state.todo);
+  const { showSubtasksInline, showListBadges } = useAppSelector((state) => state.settings);
 
   const collections = allCollections.filter(c => !c.deleted);
   const subcollections = allSubcollections.filter(s => !s.deleted);
@@ -1106,6 +1240,40 @@ export const TaskList = () => {
     toast('Task card content duplicated to clipboard! 📋', 'success');
   };
 
+  const handleToggleSubtaskInline = async (subtaskItem: Subtask, parentTask: Task) => {
+    if (!checkAuth('toggle subtask')) return;
+    const completedState = !subtaskItem.completed;
+
+    try {
+      await dispatch(updateSubtaskAsync({ ...subtaskItem, completed: completedState })).unwrap();
+      
+      const taskSubtasks = subtasks.filter(s => s.taskId === parentTask.id && !s.deleted);
+      const updatedSubtasks = taskSubtasks.map(s => s.id === subtaskItem.id ? { ...s, completed: completedState } : s);
+      const allCompleted = updatedSubtasks.every(s => s.completed);
+
+      if (allCompleted && !parentTask.completed && !parentTask.manuallyUnchecked) {
+        await dispatch(updateTaskAsync({ ...parentTask, completed: true })).unwrap();
+        dispatch(incrementXP(50));
+        playCompletionSound(soundEnabled);
+        toast('All subtasks completed! Task automatically completed! +50 XP Score! 🏆🔔', 'success');
+      } else if (!allCompleted && parentTask.completed) {
+        await dispatch(updateTaskAsync({ ...parentTask, completed: false })).unwrap();
+        toast('Incomplete subtasks found! Task reverted to active queue. 🧭', 'info');
+      }
+
+      if (completedState) {
+        dispatch(incrementXP(35));
+        dispatch(updateStreak());
+        playCompletionSound(soundEnabled);
+        toast('Subtask completed! +35 XP Score! 🔔', 'success');
+      } else {
+        toast('Subtask reverted to active.', 'info');
+      }
+    } catch {
+      toast('Failed to toggle subtask.', 'error');
+    }
+  };
+
   return (
     <div className={`flex-1 flex flex-col h-full border-r border-gray-border overflow-hidden ${activeTaskId ? 'hidden lg:flex' : 'flex'}`}>
       
@@ -1118,7 +1286,77 @@ export const TaskList = () => {
           </span>
         </div>
         
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
+          {/* Subtasks inline toggle button */}
+          <button
+            onClick={() => {
+              const modes: Array<'none' | 'all' | 'imported-priority'> = ['none', 'all', 'imported-priority'];
+              const idx = modes.indexOf(showSubtasksInline);
+              const nextMode = modes[(idx + 1) % modes.length];
+              dispatch(setShowSubtasksInline(nextMode));
+              playCompletionSound(soundEnabled);
+              toast(
+                nextMode === 'none'
+                  ? 'Inline subtasks hidden.'
+                  : nextMode === 'all'
+                  ? 'Showing all inline subtasks!'
+                  : 'Showing priority/imported inline subtasks!',
+                'success'
+              );
+            }}
+            className={`flex items-center justify-center p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border transition-all cursor-pointer text-[10px] font-bold shadow-sm ${
+              showSubtasksInline === 'none'
+                ? 'border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525]'
+                : showSubtasksInline === 'all'
+                  ? 'border-brand-primary/40 bg-brand-primary/10 text-brand-primary shadow-[0_0_10px_rgba(99,102,241,0.15)]'
+                  : 'border-brand-secondary/40 bg-brand-secondary/10 text-brand-secondary shadow-[0_0_10px_rgba(6,182,212,0.15)]'
+            }`}
+            title={`Inline Subtasks: ${
+              showSubtasksInline === 'none' 
+                ? 'Hidden' 
+                : showSubtasksInline === 'all' 
+                  ? 'All' 
+                  : 'Priority/Imported'
+            } (Click to cycle)`}
+            aria-label="Cycle inline subtasks options"
+          >
+            <LayoutList className={`w-4 h-4 sm:w-3.5 sm:h-3.5 ${
+              showSubtasksInline === 'none'
+                ? 'text-text-secondary'
+                : showSubtasksInline === 'all'
+                  ? 'text-brand-primary'
+                  : 'text-brand-secondary'
+            }`} />
+            <div className="hidden sm:flex items-center gap-1">
+              <span className="text-[8px] font-black uppercase tracking-wider text-text-secondary/50 select-none">Subtasks:</span>
+              <span className="text-text-primary text-[10px] font-extrabold">
+                {showSubtasksInline === 'none' ? 'Hide' : showSubtasksInline === 'all' ? 'All' : 'Priority'}
+              </span>
+            </div>
+          </button>
+
+          {/* List badges toggle button */}
+          <button
+            onClick={() => {
+              dispatch(setShowListBadges(!showListBadges));
+              playCompletionSound(soundEnabled);
+              toast(!showListBadges ? 'Workspace list badges visible!' : 'Workspace list badges hidden.', 'success');
+            }}
+            className={`flex items-center justify-center p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border transition-all cursor-pointer text-[10px] font-bold shadow-sm ${
+              !showListBadges
+                ? 'border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525]'
+                : 'border-brand-primary/40 bg-brand-primary/10 text-brand-primary shadow-[0_0_10px_rgba(99,102,241,0.15)]'
+            }`}
+            title={`Workspace Badges: ${showListBadges ? 'Visible' : 'Hidden'} (Click to toggle)`}
+            aria-label="Toggle workspace badges"
+          >
+            <Folder className={`w-4 h-4 sm:w-3.5 sm:h-3.5 ${showListBadges ? 'text-brand-primary' : 'text-text-secondary'}`} />
+            <div className="hidden sm:flex items-center gap-1">
+              <span className="text-[8px] font-black uppercase tracking-wider text-text-secondary/50 select-none">Badges:</span>
+              <span className="text-text-primary text-[10px] font-extrabold">{showListBadges ? 'On' : 'Off'}</span>
+            </div>
+          </button>
+
           <button
             onClick={() => {
               const order: Array<
@@ -1127,14 +1365,20 @@ export const TaskList = () => {
                 'custom', 'priority-desc', 'priority-asc', 'dueDate-asc', 'dueDate-desc', 'title-asc', 'title-desc', 'createdAt-desc', 'createdAt-asc'
               ];
               const idx = order.indexOf(sortBy);
-              dispatch(setSortBy(order[(idx + 1) % order.length]));
+              const nextSort = order[(idx + 1) % order.length];
+              dispatch(setSortBy(nextSort));
+              toast(`Sorted by: ${taskSortOptions[nextSort]?.label || 'Manual Order'} 🔄`, 'info');
             }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525] transition-all cursor-pointer text-[10px] font-bold shadow-sm"
+            className={`flex items-center justify-center p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border transition-all cursor-pointer text-[10px] font-bold shadow-sm ${
+              sortBy === 'custom'
+                ? 'border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525]'
+                : 'border-brand-primary/40 bg-brand-primary/10 text-brand-primary shadow-[0_0_10px_rgba(99,102,241,0.15)]'
+            }`}
             title={`Active Sort: ${currentSort.label} (Click to cycle)`}
             aria-label="Cycle sorting options"
           >
-            <ActiveSortIcon className="w-3.5 h-3.5 text-brand-primary" />
-            <div className="flex items-center gap-1">
+            <ActiveSortIcon className={`w-4 h-4 sm:w-3.5 sm:h-3.5 ${sortBy === 'custom' ? 'text-text-secondary' : 'text-brand-primary'}`} />
+            <div className="hidden sm:flex items-center gap-1">
               <span className="text-[8px] font-black uppercase tracking-wider text-text-secondary/50 select-none">Sort:</span>
               <span className="text-text-primary text-[10px] font-extrabold">{currentSort.label}</span>
             </div>
@@ -1246,6 +1490,22 @@ export const TaskList = () => {
               <div className="flex flex-col gap-1.5 animate-slide-in">
                 {completedQueue.map(task => {
                   const isSelected = task.id === activeTaskId;
+                  const col = collections.find(c => c.id === task.collectionId);
+                  const sub = subcollections.find(s => s.id === task.subcollectionId);
+
+                  const taskSubtasks = subtasks.filter(s => s.taskId === task.id);
+                  const inlineSubtasks = taskSubtasks.filter(s => {
+                    if (showSubtasksInline === 'all') return true;
+                    if (showSubtasksInline === 'imported-priority') {
+                      return (
+                        s.priority === 'high' || 
+                        s.priority === 'medium' || 
+                        task.imported === true || 
+                        task.priority >= 4
+                      );
+                    }
+                    return false;
+                  });
 
                   return editingTaskId === task.id ? (
                     <form
@@ -1335,77 +1595,145 @@ export const TaskList = () => {
                       </div>
                     </form>
                   ) : (
-                    <div
-                      key={task.id}
-                      onClick={() => dispatch(setActiveTaskId(task.id))}
-                      className={`group flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-success/15 bg-success/5 opacity-60 select-none cursor-pointer transition-all border-l-4 ${
-                        task.priority >= 4
-                          ? 'border-l-error/40'
-                          : task.priority >= 2
-                            ? 'border-l-warning/40'
-                            : 'border-l-success/40'
-                      } ${isSelected ? 'bg-[#222] border-[#383838] opacity-100' : 'hover:opacity-100'}`}
-                    >
-                      <div className="flex items-start gap-3 overflow-hidden flex-1">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleToggleComplete(task); }}
-                          className="w-4.5 h-4.5 rounded-full border border-success bg-success text-white flex items-center justify-center shrink-0 cursor-pointer mt-0.5"
-                          aria-label="Revert task active"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                        </button>
-                        <TaskTitleText title={task.title} lineClass="text-text-secondary line-through opacity-60" />
-                      </div>
+                    <div key={task.id} className="flex flex-col gap-1.5">
+                      <div
+                        onClick={() => dispatch(setActiveTaskId(task.id))}
+                        className={`group flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-success/15 bg-success/5 opacity-60 select-none cursor-pointer transition-all border-l-4 ${
+                          task.priority >= 4
+                            ? 'border-l-error/40'
+                            : task.priority >= 2
+                              ? 'border-l-warning/40'
+                              : 'border-l-success/40'
+                        } ${isSelected ? 'bg-[#222] border-[#383838] opacity-100' : 'hover:opacity-100'}`}
+                      >
+                        <div className="flex items-start gap-3 overflow-hidden flex-1">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleToggleComplete(task); }}
+                            className="w-4.5 h-4.5 rounded-full border border-success bg-success text-white flex items-center justify-center shrink-0 cursor-pointer mt-0.5"
+                            aria-label="Revert task active"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          
+                          <div className="flex-1 min-w-0 flex flex-col gap-1 justify-center">
+                            <TaskTitleText title={task.title} lineClass="text-text-secondary line-through opacity-60" />
+                            {showListBadges && (col || sub) && (
+                              <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                                {col && (
+                                  <span 
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-[#202020] border border-gray-border/50 text-text-secondary select-none"
+                                    style={{ borderColor: `${col.color}33`, color: col.color }}
+                                  >
+                                    <Folder className="w-2.5 h-2.5" style={{ color: col.color }} />
+                                    <span>{col.name}</span>
+                                  </span>
+                                )}
+                                {sub && (
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-[#202020] border border-gray-border/50 text-text-secondary select-none">
+                                    <LayoutList className="w-2.5 h-2.5 text-brand-secondary" />
+                                    <span>{sub.name}</span>
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
 
-                      <div className="flex items-center gap-1 shrink-0">
-                        <SubtaskProgress taskId={task.id} subtasks={subtasks} />
-                        {/* Go to position button */}
-                        {!activeCollectionId && !activeSubcollectionId && (
+                        <div className="flex items-center gap-1 shrink-0">
+                          <SubtaskProgress taskId={task.id} subtasks={subtasks} />
+                          {/* Go to position button */}
+                          {!activeCollectionId && !activeSubcollectionId && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                dispatch(setActiveCollectionId(task.collectionId));
+                                dispatch(setActiveSubcollectionId(task.subcollectionId));
+                                dispatch(setActiveTaskId(task.id));
+                                dispatch(setFilter('all'));
+                                toast("Navigated to task's workspace location! 🧭", 'success');
+                              }}
+                              className="p-1 hover:bg-[#2e2e2e] rounded text-brand-primary hover:text-brand-primary/80 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
+                              title="Go to Task Position (List/Sublist)"
+                            >
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              dispatch(setActiveCollectionId(task.collectionId));
-                              dispatch(setActiveSubcollectionId(task.subcollectionId));
-                              dispatch(setActiveTaskId(task.id));
-                              dispatch(setFilter('all'));
-                              toast("Navigated to task's workspace location! 🧭", 'success');
+                              handleCopyTask(task);
                             }}
-                            className="p-1 hover:bg-[#2e2e2e] rounded text-brand-primary hover:text-brand-primary/80 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
-                            title="Go to Task Position (List/Sublist)"
+                            className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
+                            title="Copy Task"
                           >
-                            <ArrowRight className="w-3.5 h-3.5" />
+                            <Copy className="w-3 h-3" />
                           </button>
-                        )}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCopyTask(task);
-                          }}
-                          className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
-                          title="Copy Task"
-                        >
-                          <Copy className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingTaskId(task.id);
-                            setEditingTaskTitle(task.title);
-                            setEditingTaskPriority(task.priority || 1);
-                          }}
-                          className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
-                          title="Edit Task"
-                        >
-                          <Edit2 className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
-                          className="p-1 hover:bg-[#2e2e2e] rounded text-error/60 hover:text-error opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
-                          title="Delete Task"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingTaskId(task.id);
+                              setEditingTaskTitle(task.title);
+                              setEditingTaskPriority(task.priority || 1);
+                            }}
+                            className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
+                            title="Edit Task"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
+                            className="p-1 hover:bg-[#2e2e2e] rounded text-error/60 hover:text-error opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+                            title="Delete Task"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
+
+                      {/* Inline Subtasks List for Completed Task */}
+                      {showSubtasksInline !== 'none' && inlineSubtasks.length > 0 && (
+                        <div className="mt-0.5 mb-1.5 ml-8 mr-2 flex flex-col gap-1.5 pl-3 border-l border-gray-border/40 select-none animate-slide-in">
+                          {inlineSubtasks.map(subtaskItem => (
+                            <div 
+                              key={subtaskItem.id} 
+                              onClick={(e) => e.stopPropagation()} 
+                              className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border text-[10px] font-bold transition-all bg-[#1a1a1a]/40 ${
+                                subtaskItem.completed
+                                  ? 'border-success/20 border-l-2 border-l-success opacity-60 bg-success/5'
+                                  : subtaskItem.priority === 'high'
+                                    ? 'border-error/20 border-l-2 border-l-error bg-error/5'
+                                    : subtaskItem.priority === 'medium'
+                                      ? 'border-warning/20 border-l-2 border-l-warning bg-warning/5'
+                                      : 'border-gray-border/60 border-l-2 border-l-success bg-[#121212]/40'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 overflow-hidden flex-1">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleSubtaskInline(subtaskItem, task);
+                                  }}
+                                  className={`w-3.5 h-3.5 rounded-md flex items-center justify-center border transition-all shrink-0 cursor-pointer ${
+                                    subtaskItem.completed
+                                      ? 'bg-success border-success text-white'
+                                      : subtaskItem.priority === 'high'
+                                        ? 'border-error hover:border-error/80'
+                                        : subtaskItem.priority === 'medium'
+                                          ? 'border-warning hover:border-warning/80'
+                                          : 'border-gray-border hover:border-text-secondary'
+                                  }`}
+                                  aria-label="Toggle subtask completion"
+                                >
+                                  {subtaskItem.completed && <Check className="w-2.5 h-2.5 text-white" />}
+                                </button>
+                                <span className={`truncate text-left ${subtaskItem.completed ? 'text-text-secondary line-through opacity-60' : 'text-text-primary'}`}>
+                                  {subtaskItem.title}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
