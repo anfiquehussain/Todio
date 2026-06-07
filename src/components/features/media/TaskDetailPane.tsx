@@ -183,7 +183,7 @@ export const TaskDetailPane = () => {
                 {/* Compact Properties Row (Right) */}
                 <div className="flex items-center gap-1.5 shrink-0 self-start sm:self-center">
                   {/* Due Date Pill (Icon + Selected Date, or Icon only if empty) */}
-                  <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold text-text-secondary bg-[#1a1a1a] hover:bg-[#222222] border border-gray-border/50 px-2.5 py-1.5 rounded-xl relative hover:text-text-primary transition-all cursor-pointer shrink-0" title={detailDueDate ? `Due Date: ${detailDueDate}` : 'Add Due Date'}>
+                  <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold text-text-secondary bg-[#1a1a1a] hover:bg-[#222222] border border-gray-border/50 px-2.5 py-1.5 rounded-xl relative overflow-hidden hover:text-text-primary transition-all cursor-pointer shrink-0" title={detailDueDate ? `Due Date: ${detailDueDate}` : 'Add Due Date'}>
                     <Calendar className={`w-3.5 h-3.5 ${detailDueDate ? 'text-brand-primary' : 'text-text-secondary/50'}`} />
                     <input
                       type="date"
