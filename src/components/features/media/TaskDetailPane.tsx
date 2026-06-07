@@ -19,7 +19,9 @@ export const TaskDetailPane = () => {
   const { checkAuth } = useAuthGuard();
 
   const { 
-    tasks, collections, subcollections, subtasks: allSubtasks, activeTaskId, soundEnabled, isDetailsPaneExpanded 
+    tasks, collections, subcollections, subtasks: allSubtasks,
+    activeTaskId, activeCollectionId, activeSubcollectionId,
+    soundEnabled, isDetailsPaneExpanded 
   } = useAppSelector((state) => state.todo);
   const { user } = useAppSelector((state) => state.auth);
 
@@ -51,6 +53,24 @@ export const TaskDetailPane = () => {
   }, [detailTitle, activeTaskId]);
 
   const activeTask = tasks.find(t => t.id === activeTaskId) || null;
+
+  // Auto-clear detail pane when navigating to a different list/sublist context
+  // so the subtask session goes blank instead of showing a stale task
+  useEffect(() => {
+    if (!activeTask || !activeTaskId) return;
+    const taskCollection = activeTask.collectionId || null;
+    const taskSubcollection = activeTask.subcollectionId || null;
+
+    // If a specific collection is active, the task must belong to it
+    if (activeCollectionId && taskCollection !== activeCollectionId) {
+      dispatch(setActiveTaskId(null));
+      return;
+    }
+    // If a specific subcollection is active, the task must also belong to it
+    if (activeSubcollectionId && taskSubcollection !== activeSubcollectionId) {
+      dispatch(setActiveTaskId(null));
+    }
+  }, [activeCollectionId, activeSubcollectionId, activeTask, activeTaskId, dispatch]);
 
   // Sync details pane inputs with active task
   /* eslint-disable react-hooks/set-state-in-effect */

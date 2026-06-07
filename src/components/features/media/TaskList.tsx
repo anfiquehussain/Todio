@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Plus, Check, Trash2, Smile, Edit2, X, Copy, GripVertical, ArrowRight,
   ArrowDown, ArrowUp, ArrowDownAZ, ArrowDownZA, Clock, Calendar, Folder, LayoutList, ChevronDown,
