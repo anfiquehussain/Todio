@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../../../hooks/useRedux';
 import { 
-  setActiveCollectionId, setActiveSubcollectionId, setFilter, 
+  setActiveCollectionId, setActiveSubcollectionId, setFilter, setActiveTaskId,
   createCollectionAsync, deleteCollectionAsync, createSubcollectionAsync, deleteSubcollectionAsync,
   updateCollectionAsync, updateSubcollectionAsync,
   restoreCollectionAsync, restoreSubcollectionAsync
@@ -101,6 +101,7 @@ export const OrganizerSidebar = ({
       setIsCreatingCollection(false);
       dispatch(setActiveCollectionId(newCol.id));
       dispatch(setActiveSubcollectionId(null));
+      dispatch(setActiveTaskId(null));
       dispatch(setFilter('all'));
       navigate('/');
       setIsMobileMenuOpen(false);
@@ -134,6 +135,7 @@ export const OrganizerSidebar = ({
       setExpandedCollections(prev => ({ ...prev, [collectionId]: true }));
       dispatch(setActiveCollectionId(collectionId));
       dispatch(setActiveSubcollectionId(newSub.id));
+      dispatch(setActiveTaskId(null));
       dispatch(setFilter('all'));
       navigate('/');
       setIsMobileMenuOpen(false);
@@ -234,6 +236,7 @@ export const OrganizerSidebar = ({
           onClick={() => {
             dispatch(setActiveCollectionId(null));
             dispatch(setActiveSubcollectionId(null));
+            dispatch(setActiveTaskId(null));
             dispatch(setFilter('active'));
             navigate('/');
             setIsMobileMenuOpen(false);
@@ -257,6 +260,7 @@ export const OrganizerSidebar = ({
           onClick={() => {
             dispatch(setActiveCollectionId(null));
             dispatch(setActiveSubcollectionId(null));
+            dispatch(setActiveTaskId(null));
             dispatch(setFilter('all'));
             navigate('/');
             setIsMobileMenuOpen(false);
@@ -280,6 +284,7 @@ export const OrganizerSidebar = ({
           onClick={() => {
             dispatch(setActiveCollectionId(null));
             dispatch(setActiveSubcollectionId(null));
+            dispatch(setActiveTaskId(null));
             dispatch(setFilter('overdue'));
             navigate('/');
             setIsMobileMenuOpen(false);
@@ -404,6 +409,7 @@ export const OrganizerSidebar = ({
                     onClick={() => {
                       dispatch(setActiveCollectionId(collection.id));
                       dispatch(setActiveSubcollectionId(null));
+                      dispatch(setActiveTaskId(null));
                       dispatch(setFilter('all'));
                       navigate('/');
                       setIsMobileMenuOpen(false);
@@ -520,6 +526,7 @@ export const OrganizerSidebar = ({
                               onClick={() => {
                                 dispatch(setActiveCollectionId(collection.id));
                                 dispatch(setActiveSubcollectionId(sub.id));
+                                dispatch(setActiveTaskId(null));
                                 dispatch(setFilter('all'));
                                 navigate('/');
                                 setIsMobileMenuOpen(false);
@@ -617,6 +624,7 @@ export const OrganizerSidebar = ({
           onClick={() => {
             dispatch(setActiveCollectionId(null));
             dispatch(setActiveSubcollectionId(null));
+            dispatch(setActiveTaskId(null));
             dispatch(setFilter('completed'));
             navigate('/');
             setIsMobileMenuOpen(false);
@@ -635,6 +643,7 @@ export const OrganizerSidebar = ({
           onClick={() => {
             dispatch(setActiveCollectionId(null));
             dispatch(setActiveSubcollectionId(null));
+            dispatch(setActiveTaskId(null));
             dispatch(setFilter('trash'));
             navigate('/');
             setIsMobileMenuOpen(false);

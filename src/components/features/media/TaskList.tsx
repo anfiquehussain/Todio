@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus, Check, Trash2, Smile, Edit2, X, Copy, GripVertical, ArrowRight,
   ArrowDown, ArrowUp, ArrowDownAZ, ArrowDownZA, Clock, Calendar, Folder, LayoutList, ChevronDown,
@@ -543,6 +543,7 @@ export const TaskList = () => {
             <button
               onClick={() => {
                 setIsBulkImportOpen(true);
+                dispatch(setActiveTaskId(null));
                 playCompletionSound(soundEnabled);
               }}
               className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525] transition-all cursor-pointer shadow-sm"
@@ -559,6 +560,7 @@ export const TaskList = () => {
               onClick={() => {
                 setIsSelectionMode(!isSelectionMode);
                 setSelectedTaskIds({});
+                dispatch(setActiveTaskId(null));
                 playCompletionSound(soundEnabled);
               }}
               className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all cursor-pointer shadow-sm ${

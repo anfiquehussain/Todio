@@ -39,8 +39,8 @@ const initialState: TodoState = {
   activeTaskId: localStorage.getItem('todio_active_task_id') || null,
   filter: (localStorage.getItem('todio_active_filter') as TodoState['filter']) || 'active',
   searchQuery: '',
-  sortBy: 'custom',
-  soundEnabled: true,
+  sortBy: (localStorage.getItem('todio_active_sort_by') as TodoState['sortBy']) || 'custom',
+  soundEnabled: localStorage.getItem('todio_sound_enabled') === null ? true : localStorage.getItem('todio_sound_enabled') === 'true',
   isLoading: false,
   error: null,
   isDetailsPaneExpanded: false,
@@ -668,9 +668,11 @@ const todoSlice = createSlice({
     },
     setSortBy: (state, action: PayloadAction<TodoState['sortBy']>) => {
       state.sortBy = action.payload;
+      localStorage.setItem('todio_active_sort_by', action.payload);
     },
     setSoundEnabled: (state, action: PayloadAction<boolean>) => {
       state.soundEnabled = action.payload;
+      localStorage.setItem('todio_sound_enabled', String(action.payload));
     },
     wipeData: (state) => {
       state.collections = [];
