@@ -37,7 +37,7 @@ export const ExpandableText = ({ text, lineClass = '', textSize = 'text-xs' }: E
         ref={textRef}
         title={text}
         className={`${textSize} font-bold text-left select-text wrap-break-word flex-1 ${lineClass} ${
-          isExpanded ? 'whitespace-pre-wrap' : 'line-clamp-1 overflow-hidden'
+          isExpanded ? 'whitespace-pre-wrap' : 'line-clamp-2 md:line-clamp-1 overflow-hidden'
         }`}
       >
         {text}

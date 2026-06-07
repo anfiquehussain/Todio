@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { Reorder, useDragControls, AnimatePresence, motion } from 'framer-motion';
 import { 
-  Check, GripVertical, Folder, LayoutList, ArrowRight, Copy, Edit2, Trash2, X, ChevronDown
+  Check, GripVertical, Folder, LayoutList, ArrowRight, Copy, Edit2, Trash2, X, ChevronDown, MoreVertical
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../../../hooks/useRedux';
 import { 
@@ -80,6 +81,7 @@ export const ActiveTaskItem = ({
   const { toast } = useToast();
   const dragControls = useDragControls();
   const { checkAuth } = useAuthGuard();
+  const [showMenu, setShowMenu] = useState(false);
 
   const { showListBadges, subtaskFilter } = useAppSelector((state) => state.settings);
   const { collections, subcollections, subtasks: allSubtasks, soundEnabled } = useAppSelector((state) => state.todo);
@@ -102,7 +104,13 @@ export const ActiveTaskItem = ({
       );
     }
     return true;
+  }).sort((a, b) => {
+    const priorityWeights = { high: 3, medium: 2, low: 1 };
+    const weightA = priorityWeights[a.priority || 'low'] || 1;
+    const weightB = priorityWeights[b.priority || 'low'] || 1;
+    return weightB - weightA;
   });
+
 
   const handleToggleSubtaskInline = async (subtaskItem: Subtask) => {
     if (!checkAuth('toggle subtask')) return;
@@ -319,15 +327,17 @@ export const ActiveTaskItem = ({
               />
             ) : (
               <>
-                <div
-                  onPointerDown={(e) => {
-                    dragControls.start(e);
-                  }}
-                  className="p-1 -ml-1 text-text-secondary/30 group-hover:text-text-secondary/70 hover:bg-[#282828] rounded cursor-grab active:cursor-grabbing transition-colors shrink-0 mt-0.5 touch-none"
-                  title="Drag to reorder"
-                >
-                  <GripVertical className="w-3.5 h-3.5" />
-                </div>
+                {sortBy === 'custom' && (
+                  <div
+                    onPointerDown={(e) => {
+                      dragControls.start(e);
+                    }}
+                    className="p-1 -ml-1 text-text-secondary/30 group-hover:text-text-secondary/70 hover:bg-[#282828] rounded cursor-grab active:cursor-grabbing transition-colors shrink-0 mt-0.5 touch-none"
+                    title="Drag to reorder"
+                  >
+                    <GripVertical className="w-3.5 h-3.5" />
+                  </div>
+                )}
                 {taskSubtasks.length > 0 ? (
                   <button
                     onClick={(e) => {
@@ -389,57 +399,93 @@ export const ActiveTaskItem = ({
 
           <div className="flex items-center gap-2 shrink-0">
             <SubtaskProgress taskId={task.id} subtasks={subtasksSummary} />
-            {!activeCollectionId && !activeSubcollectionId && !isSelectionMode && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  dispatch(setActiveCollectionId(task.collectionId));
-                  dispatch(setActiveSubcollectionId(task.subcollectionId));
-                  dispatch(setActiveTaskId(task.id));
-                  dispatch(setFilter('all'));
-                  toast("Navigated to task's workspace location! 🧭", 'success');
-                }}
-                className="p-1 hover:bg-[#2e2e2e] rounded text-brand-primary hover:text-brand-primary/80 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
-                title="Go to Task Position (List/Sublist)"
-              >
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            )}
-
             {!isSelectionMode && (
-              <>
+              <div className="relative">
+                {showMenu && (
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      setShowMenu(false); 
+                    }} 
+                  />
+                )}
+                
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleCopyTask(task);
+                    setShowMenu(!showMenu);
                   }}
-                  className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
-                  title="Copy Task"
+                  className="p-1.5 hover:bg-[#2e2e2e]/60 rounded-xl text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0 relative z-50 flex items-center justify-center"
+                  title="More actions"
+                  aria-label="More actions"
                 >
-                  <Copy className="w-3.5 h-3.5" />
+                  <MoreVertical className="w-4 h-4" />
                 </button>
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEditingTaskId(task.id);
-                    setEditingTaskTitle(task.title);
-                    setEditingTaskPriority(task.priority || 1);
-                  }}
-                  className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary hover:text-text-primary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
-                  title="Edit Task"
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
-
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
-                  className="p-1 hover:bg-[#2e2e2e] rounded text-error/70 hover:text-error opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
-                  title="Delete Task"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </>
+                <AnimatePresence>
+                  {showMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                      transition={{ duration: 0.1 }}
+                      className="absolute right-0 mt-1.5 w-36 bg-[#1a1a1a]/95 backdrop-blur-md border border-gray-border/60 rounded-xl shadow-xl z-50 py-1 overflow-hidden"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {!activeCollectionId && !activeSubcollectionId && (
+                        <button
+                          onClick={() => {
+                            setShowMenu(false);
+                            dispatch(setActiveCollectionId(task.collectionId));
+                            dispatch(setActiveSubcollectionId(task.subcollectionId));
+                            dispatch(setActiveTaskId(task.id));
+                            dispatch(setFilter('all'));
+                            toast("Navigated to task's workspace location! 🧭", 'success');
+                          }}
+                          className="w-full px-3 py-2 text-left text-[11px] font-bold text-brand-primary hover:bg-[#282828] transition-colors flex items-center gap-2 cursor-pointer"
+                        >
+                          <ArrowRight className="w-3.5 h-3.5" />
+                          <span>Go to List</span>
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          setShowMenu(false);
+                          handleCopyTask(task);
+                        }}
+                        className="w-full px-3 py-2 text-left text-[11px] font-bold text-text-primary hover:bg-[#282828] transition-colors flex items-center gap-2 cursor-pointer"
+                      >
+                        <Copy className="w-3.5 h-3.5 text-text-secondary" />
+                        <span>Copy Task</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowMenu(false);
+                          setEditingTaskId(task.id);
+                          setEditingTaskTitle(task.title);
+                          setEditingTaskPriority(task.priority || 1);
+                        }}
+                        className="w-full px-3 py-2 text-left text-[11px] font-bold text-text-primary hover:bg-[#282828] transition-colors flex items-center gap-2 cursor-pointer"
+                      >
+                        <Edit2 className="w-3.5 h-3.5 text-text-secondary" />
+                        <span>Edit Task</span>
+                      </button>
+                      <div className="h-[1px] bg-gray-border/30 my-0.5" />
+                      <button
+                        onClick={() => {
+                          setShowMenu(false);
+                          handleDeleteTask(task.id);
+                        }}
+                        className="w-full px-3 py-2 text-left text-[11px] font-bold text-error hover:bg-error/10 transition-colors flex items-center gap-2 cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete Task</span>
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             )}
           </div>
         </div>

@@ -238,15 +238,17 @@ export const ActiveSubtaskItem = ({
                 />
               ) : (
                 <>
-                  <div
-                    onPointerDown={(e) => {
-                      dragControls.start(e);
-                    }}
-                    className="p-1 -ml-1 text-text-secondary/30 group-hover:text-text-secondary/70 hover:bg-[#282828] rounded cursor-grab active:cursor-grabbing transition-colors shrink-0 mt-0.5 touch-none"
-                    title="Drag to reorder"
-                  >
-                    <GripVertical className="w-3 h-3" />
-                  </div>
+                  {subtaskSortOrder === 'default' && (
+                    <div
+                      onPointerDown={(e) => {
+                        dragControls.start(e);
+                      }}
+                      className="p-1 -ml-1 text-text-secondary/30 group-hover:text-text-secondary/70 hover:bg-[#282828] rounded cursor-grab active:cursor-grabbing transition-colors shrink-0 mt-0.5 touch-none"
+                      title="Drag to reorder"
+                    >
+                      <GripVertical className="w-3 h-3" />
+                    </div>
+                  )}
                   <button
                     onClick={() => handleToggleSubtask(sub)}
                     className={`w-4 h-4 rounded-md flex items-center justify-center border transition-all shrink-0 cursor-pointer mt-0.5 ${

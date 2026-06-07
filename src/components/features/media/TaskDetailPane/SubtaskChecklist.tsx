@@ -438,15 +438,15 @@ export const SubtaskChecklist = ({
               setSubtaskSortOrder(nextSort);
               localStorage.setItem('todo_subtask_sort_order', nextSort);
             }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525] transition-all cursor-pointer text-[10px] font-bold"
+            className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+              subtaskSortOrder === 'default'
+                ? 'border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525]'
+                : 'border-brand-primary/40 bg-brand-primary/10 text-brand-primary shadow-[0_0_10px_rgba(99,102,241,0.15)]'
+            }`}
             title={`Active Sort: ${activeSortOption.label} (Click to cycle)`}
             aria-label="Cycle sorting options"
           >
-            <ActiveSortIcon className="w-3.5 h-3.5 text-brand-primary" />
-            <div className="flex items-center gap-1">
-              <span className="text-[8px] font-black uppercase tracking-wider text-text-secondary/50 select-none">Sort:</span>
-              <span className="text-text-primary text-[10px] font-extrabold">{activeSortOption.label}</span>
-            </div>
+            <ActiveSortIcon className="w-3.5 h-3.5 text-inherit" />
           </button>
         </div>
       </div>
