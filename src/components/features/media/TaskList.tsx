@@ -969,7 +969,7 @@ export const TaskList = () => {
                                       ? 'border-error/20 border-l-2 border-l-error bg-error/5'
                                       : subtaskItem.priority === 'medium'
                                         ? 'border-warning/20 border-l-2 border-l-warning bg-warning/5'
-                                        : 'border-gray-border/60 border-l-2 border-l-success bg-[#121212]/40'
+                                        : 'border-gray-border/60 border-l-2 border-l-success bg-bg-primary/40'
                                 }`}
                               >
                                 <div className="flex items-center gap-2 overflow-hidden flex-1">

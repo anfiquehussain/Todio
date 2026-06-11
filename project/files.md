@@ -15,8 +15,10 @@ src/
 │   ├── collections/    # Workspace collections service layer
 │   │   ├── collectionsService.ts # Firebase firestore for lists & categories
 │   │   └── collectionsApi.ts     # API client for workspace categories
-│   └── todo/           # Core task (todo) service layer
-│       └── firestoreService.ts # CRUD tasks and details sync service
+│   ├── todo/           # Core task (todo) service layer
+│   │   └── firestoreService.ts # CRUD tasks and details sync service
+│   └── routines/       # Routine management service layer
+│       └── routineService.ts # CRUD routines and logs sync service
 ├── assets/             # Static assets (images, logos)
 ├── components/         # UI Components (3-Layer Architecture)
 │   ├── ui/             # [Layer 1] Primitives (Button.tsx, IconButton.tsx, Input.tsx, Rating.tsx, Skeleton.tsx)
@@ -51,6 +53,15 @@ src/
 │       │   └── XPProgress.tsx # Circular level XP progress loader
 │       ├── collections/# Category collections components
 │       │   └── CategoryManager.tsx # Workspace list tag manager
+│       ├── routines/   # Routine management feature components
+│       │   ├── RoutineList.tsx # Routines list and filter tab triggers
+│       │   ├── RoutineList/
+│       │   │   └── RoutineCard.tsx # Individual habit card row
+│       │   ├── RoutineFormModal.tsx # Routine creator & editor modal
+│       │   ├── RoutineDetailPane.tsx # Detail stats and history inspector
+│       │   └── RoutineDetailPane/
+│       │       ├── CalendarHeatmap.tsx # CSS grid activity matrix heatmap
+│       │       └── StreakStats.tsx # Streak counts & counter items
 │       └── settings/   # Customization features
 │           ├── FontCustomizer.tsx # Typography and size multipliers
 │           ├── SandboxPreview.tsx # UI sandbox mockup preview
@@ -63,6 +74,7 @@ src/
 │   ├── useToast.ts     # Typed toast notification hook (Sonner wrapper)
 │   ├── usePWA.ts       # PWA installer prompt and state manager hook
 │   ├── useIntersectionObserver.ts # Observer hook for infinite scroll loading
+│   ├── useRoutineSchedule.ts # Habit scheduling & streak calculators
 │   └── useTaskDetailsPage.ts # State/action coordinator for MediaDetailsPage.tsx
 ├── lib/                # Third-party library configs
 │   ├── firebase.ts     # Firebase config credentials initialization
@@ -70,6 +82,7 @@ src/
 ├── pages/              # Routed page components
 │   ├── HomePage.tsx      # Landing dashboard, streaks, and priority lists
 │   ├── BrowsePage.tsx    # Exploration, backup exporter/importer, and sound switches
+│   ├── RoutinesPage.tsx  # Habit tracking dashboard layout wrapper
 │   ├── ProfilePage.tsx   # Detailed progress metrics and database wipe resets
 │   ├── MediaDetailsPage.tsx   # Detailed subtask checklist lists and star priorities
 │   ├── CollectionsPage.tsx # Categories list dashboard
@@ -84,6 +97,7 @@ src/
 │       ├── authSlice.ts
 │       ├── profileSlice.ts
 │       ├── todoSlice.ts
+│       ├── routineSlice.ts # Routine management slice
 │       └── settingsSlice.ts # Settings customization state with LocalStorage persistence
 ├── types/              # Global TypeScript type definitions
 │   ├── env.d.ts        # Vite environment variable types
@@ -91,6 +105,7 @@ src/
 │   ├── collections.types.ts # Category lists types
 │   ├── settings.types.ts # Font family and font-size configuration typings
 │   ├── auth.types.ts   # Firebase auth types
+│   ├── routine.types.ts # Habit definitions & log models
 │   └── index.ts        # Barrel export for all global types
 ├── App.tsx             # App entry with RouterProvider
 ├── main.tsx            # React DOM mounting point with Redux Provider

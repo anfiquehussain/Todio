@@ -7,6 +7,7 @@ import { CollectionsPage } from '../pages/CollectionsPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { BrowsePage } from '../pages/BrowsePage';
 import { CollectionDetailsPage } from '../pages/CollectionDetailsPage';
+import { RoutinesPage } from '../pages/RoutinesPage';
 
 export const router = createBrowserRouter([
   {
@@ -40,8 +41,13 @@ export const router = createBrowserRouter([
       {
         path: 'settings',
         element: <SettingsPage />,
+      },
+      {
+        path: 'routines',
+        element: <RoutinesPage />,
       }
     ],
   },
 ]);
+
 

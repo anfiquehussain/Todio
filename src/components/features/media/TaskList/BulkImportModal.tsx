@@ -65,13 +65,14 @@ export const BulkImportModal = ({
     text: string,
     userId: string,
     activeColId: string | null,
-    activeSubId: string | null
+    activeSubId: string | null,
+    timestamp: number
   ): { tasks: Task[]; subtasks: Subtask[] } => {
     const lines = text.split('\n');
     const tasks: Task[] = [];
     const subtasks: Subtask[] = [];
     let currentTask: Task | null = null;
-    const timestamp = Date.now();
+    const defaultDueDate = new Date(timestamp).toISOString().split('T')[0];
 
     lines.forEach((line, lineIndex) => {
       if (!line.trim()) return;
@@ -130,7 +131,7 @@ export const BulkImportModal = ({
           overview: '',
           completed,
           priority: priorityNum,
-          dueDate: dueDate || (activeColId ? '' : new Date().toISOString().split('T')[0]),
+          dueDate: dueDate || (activeColId ? '' : defaultDueDate),
           collectionId: activeColId,
           subcollectionId: activeSubId,
           userId,
@@ -147,11 +148,14 @@ export const BulkImportModal = ({
   // Live real-time parsing for preview feedback
   const { parsedTasks, parsedSubtasks } = useMemo(() => {
     if (!bulkText.trim()) return { parsedTasks: [], parsedSubtasks: [] };
+    // Pass a static timestamp seed to ensure the function is completely pure during render
+    const previewTimestamp = 1700000000000;
     const { tasks, subtasks } = parseBulkImportText(
       bulkText,
       user?.uid || 'preview',
       activeCollectionId,
-      activeSubcollectionId
+      activeSubcollectionId,
+      previewTimestamp
     );
     return { parsedTasks: tasks, parsedSubtasks: subtasks };
   }, [bulkText, user, activeCollectionId, activeSubcollectionId]);
@@ -173,7 +177,8 @@ export const BulkImportModal = ({
         bulkText,
         user.uid,
         activeCollectionId,
-        activeSubcollectionId
+        activeSubcollectionId,
+        Date.now()
       );
 
       if (tasks.length === 0) {
@@ -267,7 +272,7 @@ export const BulkImportModal = ({
               {examples[activeTab].desc}
             </div>
 
-            <pre className="bg-[#181818] p-3 rounded-xl border border-gray-border/20 text-[10px] text-text-secondary/80 font-mono leading-relaxed select-text select-all whitespace-pre-wrap">
+            <pre className="bg-[#181818] p-3 rounded-xl border border-gray-border/20 text-[10px] text-text-secondary/80 font-mono leading-relaxed select-all whitespace-pre-wrap">
               {examples[activeTab].text}
             </pre>
           </div>

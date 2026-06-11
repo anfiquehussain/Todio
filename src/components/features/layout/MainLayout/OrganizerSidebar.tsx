@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
-  CheckSquare, Folder, Plus, Check, X, Edit2, Trash2, LayoutList, ChevronDown, ChevronRight, Download
+  CheckSquare, Folder, Plus, Check, X, Edit2, Trash2, LayoutList, ChevronDown, ChevronRight, Download, RefreshCw
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../../../hooks/useRedux';
 import { 
@@ -14,6 +14,7 @@ import type { Collection, Subcollection } from '../../../../types';
 import { useToast } from '../../../../hooks/useToast';
 import { useAuthGuard } from '../../../../hooks/useAuthGuard';
 import { ConfirmationModal } from '../../../patterns/ConfirmationModal';
+import { useRoutineSchedule } from '../../../../hooks/useRoutineSchedule';
 
 interface OrganizerSidebarProps {
   setIsMobileMenuOpen: (open: boolean) => void;
@@ -23,18 +24,23 @@ export const OrganizerSidebar = ({
   setIsMobileMenuOpen
 }: OrganizerSidebarProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const { checkAuth } = useAuthGuard();
+  const { getPendingRoutinesCount } = useRoutineSchedule();
 
   const { 
     collections: allCollections, subcollections: allSubcollections, tasks: allTasks, activeCollectionId, 
     activeSubcollectionId, filter 
   } = useAppSelector((state) => state.todo);
 
+  const { routines, routineLogs } = useAppSelector((state) => state.routine);
+
   const collections = allCollections.filter(c => !c.deleted);
   const subcollections = allSubcollections.filter(s => !s.deleted);
   const tasks = allTasks.filter(t => !t.deleted);
+  const routinesDueTodayCount = getPendingRoutinesCount(routines, routineLogs);
 
   const { user } = useAppSelector((state) => state.auth);
 
@@ -301,6 +307,29 @@ export const OrganizerSidebar = ({
           </div>
           <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#202020] text-text-secondary">
             {getSmartViewCount('inbox')}
+          </span>
+        </button>
+
+        <button
+          onClick={() => {
+            dispatch(setActiveCollectionId(null));
+            dispatch(setActiveSubcollectionId(null));
+            dispatch(setActiveTaskId(null));
+            navigate('/routines');
+            setIsMobileMenuOpen(false);
+          }}
+          className={`flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold select-none cursor-pointer transition-all ${
+            location.pathname === '/routines'
+              ? 'bg-[#242424] text-brand-primary'
+              : 'text-text-secondary hover:text-text-primary hover:bg-[#1a1a1a]'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <RefreshCw className="w-4 h-4 font-normal" />
+            <span>Routines</span>
+          </div>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#202020] text-text-secondary">
+            {routinesDueTodayCount}
           </span>
         </button>
       </div>

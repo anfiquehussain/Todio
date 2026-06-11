@@ -374,3 +374,41 @@ To ensure a seamless user experience, key workspace view state is persisted in `
     *   If a user navigates to a sublist or task context (such as via the "Go" shortcut), the parent list automatically expands to reveal the item.
 4.  **Cleanup**:
     *   Wiping data or deleting active folders cleanly scrubs their stored keys to prevent stale or broken workspace references.
+
+---
+
+## 18. Routine Domain Model
+
+Routines are recurring habits or rituals scheduled at daily, weekly, monthly, or custom day intervals. They never complete permanently; instead, completions are tracked using check-in logs.
+
+### 18.1 Routine Schema
+- `id`: Unique identifier (`string`).
+- `userId`: Parent user ID association (`string`).
+- `title`: Short title of the habit card (`string`).
+- `description`: Notes or context of the habit (`string`).
+- `icon`: Lucide icon name for visual identity (`string`).
+- `color`: Custom theme color for badge highlight (`string`).
+- `recurrenceType`: Frequency pattern (`'daily' | 'weekly' | 'monthly' | 'custom'`).
+- `recurrenceDays`: Scheduled days of week `[0-6]` (Sun-Sat) or days of month `[1-31]` (`number[]`).
+- `customIntervalDays`: Interval value N for custom frequency (`number | null`).
+- `startDate`: Start schedule date (`string`, YYYY-MM-DD).
+- `endDate`: End schedule date or null (`string | null`, YYYY-MM-DD).
+- `currentStreak`: Consecutive due days completed up to today (`number`).
+- `bestStreak`: All-time record streak (`number`).
+- `archived`: Archiving toggle flag (`boolean`).
+- `deleted`: Soft-delete trash bin flag (`boolean`).
+- `deletedAt`: ISO timestamp when deleted (`string | null`).
+
+### 18.2 RoutineLog Schema
+Each completed occurrence generates a log entry:
+- `id`: Log item identifier (`string`).
+- `routineId`: Parent routine definition ID (`string`).
+- `userId`: Owner user ID (`string`).
+- `completedAt`: ISO datetime of check-in (`string`).
+- `scheduledDate`: Target date (YYYY-MM-DD) for which check-in is logged (`string`).
+- `note`: Optional text note added at check-in (`string`).
+
+### 18.3 Gamification & XP Rewards
+- Completing a routine check-in awards `25 XP` and increments the profile streak.
+- Unchecking / deleting a completion log decrements `25 XP` and resets the streak.
+

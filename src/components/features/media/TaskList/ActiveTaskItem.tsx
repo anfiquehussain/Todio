@@ -471,7 +471,7 @@ export const ActiveTaskItem = ({
                         <Edit2 className="w-3.5 h-3.5 text-text-secondary" />
                         <span>Edit Task</span>
                       </button>
-                      <div className="h-[1px] bg-gray-border/30 my-0.5" />
+                      <div className="h-px bg-gray-border/30 my-0.5" />
                       <button
                         onClick={() => {
                           setShowMenu(false);
@@ -512,7 +512,7 @@ export const ActiveTaskItem = ({
                        ? 'border-error/20 border-l-2 border-l-error bg-error/5 hover:bg-error/10'
                        : subtaskItem.priority === 'medium'
                          ? 'border-warning/20 border-l-2 border-l-warning bg-warning/5 hover:bg-warning/10'
-                         : 'border-gray-border/60 border-l-2 border-l-success bg-[#121212]/40 hover:bg-[#151515]/50'
+                         : 'border-gray-border/60 border-l-2 border-l-success bg-bg-primary/40 hover:bg-[#151515]/50'
                  }`}
                >
                  <div className="flex items-center gap-2 overflow-hidden flex-1">

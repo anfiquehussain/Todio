@@ -4,26 +4,32 @@ import authReducer from './slices/authSlice';
 import profileReducer from './slices/profileSlice';
 import todoReducer from './slices/todoSlice';
 import settingsReducer from './slices/settingsSlice';
+import routineReducer from './slices/routineSlice';
 
 const localStorageMiddleware: Middleware = (store) => (next) => (action) => {
   const result = next(action);
   
-  if (
-    action && 
-    typeof action === 'object' && 
-    'type' in action && 
-    typeof action.type === 'string' && 
-    action.type.startsWith('todo/')
-  ) {
-    const state = store.getState() as { todo: { collections: unknown[]; subcollections: unknown[]; tasks: unknown[]; subtasks: unknown[] } };
-    const todoState = state.todo;
-    try {
-      localStorage.setItem('todio_collections', JSON.stringify(todoState.collections));
-      localStorage.setItem('todio_subcollections', JSON.stringify(todoState.subcollections));
-      localStorage.setItem('todio_tasks', JSON.stringify(todoState.tasks));
-      localStorage.setItem('todio_subtasks', JSON.stringify(todoState.subtasks));
-    } catch (e) {
-      console.error('Failed to sync todo state to localStorage:', e);
+  if (action && typeof action === 'object' && 'type' in action && typeof action.type === 'string') {
+    if (action.type.startsWith('todo/')) {
+      const state = store.getState() as { todo: { collections: unknown[]; subcollections: unknown[]; tasks: unknown[]; subtasks: unknown[] } };
+      const todoState = state.todo;
+      try {
+        localStorage.setItem('todio_collections', JSON.stringify(todoState.collections));
+        localStorage.setItem('todio_subcollections', JSON.stringify(todoState.subcollections));
+        localStorage.setItem('todio_tasks', JSON.stringify(todoState.tasks));
+        localStorage.setItem('todio_subtasks', JSON.stringify(todoState.subtasks));
+      } catch (e) {
+        console.error('Failed to sync todo state to localStorage:', e);
+      }
+    } else if (action.type.startsWith('routine/')) {
+      const state = store.getState() as { routine: { routines: unknown[]; routineLogs: unknown[] } };
+      const routineState = state.routine;
+      try {
+        localStorage.setItem('todio_routines', JSON.stringify(routineState.routines));
+        localStorage.setItem('todio_routine_logs', JSON.stringify(routineState.routineLogs));
+      } catch (e) {
+        console.error('Failed to sync routine state to localStorage:', e);
+      }
     }
   }
   
@@ -36,6 +42,7 @@ export const store = configureStore({
     profile: profileReducer,
     todo: todoReducer,
     settings: settingsReducer,
+    routine: routineReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -45,3 +52,4 @@ export const store = configureStore({
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
+

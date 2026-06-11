@@ -73,6 +73,18 @@ export const SidebarRail = ({
           </button>
 
           <button
+            onClick={() => navigate('/routines')}
+            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-brand-primary/50 ${
+              location.pathname === '/routines' 
+                ? 'bg-card text-brand-primary shadow-lg border border-gray-border' 
+                : 'text-text-secondary hover:text-text-primary hover:bg-card/50'
+            }`}
+            title="Routines & Habits"
+          >
+            <RefreshCw aria-hidden="true" className="w-4.5 h-4.5" />
+          </button>
+
+          <button
             onClick={() => navigate('/profile')}
             className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-brand-primary/50 ${
               location.pathname === '/profile' 

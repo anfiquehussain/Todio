@@ -66,7 +66,7 @@ export const SettingsPage = () => {
                 className={`px-4 py-2 rounded-xl text-xs font-extrabold cursor-pointer transition-all border ${
                   soundEnabled 
                     ? 'bg-brand-primary text-white border-brand-primary shadow-lg shadow-brand-primary/15'
-                    : 'bg-transparent text-text-secondary border-gray-border hover:text-text-primary hover:bg-[#1a1a1a]'
+                    : 'bg-transparent text-text-secondary border-gray-border hover:text-text-primary hover:bg-card'
                 }`}
               >
                 {soundEnabled ? 'Enabled 🔔' : 'Muted 🔇'}
@@ -89,7 +89,7 @@ export const SettingsPage = () => {
 
 
             {/* List badges toggle */}
-            <div className="flex items-center justify-between gap-4 p-3.5 bg-[#1e1e1e]/40 border border-gray-border/50 rounded-2xl">
+            <div className="flex items-center justify-between gap-4 p-3.5 bg-card/40 border border-gray-border/50 rounded-2xl">
               <div className="flex flex-col gap-0.5 text-left">
                 <span className="text-xs font-bold text-text-primary">Show List & Sublist Badges</span>
                 <span className="text-[10px] text-text-secondary">Display parent list tags on task cards in global views.</span>
@@ -102,7 +102,7 @@ export const SettingsPage = () => {
                 className={`px-4 py-2 rounded-xl text-xs font-extrabold cursor-pointer transition-all border ${
                   showListBadges
                     ? 'bg-brand-primary text-white border-brand-primary shadow-lg shadow-brand-primary/15'
-                    : 'bg-transparent text-text-secondary border-gray-border hover:text-text-primary hover:bg-[#1a1a1a]'
+                    : 'bg-transparent text-text-secondary border-gray-border hover:text-text-primary hover:bg-card'
                 }`}
               >
                 {showListBadges ? 'Show Badges 🏷️' : 'Hidden'}
