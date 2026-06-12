@@ -5,6 +5,7 @@ import { useAppSelector, useAppDispatch } from '../../../hooks/useRedux';
 import { 
   setSoundEnabled, fetchAllTodoData 
 } from '../../../store/slices/todoSlice';
+import { fetchAllRoutineData } from '../../../store/slices/routineSlice';
 import { setAuthModalOpen, setUser } from '../../../store/slices/authSlice';
 import { authService } from '../../../api/auth/authService';
 import { useToast } from '../../../hooks/useToast';
@@ -34,7 +35,10 @@ export const MainLayout = () => {
       return;
     }
     try {
-      await dispatch(fetchAllTodoData(user.uid)).unwrap();
+      await Promise.all([
+        dispatch(fetchAllTodoData(user.uid)).unwrap(),
+        dispatch(fetchAllRoutineData(user.uid)).unwrap()
+      ]);
       toast('Workspace successfully synchronized! 🔄', 'success');
     } catch {
       toast('Failed to synchronize workspace.', 'error');

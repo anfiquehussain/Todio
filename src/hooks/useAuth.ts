@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from './useRedux';
 import { setUser, setLoading, setError } from '../store/slices/authSlice';
-import { fetchAllTodoData, wipeData, cleanupExpiredTrashAsync } from '../store/slices/todoSlice';
+import { fetchAllTodoData, wipeData as wipeTodoData, cleanupExpiredTrashAsync } from '../store/slices/todoSlice';
+import { fetchAllRoutineData, wipeData as wipeRoutineData } from '../store/slices/routineSlice';
 import { auth, onAuthStateChanged } from '../lib/firebase';
 import type { UserProfile } from '../types';
 
@@ -23,12 +24,18 @@ export const useAuth = () => {
             createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
           };
           dispatch(setUser(profile));
-          dispatch(fetchAllTodoData(profile.uid)).unwrap().then(() => {
+          
+          // Fetch all todo and routine data concurrently
+          Promise.all([
+            dispatch(fetchAllTodoData(profile.uid)).unwrap(),
+            dispatch(fetchAllRoutineData(profile.uid)).unwrap()
+          ]).then(() => {
             dispatch(cleanupExpiredTrashAsync());
           });
         } else {
           dispatch(setUser(null));
-          dispatch(wipeData());
+          dispatch(wipeTodoData());
+          dispatch(wipeRoutineData());
         }
         dispatch(setLoading(false));
       },
