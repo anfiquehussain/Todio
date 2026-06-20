@@ -10,7 +10,10 @@ import { TaskFormModal } from '../components/features/media/TaskFormModal';
 import { ConfirmationModal } from '../components/patterns/ConfirmationModal';
 import { updateTaskAsync } from '../store/slices/todoSlice';
 
+import { useAppSelector } from '../hooks/useRedux';
+
 export const MediaDetailsPage = () => {
+  const { showGlowBackdrops } = useAppSelector((state) => state.settings);
   const {
     task,
     collections,
@@ -39,10 +42,13 @@ export const MediaDetailsPage = () => {
 
   return (
     <div className="flex flex-col gap-8 relative font-sans">
-      <div
-        className="absolute -top-24 left-1/2 -translate-x-1/2 w-full max-w-5xl h-72 rounded-full blur-3xl opacity-20 pointer-events-none transition-all duration-500"
-        style={{ backgroundColor: 'rgba(99, 102, 241, 0.15)' }}
-      />
+      {showGlowBackdrops && (
+        <div
+          className="absolute -top-24 left-1/2 -translate-x-1/2 w-full max-w-5xl h-72 rounded-full blur-3xl opacity-20 pointer-events-none transition-all duration-500"
+          style={{ backgroundColor: 'rgba(99, 102, 241, 0.15)' }}
+        />
+      )}
+
 
       <div className="flex items-center justify-between border-b border-gray-border/50 pb-5 relative z-10">
         <button
@@ -152,7 +158,7 @@ export const MediaDetailsPage = () => {
                 </span>
                 <div className="mt-0.5 flex items-center gap-1.5">
                   <span className="text-xs font-black text-brand-accent">
-                    {task.priority}/5
+                    {task.priority === 'high' ? 'High' : task.priority === 'medium' ? 'Medium' : 'Low'}
                   </span>
                 </div>
               </div>

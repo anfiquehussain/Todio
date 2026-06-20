@@ -34,7 +34,7 @@ export const TaskDetailPane = () => {
   const [detailTitle, setDetailTitle] = useState('');
   const [detailOverview, setDetailOverview] = useState('');
   const [detailDueDate, setDetailDueDate] = useState('');
-  const [detailPriority, setDetailPriority] = useState<number>(0);
+  const [detailPriority, setDetailPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [detailCollectionId, setDetailCollectionId] = useState<string>('');
   const [detailSubcollectionId, setDetailSubcollectionId] = useState<string | null>(null);
 
@@ -79,14 +79,14 @@ export const TaskDetailPane = () => {
       setDetailTitle(activeTask.title);
       setDetailOverview(activeTask.overview || '');
       setDetailDueDate(activeTask.dueDate || '');
-      setDetailPriority(activeTask.priority || 0);
+      setDetailPriority(activeTask.priority || 'medium');
       setDetailCollectionId(activeTask.collectionId || '');
       setDetailSubcollectionId(activeTask.subcollectionId || null);
     } else {
       setDetailTitle('');
       setDetailOverview('');
       setDetailDueDate('');
-      setDetailPriority(0);
+      setDetailPriority('medium');
       setDetailCollectionId('');
       setDetailSubcollectionId(null);
     }
@@ -203,11 +203,11 @@ export const TaskDetailPane = () => {
                   <div className="flex items-center bg-[#1a1a1a] border border-gray-border/50 px-2.5 py-1.5 rounded-xl gap-2 select-none shrink-0" title="Priority Weight">
                     <button
                       onClick={() => {
-                        setDetailPriority(1);
-                        handleUpdateActiveTask({ priority: 1 });
+                        setDetailPriority('low');
+                        handleUpdateActiveTask({ priority: 'low' });
                       }}
                       className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
-                        detailPriority <= 1
+                        detailPriority === 'low'
                           ? 'bg-success ring-2 ring-success/40 scale-110 shadow-md shadow-success/30'
                           : 'bg-success/30 hover:bg-success/60'
                       }`}
@@ -216,11 +216,11 @@ export const TaskDetailPane = () => {
                     />
                     <button
                       onClick={() => {
-                        setDetailPriority(3);
-                        handleUpdateActiveTask({ priority: 3 });
+                        setDetailPriority('medium');
+                        handleUpdateActiveTask({ priority: 'medium' });
                       }}
                       className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
-                        detailPriority >= 2 && detailPriority <= 3
+                        detailPriority === 'medium'
                           ? 'bg-warning ring-2 ring-warning/40 scale-110 shadow-md shadow-warning/30'
                           : 'bg-warning/30 hover:bg-warning/60'
                       }`}
@@ -229,11 +229,11 @@ export const TaskDetailPane = () => {
                     />
                     <button
                       onClick={() => {
-                        setDetailPriority(5);
-                        handleUpdateActiveTask({ priority: 5 });
+                        setDetailPriority('high');
+                        handleUpdateActiveTask({ priority: 'high' });
                       }}
                       className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
-                        detailPriority >= 4
+                        detailPriority === 'high'
                           ? 'bg-error ring-2 ring-error/40 scale-110 shadow-md shadow-error/30'
                           : 'bg-error/30 hover:bg-error/60'
                       }`}

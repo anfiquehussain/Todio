@@ -8,7 +8,7 @@ export interface Task {
   collectionId: string | null;
   title: string;
   overview: string;
-  priority: number; // 0-5
+  priority: 'low' | 'medium' | 'high';
   dueDate: string;
   completed: boolean;
   userId: string;

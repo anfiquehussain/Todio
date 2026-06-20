@@ -213,7 +213,7 @@ export const OrganizerSidebar = ({
         return t.dueDate && new Date(t.dueDate).setHours(0, 0, 0, 0) === today;
       }
       if (type === 'week') {
-        return t.imported === true || t.priority >= 4;
+        return t.imported === true || t.priority === 'high';
       }
       if (type === 'inbox') {
         return !t.collectionId;

@@ -308,7 +308,7 @@ export default Component;
   - `title`: Title of the task card.
   - `overview`: Details and notes of the task.
   - `completed`: Completion status flag (`boolean`).
-  - `priority`: Priority weight (`number`, 1 to 5).
+  - `priority`: Priority weight (`'low' | 'medium' | 'high'`).
   - `collectionId`: Workspace category ID or null.
   - `subcollectionId`: Workspace subcollection ID or null.
   - `dueDate`: Target due date (`string`).

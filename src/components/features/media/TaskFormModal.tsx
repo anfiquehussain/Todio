@@ -29,7 +29,7 @@ export const TaskFormModal = ({
   const [overview, setOverview] = useState('');
   const [collectionId, setCollectionId] = useState('');
   const [subcollectionId, setSubcollectionId] = useState('');
-  const [priority, setPriority] = useState(3);
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [dueDate, setDueDate] = useState('');
 
   /* eslint-disable react-hooks/set-state-in-effect */
@@ -46,7 +46,7 @@ export const TaskFormModal = ({
       setOverview('');
       setCollectionId(defaultCollectionId || collections[0]?.id || '');
       setSubcollectionId(defaultSubcollectionId || '');
-      setPriority(3);
+      setPriority('medium');
       setDueDate(new Date().toISOString().split('T')[0]);
     }
   }, [editingTask, isOpen, collections, defaultCollectionId, defaultSubcollectionId]);
@@ -159,9 +159,9 @@ export const TaskFormModal = ({
           <div className="flex items-center gap-2.5">
             <button
               type="button"
-              onClick={() => setPriority(1)}
+              onClick={() => setPriority('low')}
               className={`w-4 h-4 rounded-full transition-all cursor-pointer ${
-                priority <= 1
+                priority === 'low'
                   ? 'bg-success ring-2 ring-success/40 scale-110 shadow-md shadow-success/30'
                   : 'bg-success/30 hover:bg-success/60'
               }`}
@@ -170,9 +170,9 @@ export const TaskFormModal = ({
             />
             <button
               type="button"
-              onClick={() => setPriority(3)}
+              onClick={() => setPriority('medium')}
               className={`w-4 h-4 rounded-full transition-all cursor-pointer ${
-                priority >= 2 && priority <= 3
+                priority === 'medium'
                   ? 'bg-warning ring-2 ring-warning/40 scale-110 shadow-md shadow-warning/30'
                   : 'bg-warning/30 hover:bg-warning/60'
               }`}
@@ -181,9 +181,9 @@ export const TaskFormModal = ({
             />
             <button
               type="button"
-              onClick={() => setPriority(5)}
+              onClick={() => setPriority('high')}
               className={`w-4 h-4 rounded-full transition-all cursor-pointer ${
-                priority >= 4
+                priority === 'high'
                   ? 'bg-error ring-2 ring-error/40 scale-110 shadow-md shadow-error/30'
                   : 'bg-error/30 hover:bg-error/60'
               }`}
@@ -191,7 +191,7 @@ export const TaskFormModal = ({
               aria-label="Set high priority"
             />
             <span className="text-[11px] font-semibold text-text-secondary/70 ml-0.5">
-              {priority <= 1 ? 'Low Priority' : priority <= 3 ? 'Medium Priority' : 'Critical Priority 🚨'}
+              {priority === 'low' ? 'Low Priority' : priority === 'medium' ? 'Medium Priority' : 'High Priority 🚨'}
             </span>
           </div>
         </div>

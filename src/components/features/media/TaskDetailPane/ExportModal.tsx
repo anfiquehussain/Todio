@@ -54,9 +54,9 @@ export const ExportModal = ({
     }
 
     const priorityLabel =
-      activeTask.priority === 5
+      activeTask.priority === 'high'
         ? 'High'
-        : activeTask.priority === 3
+        : activeTask.priority === 'medium'
         ? 'Medium'
         : 'Low';
 

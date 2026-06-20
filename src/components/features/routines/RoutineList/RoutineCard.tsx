@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import * as Icons from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../../../hooks/useRedux';
 import type { Routine } from '../../../../types';
@@ -9,6 +9,7 @@ import {
 import { incrementXP, decrementXP } from '../../../../store/slices/profileSlice';
 import { playCompletionSound } from '../../../../lib/sound';
 import { useToast } from '../../../../hooks/useToast';
+import { CheckInNoteModal } from './CheckInNoteModal';
 
 interface RoutineCardProps {
   routine: Routine;
@@ -23,6 +24,7 @@ export const RoutineCard = ({ routine, isSelected }: RoutineCardProps) => {
   const { routineLogs } = useAppSelector((state) => state.routine);
   const { soundEnabled } = useAppSelector((state) => state.todo);
   const { user } = useAppSelector((state) => state.auth);
+  const { routineNotesPrompt } = useAppSelector((state) => state.settings);
 
   const dueToday = isDueToday(routine);
   const completed = isCompletedToday(routine, routineLogs);
@@ -34,6 +36,30 @@ export const RoutineCard = ({ routine, isSelected }: RoutineCardProps) => {
   const getIcon = (iconName: string) => {
     const IconComp = (Icons as unknown as Record<string, React.ComponentType<{ className?: string; 'aria-hidden'?: string }>>)[iconName];
     return IconComp ? <IconComp className="w-5 h-5" aria-hidden="true" /> : <Icons.RefreshCw className="w-5 h-5" aria-hidden="true" />;
+  };
+
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+
+  const handleConfirmCheckIn = async (note: string) => {
+    if (!user) return;
+    const todayStr = formatDate(new Date());
+    const log = {
+      id: `log-${Date.now()}`,
+      routineId: routine.id,
+      userId: user.uid,
+      completedAt: new Date().toISOString(),
+      scheduledDate: todayStr,
+      note,
+    };
+
+    try {
+      await dispatch(createRoutineLogAsync(log)).unwrap();
+      dispatch(incrementXP(25));
+      playCompletionSound(soundEnabled);
+      toast('Routine completed! +25 XP 🔥', 'success');
+    } catch {
+      toast('Failed to log routine completion.', 'error');
+    }
   };
 
   const handleCheckInToggle = async (e: React.MouseEvent) => {
@@ -59,22 +85,10 @@ export const RoutineCard = ({ routine, isSelected }: RoutineCardProps) => {
         }
       }
     } else {
-      // Check in routine
-      const log = {
-        id: `log-${Date.now()}`,
-        routineId: routine.id,
-        userId: user.uid,
-        completedAt: new Date().toISOString(),
-        scheduledDate: todayStr,
-      };
-
-      try {
-        await dispatch(createRoutineLogAsync(log)).unwrap();
-        dispatch(incrementXP(25));
-        playCompletionSound(soundEnabled);
-        toast('Routine completed! +25 XP 🔥', 'success');
-      } catch {
-        toast('Failed to log routine completion.', 'error');
+      if (routineNotesPrompt) {
+        setIsNoteModalOpen(true);
+      } else {
+        await handleConfirmCheckIn('');
       }
     }
   };
@@ -140,6 +154,13 @@ export const RoutineCard = ({ routine, isSelected }: RoutineCardProps) => {
           <span className="text-xs" role="img" aria-label="Streak fire">🔥</span>
         </div>
       )}
+
+      <CheckInNoteModal
+        isOpen={isNoteModalOpen}
+        onClose={() => setIsNoteModalOpen(false)}
+        onConfirm={handleConfirmCheckIn}
+        routineTitle={routine.title}
+      />
     </div>
   );
 };

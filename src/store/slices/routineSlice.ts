@@ -232,24 +232,28 @@ export const deleteRoutinePermanentAsync = createAsyncThunk(
 export const createRoutineLogAsync = createAsyncThunk(
   'routine/createLog',
   async (log: RoutineLog, { getState, dispatch }) => {
-    // 1. Create the log entry
-    await routineService.createRoutineLog(log);
-
-    // 2. Re-calculate and update routine streak/rate
+    // 1. Re-calculate and update routine streak/rate optimistically
     const state = getState() as { routine: RoutineState };
     const routine = state.routine.routines.find(r => r.id === log.routineId);
+    let updatedRoutine: Routine | null = null;
+    
     if (routine) {
       const updatedLogs = [...state.routine.routineLogs, log];
       const stats = calculateStreakAndRate(routine, updatedLogs);
-      const updatedRoutine = {
+      updatedRoutine = {
         ...routine,
         currentStreak: stats.currentStreak,
         bestStreak: stats.bestStreak,
       };
-      await routineService.updateRoutine(updatedRoutine);
-      // We dispatch update locally so they stay in sync
+      // Dispatch locally immediately for zero latency
       dispatch(updateRoutineLocally(updatedRoutine));
     }
+
+    // 2. Perform DB write operations in parallel
+    await Promise.all([
+      routineService.createRoutineLog(log),
+      updatedRoutine ? routineService.updateRoutine(updatedRoutine) : Promise.resolve(),
+    ]);
 
     return log;
   }
@@ -262,21 +266,27 @@ export const deleteRoutineLogAsync = createAsyncThunk(
     const log = state.routine.routineLogs.find(l => l.id === logId);
 
     if (log) {
-      await routineService.deleteRoutineLog(logId);
-
-      // Re-calculate streak/rate after removing the log
+      // 1. Re-calculate streak/rate and update routine optimistically
       const routine = state.routine.routines.find(r => r.id === log.routineId);
+      let updatedRoutine: Routine | null = null;
+      
       if (routine) {
         const updatedLogs = state.routine.routineLogs.filter(l => l.id !== logId);
         const stats = calculateStreakAndRate(routine, updatedLogs);
-        const updatedRoutine = {
+        updatedRoutine = {
           ...routine,
           currentStreak: stats.currentStreak,
           bestStreak: stats.bestStreak,
         };
-        await routineService.updateRoutine(updatedRoutine);
+        // Dispatch locally immediately for zero latency
         dispatch(updateRoutineLocally(updatedRoutine));
       }
+
+      // 2. Perform DB delete/update operations in parallel
+      await Promise.all([
+        routineService.deleteRoutineLog(logId),
+        updatedRoutine ? routineService.updateRoutine(updatedRoutine) : Promise.resolve(),
+      ]);
     }
 
     return logId;
@@ -376,10 +386,27 @@ const routineSlice = createSlice({
         }
       })
       // Create log
+      .addCase(createRoutineLogAsync.pending, (state, action) => {
+        const log = action.meta.arg;
+        if (!state.routineLogs.some(l => l.id === log.id)) {
+          state.routineLogs.push(log);
+        }
+      })
       .addCase(createRoutineLogAsync.fulfilled, (state, action) => {
-        state.routineLogs.push(action.payload);
+        const idx = state.routineLogs.findIndex(l => l.id === action.payload.id);
+        if (idx !== -1) {
+          state.routineLogs[idx] = action.payload;
+        }
+      })
+      .addCase(createRoutineLogAsync.rejected, (state, action) => {
+        const log = action.meta.arg;
+        state.routineLogs = state.routineLogs.filter(l => l.id !== log.id);
       })
       // Delete log
+      .addCase(deleteRoutineLogAsync.pending, (state, action) => {
+        const logId = action.meta.arg;
+        state.routineLogs = state.routineLogs.filter(l => l.id !== logId);
+      })
       .addCase(deleteRoutineLogAsync.fulfilled, (state, action) => {
         state.routineLogs = state.routineLogs.filter(l => l.id !== action.payload);
       });

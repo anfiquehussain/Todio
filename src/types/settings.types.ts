@@ -6,4 +6,9 @@ export interface SettingsState {
   fontSize: SettingsFontSize;
   subtaskFilter: 'all' | 'priority';
   showListBadges: boolean;
+  showGlowBackdrops: boolean;
+  defaultTaskPriority: 'low' | 'medium' | 'high';
+  autoArchiveCompleted: boolean;
+  routineNotesPrompt: boolean;
 }
+

@@ -24,8 +24,8 @@ interface ActiveTaskItemProps {
   setEditingTaskId: (id: string | null) => void;
   editingTaskTitle: string;
   setEditingTaskTitle: (title: string) => void;
-  editingTaskPriority: number;
-  setEditingTaskPriority: (priority: number) => void;
+  editingTaskPriority: 'low' | 'medium' | 'high';
+  setEditingTaskPriority: (priority: 'low' | 'medium' | 'high') => void;
   handleUpdateTaskInline: (task: Task) => void;
   handleToggleComplete: (task: Task) => void;
   handleDeleteTask: (id: string) => void;
@@ -100,7 +100,7 @@ export const ActiveTaskItem = ({
         s.priority === 'high' ||
         s.priority === 'medium' ||
         task.imported === true ||
-        task.priority >= 4
+        task.priority === 'high'
       );
     }
     return true;
@@ -220,9 +220,9 @@ export const ActiveTaskItem = ({
           }}
           onClick={(e) => e.stopPropagation()}
           className={`flex items-center justify-between px-3.5 py-3.5 rounded-2xl border border-l-4 select-none transition-all ${
-            editingTaskPriority >= 4
+            editingTaskPriority === 'high'
               ? 'bg-error/5 border-error/20 border-l-error'
-              : editingTaskPriority >= 2
+              : editingTaskPriority === 'medium'
                 ? 'bg-warning/5 border-warning/20 border-l-warning'
                 : 'bg-[#181818]/60 border-gray-border border-l-success'
           }`}
@@ -231,9 +231,9 @@ export const ActiveTaskItem = ({
             <div className="flex items-center gap-1 shrink-0 bg-[#202020] border border-gray-border/20 px-2 py-1.5 rounded-xl">
               <button
                 type="button"
-                onClick={() => setEditingTaskPriority(1)}
+                onClick={() => setEditingTaskPriority('low')}
                 className={`w-3.5 h-3.5 rounded-full transition-all cursor-pointer ${
-                  editingTaskPriority <= 1
+                  editingTaskPriority === 'low'
                     ? 'bg-success ring-2 ring-success/40 scale-110'
                     : 'bg-success/30 hover:bg-success/60'
                 }`}
@@ -242,9 +242,9 @@ export const ActiveTaskItem = ({
               />
               <button
                 type="button"
-                onClick={() => setEditingTaskPriority(3)}
+                onClick={() => setEditingTaskPriority('medium')}
                 className={`w-3.5 h-3.5 rounded-full transition-all cursor-pointer ${
-                  editingTaskPriority >= 2 && editingTaskPriority <= 3
+                  editingTaskPriority === 'medium'
                     ? 'bg-warning ring-2 ring-warning/40 scale-110'
                     : 'bg-warning/30 hover:bg-warning/60'
                 }`}
@@ -253,9 +253,9 @@ export const ActiveTaskItem = ({
               />
               <button
                 type="button"
-                onClick={() => setEditingTaskPriority(5)}
+                onClick={() => setEditingTaskPriority('high')}
                 className={`w-3.5 h-3.5 rounded-full transition-all cursor-pointer ${
-                  editingTaskPriority >= 4
+                  editingTaskPriority === 'high'
                     ? 'bg-error ring-2 ring-error/40 scale-110'
                     : 'bg-error/30 hover:bg-error/60'
                 }`}
@@ -306,9 +306,9 @@ export const ActiveTaskItem = ({
             }
           }}
           className={`group flex items-center justify-between px-3.5 py-3 rounded-2xl border border-l-4 cursor-pointer select-none transition-all ${
-            task.priority >= 4
+            task.priority === 'high'
               ? `${isSelected ? 'bg-error/10 border-[#383838]' : 'bg-error/5 border-error/20 hover:bg-error/10'} border-l-error`
-              : task.priority >= 2
+              : task.priority === 'medium'
                 ? `${isSelected ? 'bg-warning/10 border-[#383838]' : 'bg-warning/5 border-warning/20 hover:bg-warning/10'} border-l-warning`
                 : `${isSelected ? 'bg-[#222222] border-[#383838]' : 'bg-[#181818]/60 border-gray-border hover:bg-[#1c1c1c]'} border-l-success`
           } ${isSelected ? 'shadow-md shadow-brand-primary/5' : ''}`}
@@ -359,16 +359,16 @@ export const ActiveTaskItem = ({
                 <button
                   onClick={(e) => { e.stopPropagation(); handleToggleComplete(task); }}
                   className={`w-4.5 h-4.5 rounded-full border bg-bg-secondary flex items-center justify-center text-transparent transition-all shrink-0 cursor-pointer mt-0.5 ${
-                    task.priority >= 4
+                    task.priority === 'high'
                       ? 'border-error hover:border-error/80'
-                      : task.priority >= 2
+                      : task.priority === 'medium'
                         ? 'border-warning hover:border-warning/80'
                         : 'border-text-secondary/40 hover:border-brand-primary/80'
                   }`}
                   aria-label="Mark task completed"
                 >
                   <Check className={`w-3 h-3 ${
-                    task.priority >= 4 ? 'hover:text-error' : task.priority >= 2 ? 'hover:text-warning' : 'hover:text-brand-primary'
+                    task.priority === 'high' ? 'hover:text-error' : task.priority === 'medium' ? 'hover:text-warning' : 'hover:text-brand-primary'
                   }`} />
                 </button>
               </>
@@ -464,7 +464,7 @@ export const ActiveTaskItem = ({
                           setShowMenu(false);
                           setEditingTaskId(task.id);
                           setEditingTaskTitle(task.title);
-                          setEditingTaskPriority(task.priority || 1);
+                          setEditingTaskPriority(task.priority || 'medium');
                         }}
                         className="w-full px-3 py-2 text-left text-[11px] font-bold text-text-primary hover:bg-[#282828] transition-colors flex items-center gap-2 cursor-pointer"
                       >

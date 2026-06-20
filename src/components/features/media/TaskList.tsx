@@ -38,7 +38,7 @@ export const TaskList = () => {
     tasks: allTasks, collections: allCollections, subcollections: allSubcollections, activeCollectionId, 
     activeSubcollectionId, activeTaskId, filter, sortBy, soundEnabled, subtasks: allSubtasks
   } = useAppSelector((state) => state.todo);
-  const { showListBadges, subtaskFilter } = useAppSelector((state) => state.settings);
+  const { showListBadges, subtaskFilter, defaultTaskPriority, autoArchiveCompleted } = useAppSelector((state) => state.settings);
 
   const collections = allCollections.filter(c => !c.deleted);
   const subcollections = allSubcollections.filter(s => !s.deleted);
@@ -73,7 +73,7 @@ export const TaskList = () => {
 
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTaskTitle, setEditingTaskTitle] = useState('');
-  const [editingTaskPriority, setEditingTaskPriority] = useState<number>(1);
+  const [editingTaskPriority, setEditingTaskPriority] = useState<'low' | 'medium' | 'high'>('low');
   const [taskToDeleteId, setTaskToDeleteId] = useState<string | null>(null);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -132,7 +132,7 @@ export const TaskList = () => {
         return t.dueDate && new Date(t.dueDate).setHours(0, 0, 0, 0) === today;
       }
       if (filter === 'all') {
-        return t.imported === true || t.priority >= 4;
+        return t.imported === true || t.priority === 'high';
       }
       if (filter === 'overdue') {
         return !t.collectionId;
@@ -145,8 +145,14 @@ export const TaskList = () => {
   };
 
   const sortedTasks = [...getFilteredTasks()].sort((a, b) => {
-    if (sortBy === 'priority-desc') return b.priority - a.priority;
-    if (sortBy === 'priority-asc') return a.priority - b.priority;
+    if (sortBy === 'priority-desc') {
+      const w = { high: 3, medium: 2, low: 1 };
+      return w[b.priority] - w[a.priority];
+    }
+    if (sortBy === 'priority-asc') {
+      const w = { high: 3, medium: 2, low: 1 };
+      return w[a.priority] - w[b.priority];
+    }
     if (sortBy === 'dueDate-desc') {
       if (!a.dueDate) return 1;
       if (!b.dueDate) return -1;
@@ -171,7 +177,8 @@ export const TaskList = () => {
     }
     
     // Legacy support fallback
-    if (sortBy as string === 'priority') return b.priority - a.priority;
+    const w = { high: 3, medium: 2, low: 1 };
+    if (sortBy as string === 'priority') return w[b.priority] - w[a.priority];
     if (sortBy as string === 'dueDate') {
       if (!a.dueDate) return 1;
       if (!b.dueDate) return -1;
@@ -192,7 +199,7 @@ export const TaskList = () => {
   });
 
   const activeQueue = sortedTasks.filter(t => !t.completed);
-  const completedQueue = sortedTasks.filter(t => t.completed);
+  const completedQueue = autoArchiveCompleted ? [] : sortedTasks.filter(t => t.completed);
 
   const visibleTasks = getFilteredTasks();
   const anyExpanded = visibleTasks.some(t => manuallyExpandedTaskIds[t.id] === true);
@@ -222,7 +229,7 @@ export const TaskList = () => {
       id: `task-${Date.now()}`,
       title: newTitle.trim(),
       overview: '',
-      priority: 1,
+      priority: defaultTaskPriority,
       dueDate: activeCollectionId ? '' : new Date().toISOString().split('T')[0], // Set today's date if in Today smart view
       completed: false,
       collectionId: activeCollectionId,
@@ -717,7 +724,7 @@ export const TaskList = () => {
                         s.priority === 'high' ||
                         s.priority === 'medium' ||
                         task.imported === true ||
-                        task.priority >= 4
+                        task.priority === 'high'
                       );
                     }
                     return true;
@@ -732,9 +739,9 @@ export const TaskList = () => {
                       }}
                       onClick={(e) => e.stopPropagation()}
                       className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-success/15 bg-success/5 select-none transition-all border-l-4 ${
-                        editingTaskPriority >= 4
+                        editingTaskPriority === 'high'
                           ? 'border-l-error/40'
-                          : editingTaskPriority >= 2
+                          : editingTaskPriority === 'medium'
                             ? 'border-l-warning/40'
                             : 'border-l-success/40'
                       }`}
@@ -744,9 +751,9 @@ export const TaskList = () => {
                         <div className="flex items-center gap-1 shrink-0 bg-[#202020] border border-gray-border/20 px-2 py-1.5 rounded-xl">
                           <button
                             type="button"
-                            onClick={() => setEditingTaskPriority(1)}
+                            onClick={() => setEditingTaskPriority('low')}
                             className={`w-3.5 h-3.5 rounded-full transition-all cursor-pointer ${
-                              editingTaskPriority <= 1
+                              editingTaskPriority === 'low'
                                 ? 'bg-success ring-2 ring-success/40 scale-110'
                                 : 'bg-success/30 hover:bg-success/60'
                             }`}
@@ -755,9 +762,9 @@ export const TaskList = () => {
                           />
                           <button
                             type="button"
-                            onClick={() => setEditingTaskPriority(3)}
+                            onClick={() => setEditingTaskPriority('medium')}
                             className={`w-3.5 h-3.5 rounded-full transition-all cursor-pointer ${
-                              editingTaskPriority >= 2 && editingTaskPriority <= 3
+                              editingTaskPriority === 'medium'
                                 ? 'bg-warning ring-2 ring-warning/40 scale-110'
                                 : 'bg-warning/30 hover:bg-warning/60'
                             }`}
@@ -766,9 +773,9 @@ export const TaskList = () => {
                           />
                           <button
                             type="button"
-                            onClick={() => setEditingTaskPriority(5)}
+                            onClick={() => setEditingTaskPriority('high')}
                             className={`w-3.5 h-3.5 rounded-full transition-all cursor-pointer ${
-                              editingTaskPriority >= 4
+                              editingTaskPriority === 'high'
                                 ? 'bg-error ring-2 ring-error/40 scale-110'
                                 : 'bg-error/30 hover:bg-error/60'
                             }`}
@@ -821,9 +828,9 @@ export const TaskList = () => {
                           }
                         }}
                         className={`group flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-success/15 bg-success/5 opacity-60 select-none cursor-pointer transition-all border-l-4 ${
-                          task.priority >= 4
+                          task.priority === 'high'
                             ? 'border-l-error/40'
-                            : task.priority >= 2
+                            : task.priority === 'medium'
                               ? 'border-l-warning/40'
                               : 'border-l-success/40'
                         } ${isSelected ? 'bg-[#222] border-[#383838] opacity-100' : 'hover:opacity-100'}`}
@@ -929,7 +936,7 @@ export const TaskList = () => {
                                   e.stopPropagation();
                                   setEditingTaskId(task.id);
                                   setEditingTaskTitle(task.title);
-                                  setEditingTaskPriority(task.priority || 1);
+                                  setEditingTaskPriority(task.priority || 'low');
                                 }}
                                 className="p-1 hover:bg-[#2e2e2e] rounded text-text-secondary opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
                                 title="Edit Task"

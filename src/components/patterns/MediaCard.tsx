@@ -106,7 +106,7 @@ export const MediaCard = ({
           </div>
 
           <div className="flex items-center gap-1 font-semibold text-brand-accent">
-            <span>Priority: {media.priority}</span>
+            <span>Priority: {media.priority === 'high' ? 'High' : media.priority === 'medium' ? 'Medium' : 'Low'}</span>
           </div>
         </div>
 

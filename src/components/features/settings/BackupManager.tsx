@@ -26,11 +26,25 @@ export const BackupManager = () => {
         let importCount = 0;
         for (const rawTask of json) {
           if (rawTask && typeof rawTask === 'object' && 'title' in rawTask) {
+            const rawPriority = rawTask.priority;
+            let finalPriority: 'low' | 'medium' | 'high' = 'low';
+            if (typeof rawPriority === 'string') {
+              if (rawPriority === 'medium' || rawPriority === 'high') {
+                finalPriority = rawPriority;
+              }
+            } else if (typeof rawPriority === 'number') {
+              if (rawPriority >= 4) {
+                finalPriority = 'high';
+              } else if (rawPriority >= 2) {
+                finalPriority = 'medium';
+              }
+            }
+
             const task = {
               id: rawTask.id || `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
               title: String(rawTask.title),
               overview: String(rawTask.overview || ''),
-              priority: Number(rawTask.priority ?? 1),
+              priority: finalPriority,
               dueDate: String(rawTask.dueDate || ''),
               completed: Boolean(rawTask.completed || false),
               collectionId: rawTask.collectionId || null,

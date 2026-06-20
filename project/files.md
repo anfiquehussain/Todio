@@ -56,7 +56,8 @@ src/
 │       ├── routines/   # Routine management feature components
 │       │   ├── RoutineList.tsx # Routines list and filter tab triggers
 │       │   ├── RoutineList/
-│       │   │   └── RoutineCard.tsx # Individual habit card row
+│       │   │   ├── RoutineCard.tsx # Individual habit card row
+│       │   │   └── CheckInNoteModal.tsx # Routine milestone comments prompt dialog modal
 │       │   ├── RoutineFormModal.tsx # Routine creator & editor modal
 │       │   ├── RoutineDetailPane.tsx # Detail stats and history inspector
 │       │   └── RoutineDetailPane/

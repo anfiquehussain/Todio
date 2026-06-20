@@ -89,16 +89,16 @@ export const BulkImportModal = ({
       if (!cleaned) return;
 
       // Extract Priority
-      let priorityNum = 1;
+      let taskPriority: 'low' | 'medium' | 'high' = 'low';
       let subtaskPriority: 'low' | 'medium' | 'high' = 'low';
       if (/(?:priority|prio):\s*high/i.test(cleaned)) {
-        priorityNum = 5;
+        taskPriority = 'high';
         subtaskPriority = 'high';
       } else if (/(?:priority|prio):\s*(?:medium|med)/i.test(cleaned)) {
-        priorityNum = 3;
+        taskPriority = 'medium';
         subtaskPriority = 'medium';
       } else if (/(?:priority|prio):\s*low/i.test(cleaned)) {
-        priorityNum = 1;
+        taskPriority = 'low';
         subtaskPriority = 'low';
       }
 
@@ -125,12 +125,12 @@ export const BulkImportModal = ({
         };
         subtasks.push(subtask);
       } else {
-        currentTask = {
+        const newTask: Task = {
           id: `task-${timestamp}-${lineIndex}`,
           title,
           overview: '',
           completed,
-          priority: priorityNum,
+          priority: taskPriority,
           dueDate: dueDate || (activeColId ? '' : defaultDueDate),
           collectionId: activeColId,
           subcollectionId: activeSubId,
@@ -138,7 +138,8 @@ export const BulkImportModal = ({
           createdAt: new Date(timestamp + lineIndex).toISOString(),
           imported: true,
         };
-        tasks.push(currentTask);
+        currentTask = newTask;
+        tasks.push(newTask);
       }
     });
 
@@ -307,9 +308,9 @@ export const BulkImportModal = ({
                         <span className={t.completed ? 'line-through opacity-60 text-text-secondary' : ''}>
                           {t.title}
                         </span>
-                        {t.priority > 1 && (
+                        {t.priority !== 'low' && (
                           <span className="text-[8px] px-1.5 py-0.5 rounded bg-error/15 text-error font-black uppercase tracking-wider scale-90">
-                            Prio {t.priority === 5 ? 'High' : 'Medium'}
+                            Prio {t.priority === 'high' ? 'High' : 'Medium'}
                           </span>
                         )}
                         {t.dueDate && (
