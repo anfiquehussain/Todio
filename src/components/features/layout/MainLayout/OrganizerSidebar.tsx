@@ -247,17 +247,21 @@ export const OrganizerSidebar = ({
             navigate('/');
             setIsMobileMenuOpen(false);
           }}
-          className={`flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold select-none cursor-pointer transition-all ${
+          className={`flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold select-none cursor-pointer transition-all border ${
             filter === 'active' && !activeCollectionId
-              ? 'bg-[#242424] text-brand-primary'
-              : 'text-text-secondary hover:text-text-primary hover:bg-[#1a1a1a]'
+              ? 'bg-brand-primary/10 text-brand-primary border-brand-primary/20 shadow-xs'
+              : 'text-text-secondary border-transparent hover:text-text-primary hover:bg-bg-primary'
           }`}
         >
           <div className="flex items-center gap-2.5">
             <CheckSquare className="w-4 h-4" />
             <span>Today</span>
           </div>
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#202020] text-text-secondary">
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border transition-all ${
+            filter === 'active' && !activeCollectionId
+              ? 'bg-brand-primary text-white border-transparent'
+              : 'bg-bg-primary border-gray-border/50 text-text-secondary'
+          }`}>
             {getSmartViewCount('today')}
           </span>
         </button>
@@ -271,17 +275,21 @@ export const OrganizerSidebar = ({
             navigate('/');
             setIsMobileMenuOpen(false);
           }}
-          className={`flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold select-none cursor-pointer transition-all ${
+          className={`flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold select-none cursor-pointer transition-all border ${
             filter === 'all' && !activeCollectionId
-              ? 'bg-[#242424] text-brand-primary'
-              : 'text-text-secondary hover:text-text-primary hover:bg-[#1a1a1a]'
+              ? 'bg-brand-primary/10 text-brand-primary border-brand-primary/20 shadow-xs'
+              : 'text-text-secondary border-transparent hover:text-text-primary hover:bg-bg-primary'
           }`}
         >
           <div className="flex items-center gap-2.5">
             <Download className="w-4 h-4" />
             <span>Imported</span>
           </div>
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#202020] text-text-secondary">
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border transition-all ${
+            filter === 'all' && !activeCollectionId
+              ? 'bg-brand-primary text-white border-transparent'
+              : 'bg-bg-primary border-gray-border/50 text-text-secondary'
+          }`}>
             {getSmartViewCount('week')}
           </span>
         </button>
@@ -295,17 +303,21 @@ export const OrganizerSidebar = ({
             navigate('/');
             setIsMobileMenuOpen(false);
           }}
-          className={`flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold select-none cursor-pointer transition-all ${
+          className={`flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold select-none cursor-pointer transition-all border ${
             filter === 'overdue' && !activeCollectionId
-              ? 'bg-[#242424] text-brand-primary'
-              : 'text-text-secondary hover:text-text-primary hover:bg-[#1a1a1a]'
+              ? 'bg-brand-primary/10 text-brand-primary border-brand-primary/20 shadow-xs'
+              : 'text-text-secondary border-transparent hover:text-text-primary hover:bg-bg-primary'
           }`}
         >
           <div className="flex items-center gap-2.5">
             <Folder className="w-4 h-4" />
             <span>Inbox</span>
           </div>
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#202020] text-text-secondary">
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border transition-all ${
+            filter === 'overdue' && !activeCollectionId
+              ? 'bg-brand-primary text-white border-transparent'
+              : 'bg-bg-primary border-gray-border/50 text-text-secondary'
+          }`}>
             {getSmartViewCount('inbox')}
           </span>
         </button>
@@ -318,17 +330,21 @@ export const OrganizerSidebar = ({
             navigate('/routines');
             setIsMobileMenuOpen(false);
           }}
-          className={`flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold select-none cursor-pointer transition-all ${
+          className={`flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold select-none cursor-pointer transition-all border ${
             location.pathname === '/routines'
-              ? 'bg-[#242424] text-brand-primary'
-              : 'text-text-secondary hover:text-text-primary hover:bg-[#1a1a1a]'
+              ? 'bg-brand-primary/10 text-brand-primary border-brand-primary/20 shadow-xs'
+              : 'text-text-secondary border-transparent hover:text-text-primary hover:bg-bg-primary'
           }`}
         >
           <div className="flex items-center gap-2.5">
             <RefreshCw className="w-4 h-4 font-normal" />
             <span>Routines</span>
           </div>
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#202020] text-text-secondary">
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border transition-all ${
+            location.pathname === '/routines'
+              ? 'bg-brand-primary text-white border-transparent'
+              : 'bg-bg-primary border-gray-border/50 text-text-secondary'
+          }`}>
             {routinesDueTodayCount}
           </span>
         </button>
@@ -340,7 +356,7 @@ export const OrganizerSidebar = ({
           <span className="text-xs font-bold uppercase tracking-widest text-text-secondary/50">Lists</span>
           <button 
             onClick={() => setIsCreatingCollection(true)}
-            className="p-1 hover:bg-[#1a1a1a] rounded text-text-secondary hover:text-brand-primary transition-colors cursor-pointer"
+            className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-secondary hover:text-brand-primary transition-colors cursor-pointer"
             aria-label="Add list"
           >
             <Plus className="w-4 h-4" />
@@ -401,7 +417,7 @@ export const OrganizerSidebar = ({
                 {editingCollectionId === collection.id ? (
                   <form 
                     onSubmit={(e) => handleUpdateCollection(e, collection)} 
-                    className="px-2 py-1.5 flex items-center gap-1.5 w-full bg-[#1a1a1a] rounded-xl"
+                    className="px-2 py-1.5 flex items-center gap-1.5 w-full bg-bg-primary dark:bg-bg-secondary border border-gray-border/50 rounded-xl"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Folder className="w-4 h-4 shrink-0 text-brand-primary" style={{ color: collection.color }} />
@@ -443,10 +459,10 @@ export const OrganizerSidebar = ({
                       navigate('/');
                       setIsMobileMenuOpen(false);
                     }}
-                    className={`group flex items-center justify-between px-2 py-1.5 rounded-xl cursor-pointer transition-all ${
+                    className={`group flex items-center justify-between px-2 py-1.5 rounded-xl cursor-pointer transition-all border ${
                       isSelected 
-                        ? 'bg-[#242424] text-brand-primary' 
-                        : 'text-text-secondary hover:text-text-primary hover:bg-[#1a1a1a]'
+                        ? 'bg-brand-primary/10 text-brand-primary border-brand-primary/20 shadow-xs' 
+                        : 'text-text-secondary border-transparent hover:text-text-primary hover:bg-bg-primary'
                     }`}
                   >
                     <div className="flex items-center gap-1.5 overflow-hidden flex-1">
@@ -455,7 +471,7 @@ export const OrganizerSidebar = ({
                           e.stopPropagation();
                           setExpandedCollections(prev => ({ ...prev, [collection.id]: !prev[collection.id] }));
                         }}
-                        className="p-0.5 hover:bg-[#1a1a1a] rounded text-text-secondary/70 shrink-0"
+                        className="p-0.5 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-secondary/70 shrink-0"
                         aria-label={isExpanded ? 'Collapse' : 'Expand'}
                       >
                         {subs.length > 0 ? (
@@ -469,7 +485,11 @@ export const OrganizerSidebar = ({
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-[#202020] text-text-secondary/70 lg:group-hover:hidden hidden lg:block">
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border transition-all lg:group-hover:hidden hidden lg:block ${
+                        isSelected
+                          ? 'bg-brand-primary text-white border-transparent'
+                          : 'bg-bg-primary border-gray-border/50 text-text-secondary/70'
+                      }`}>
                         {totalActiveTasks}
                       </span>
                       <div className="flex lg:hidden lg:group-hover:flex items-center gap-1">
@@ -479,7 +499,7 @@ export const OrganizerSidebar = ({
                             setCreatingSubcollectionFor(collection.id);
                             setExpandedCollections(prev => ({ ...prev, [collection.id]: true }));
                           }}
-                          className="p-0.5 hover:bg-[#202020] rounded text-text-secondary"
+                          className="p-0.5 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-secondary"
                           title="Add Sublist"
                         >
                           <Plus className="w-3 h-3" />
@@ -490,7 +510,7 @@ export const OrganizerSidebar = ({
                             setEditingCollectionId(collection.id);
                             setEditingCollectionName(collection.name);
                           }}
-                          className="p-0.5 hover:bg-[#202020] rounded text-text-secondary"
+                          className="p-0.5 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-secondary"
                           title="Rename List"
                         >
                           <Edit2 className="w-3 h-3" />
@@ -518,7 +538,7 @@ export const OrganizerSidebar = ({
                           {editingSubcollectionId === sub.id ? (
                             <form 
                               onSubmit={(e) => handleUpdateSubcollection(e, sub)} 
-                              className="px-2 py-1 flex items-center gap-1 w-full bg-[#1a1a1a] rounded-lg"
+                              className="px-2 py-1 flex items-center gap-1 w-full bg-bg-primary dark:bg-bg-secondary border border-gray-border/50 rounded-lg"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <LayoutList className="w-3.5 h-3.5 shrink-0 opacity-60" />
@@ -560,10 +580,10 @@ export const OrganizerSidebar = ({
                                 navigate('/');
                                 setIsMobileMenuOpen(false);
                               }}
-                              className={`group flex items-center justify-between px-2 py-1 rounded-lg cursor-pointer transition-all ${
+                              className={`group flex items-center justify-between px-2 py-1 rounded-lg cursor-pointer transition-all border ${
                                 isSubSelected
-                                  ? 'bg-[#242424] text-brand-primary font-bold'
-                                  : 'text-text-secondary hover:text-text-primary hover:bg-[#1a1a1a]'
+                                  ? 'bg-brand-primary/10 text-brand-primary border-brand-primary/20 shadow-xs'
+                                  : 'text-text-secondary border-transparent hover:text-text-primary hover:bg-bg-primary'
                               }`}
                             >
                               <div className="flex items-center gap-1.5 overflow-hidden flex-1">
@@ -572,7 +592,11 @@ export const OrganizerSidebar = ({
                               </div>
                               
                               <div className="flex items-center gap-1 shrink-0">
-                                <span className="text-[9px] font-semibold px-1 rounded bg-[#202020] text-text-secondary/60 lg:group-hover:hidden hidden lg:block">
+                                <span className={`text-[9px] font-semibold px-1 rounded border transition-all lg:group-hover:hidden hidden lg:block ${
+                                  isSubSelected
+                                    ? 'bg-brand-primary text-white border-transparent'
+                                    : 'bg-bg-primary border-gray-border/50 text-text-secondary/60'
+                                }`}>
                                   {subTasksCount}
                                 </span>
                                 <div className="flex lg:hidden lg:group-hover:flex items-center gap-1">
@@ -582,7 +606,7 @@ export const OrganizerSidebar = ({
                                       setEditingSubcollectionId(sub.id);
                                       setEditingSubcollectionName(sub.name);
                                     }}
-                                    className="p-0.5 hover:bg-[#202020] rounded text-text-secondary"
+                                    className="p-0.5 hover:bg-black/5 dark:hover:bg-white/5 rounded text-text-secondary"
                                     title="Rename Sublist"
                                   >
                                     <Edit2 className="w-3 h-3" />
@@ -658,10 +682,10 @@ export const OrganizerSidebar = ({
             navigate('/');
             setIsMobileMenuOpen(false);
           }}
-          className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold select-none cursor-pointer transition-all ${
+          className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold select-none cursor-pointer transition-all border ${
             filter === 'completed' && !activeCollectionId
-              ? 'bg-[#242424] text-brand-primary font-bold animate-pulse'
-              : 'text-text-secondary hover:text-text-primary hover:bg-[#1a1a1a]'
+              ? 'bg-brand-primary/10 text-brand-primary border-brand-primary/20 font-bold animate-pulse'
+              : 'text-text-secondary border-transparent hover:text-text-primary hover:bg-bg-primary'
           }`}
         >
           <Check className="w-4 h-4" />
@@ -677,10 +701,10 @@ export const OrganizerSidebar = ({
             navigate('/');
             setIsMobileMenuOpen(false);
           }}
-          className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold select-none cursor-pointer transition-all ${
+          className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold select-none cursor-pointer transition-all border ${
             filter === 'trash' && !activeCollectionId
-              ? 'bg-[#242424] text-brand-primary font-bold animate-pulse'
-              : 'text-text-secondary hover:text-text-primary hover:bg-[#1a1a1a]'
+              ? 'bg-brand-primary/10 text-brand-primary border-brand-primary/20 font-bold animate-pulse'
+              : 'text-text-secondary border-transparent hover:text-text-primary hover:bg-bg-primary'
           }`}
         >
           <Trash2 className="w-4 h-4" />

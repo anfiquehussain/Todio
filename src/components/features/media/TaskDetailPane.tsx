@@ -183,7 +183,7 @@ export const TaskDetailPane = () => {
                 {/* Compact Properties Row (Right) */}
                 <div className="flex items-center gap-1.5 shrink-0 self-start sm:self-center">
                   {/* Due Date Pill (Icon + Selected Date, or Icon only if empty) */}
-                  <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold text-text-secondary bg-[#1a1a1a] hover:bg-[#222222] border border-gray-border/50 px-2.5 py-1.5 rounded-xl relative overflow-hidden hover:text-text-primary transition-all cursor-pointer shrink-0" title={detailDueDate ? `Due Date: ${detailDueDate}` : 'Add Due Date'}>
+                  <div className="flex items-center justify-center gap-1.5 text-[10px] font-bold text-text-secondary bg-bg-primary/80 dark:bg-[#1a1a1a] hover:bg-bg-primary dark:hover:bg-[#222222] border border-gray-border/50 px-2.5 py-1.5 rounded-xl relative overflow-hidden hover:text-text-primary transition-all cursor-pointer shrink-0" title={detailDueDate ? `Due Date: ${detailDueDate}` : 'Add Due Date'}>
                     <Calendar className={`w-3.5 h-3.5 ${detailDueDate ? 'text-brand-primary' : 'text-text-secondary/50'}`} />
                     <input
                       type="date"
@@ -200,7 +200,7 @@ export const TaskDetailPane = () => {
                   </div>
 
                   {/* Priority Selector Pill */}
-                  <div className="flex items-center bg-[#1a1a1a] border border-gray-border/50 px-2.5 py-1.5 rounded-xl gap-2 select-none shrink-0" title="Priority Weight">
+                  <div className="flex items-center bg-bg-primary/80 dark:bg-[#1a1a1a] border border-gray-border/50 px-2.5 py-1.5 rounded-xl gap-2 select-none shrink-0" title="Priority Weight">
                     <button
                       onClick={() => {
                         setDetailPriority('low');
@@ -273,7 +273,7 @@ export const TaskDetailPane = () => {
           
           {/* Details panel bottom formatting strip decoration */}
           {!isDetailsPaneExpanded && (
-            <div className="px-6 py-4.5 border-t border-gray-border/50 bg-[#161616]/40 select-none flex items-center justify-between shrink-0">
+            <div className="px-6 py-4.5 border-t border-gray-border/50 bg-bg-primary/30 dark:bg-[#161616]/40 select-none flex items-center justify-between shrink-0">
               <div className="flex items-center gap-1">
                 <Folder className="w-4 h-4 text-text-secondary/50 shrink-0" />
                 <span className="text-[10px] font-extrabold text-text-secondary/70">

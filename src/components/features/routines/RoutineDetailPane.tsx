@@ -132,11 +132,11 @@ export const RoutineDetailPane = () => {
         <div className="flex flex-col h-full overflow-hidden animate-slide-in relative">
           
           {/* Header Panel */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-border/30 shrink-0 bg-[#161616]/20">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-border/30 shrink-0 bg-bg-secondary/80 dark:bg-[#161616]/20">
             {/* Close / Back button (Mobile focused) */}
             <button
               onClick={() => dispatch(setActiveRoutineId(null))}
-              className="p-2 hover:bg-[#202020] rounded-xl text-text-secondary hover:text-text-primary transition-all cursor-pointer flex items-center gap-1 text-xs font-bold"
+              className="p-2 hover:bg-black/5 dark:hover:bg-[#202020] rounded-xl text-text-secondary hover:text-text-primary transition-all cursor-pointer flex items-center gap-1 text-xs font-bold"
               aria-label="Back to routines list"
             >
               <Icons.ArrowLeft className="w-4 h-4" />
@@ -149,7 +149,7 @@ export const RoutineDetailPane = () => {
                 <>
                   <button
                     onClick={() => setIsEditOpen(true)}
-                    className="p-2 hover:bg-[#202020] rounded-xl text-text-secondary hover:text-brand-primary transition-all cursor-pointer"
+                    className="p-2 hover:bg-black/5 dark:hover:bg-[#202020] rounded-xl text-text-secondary hover:text-brand-primary transition-all cursor-pointer"
                     title="Edit Routine"
                     aria-label="Edit routine"
                   >
@@ -157,7 +157,7 @@ export const RoutineDetailPane = () => {
                   </button>
                   <button
                     onClick={handleArchiveToggle}
-                    className="p-2 hover:bg-[#202020] rounded-xl text-text-secondary hover:text-brand-primary transition-all cursor-pointer"
+                    className="p-2 hover:bg-black/5 dark:hover:bg-[#202020] rounded-xl text-text-secondary hover:text-brand-primary transition-all cursor-pointer"
                     title={activeRoutine.archived ? 'Restore to Active' : 'Archive Routine'}
                     aria-label={activeRoutine.archived ? 'Restore routine' : 'Archive routine'}
                   >
@@ -176,7 +176,7 @@ export const RoutineDetailPane = () => {
                 <>
                   <button
                     onClick={handleRestore}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#202020] hover:bg-[#282828] border border-gray-border/30 text-text-primary text-xs font-bold rounded-xl cursor-pointer transition-all"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-bg-primary hover:bg-bg-secondary dark:bg-[#202020] dark:hover:bg-[#282828] border border-gray-border/30 text-text-primary text-xs font-bold rounded-xl cursor-pointer transition-all"
                     title="Restore Routine"
                   >
                     <Icons.RotateCcw className="w-3.5 h-3.5" />
@@ -252,7 +252,7 @@ export const RoutineDetailPane = () => {
                           {formatDateLabel(log.scheduledDate)}
                         </span>
                         {log.note && (
-                          <span className="text-[10px] text-text-secondary/70 truncate bg-[#202020] px-2 py-0.5 rounded-lg border border-gray-border/25">
+                          <span className="text-[10px] text-text-secondary/70 truncate bg-bg-primary dark:bg-[#202020] px-2 py-0.5 rounded-lg border border-gray-border/25">
                             {log.note}
                           </span>
                         )}
@@ -278,7 +278,7 @@ export const RoutineDetailPane = () => {
           </div>
 
           {/* Footer Metadata */}
-          <div className="px-6 py-4 border-t border-gray-border/30 bg-[#161616]/20 select-none flex items-center justify-between shrink-0">
+          <div className="px-6 py-4 border-t border-gray-border/30 bg-bg-secondary/80 dark:bg-[#161616]/20 select-none flex items-center justify-between shrink-0">
             <div className="flex items-center gap-1.5">
               <Icons.Calendar className="w-3.5 h-3.5 text-text-secondary/50 shrink-0" />
               <span className="text-[10px] font-bold text-text-secondary/60">

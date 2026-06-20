@@ -371,7 +371,7 @@ export const SubtaskChecklist = ({
       <div className="flex items-center justify-between border-b border-gray-border/30 pb-2 select-none">
         <div className="flex items-center gap-2">
           <label className="text-[10px] font-black uppercase tracking-wider text-text-secondary/50">Subtasks</label>
-          <span className="text-[9px] font-bold text-text-secondary/60 bg-[#202020] border border-gray-border px-1.5 py-0.5 rounded-md">
+          <span className="text-[9px] font-bold text-text-secondary/60 bg-bg-primary dark:bg-[#202020] border border-gray-border px-1.5 py-0.5 rounded-md">
             {currentTaskSubtasks.length}
           </span>
         </div>
@@ -384,7 +384,7 @@ export const SubtaskChecklist = ({
             className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
               isBulkMode
                 ? 'bg-brand-primary/15 border-brand-primary/20 text-brand-primary'
-                : 'bg-[#202020] border-gray-border text-text-secondary hover:text-text-primary hover:bg-[#252525]'
+                : 'bg-bg-primary hover:bg-bg-secondary dark:bg-[#202020] border-gray-border/60 text-text-secondary hover:text-text-primary dark:hover:bg-[#252525]'
             }`}
             title={isBulkMode ? "Switch to single input" : "Bulk import subtasks"}
             aria-label="Bulk import subtasks"
@@ -397,7 +397,7 @@ export const SubtaskChecklist = ({
             <button
               type="button"
               onClick={() => onTriggerExport('subtask')}
-              className="p-1.5 rounded-lg border border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525] transition-all cursor-pointer animate-scale-in"
+              className="p-1.5 rounded-lg border border-gray-border/60 bg-bg-primary hover:bg-bg-secondary dark:bg-[#202020] text-text-secondary hover:text-text-primary dark:hover:bg-[#252525] transition-all cursor-pointer animate-scale-in"
               title="Export subtasks list"
               aria-label="Export subtasks list"
             >
@@ -417,7 +417,7 @@ export const SubtaskChecklist = ({
               className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                 isSelectionMode
                   ? 'bg-brand-primary/15 border-brand-primary/20 text-brand-primary shadow-[0_0_10px_rgba(99,102,241,0.15)]'
-                  : 'bg-[#202020] border-gray-border text-text-secondary hover:text-text-primary hover:bg-[#252525]'
+                  : 'bg-bg-primary hover:bg-bg-secondary dark:bg-[#202020] border-gray-border/60 text-text-secondary hover:text-text-primary dark:hover:bg-[#252525]'
               }`}
               title={isSelectionMode ? "Exit Selection Mode" : "Select Multiple Subtasks"}
               aria-label="Toggle multi-select mode for subtasks"
@@ -440,7 +440,7 @@ export const SubtaskChecklist = ({
             }}
             className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
               subtaskSortOrder === 'default'
-                ? 'border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525]'
+                ? 'bg-bg-primary hover:bg-bg-secondary dark:bg-[#202020] border-gray-border/60 text-text-secondary hover:text-text-primary dark:hover:bg-[#252525]'
                 : 'border-brand-primary/40 bg-brand-primary/10 text-brand-primary shadow-[0_0_10px_rgba(99,102,241,0.15)]'
             }`}
             title={`Active Sort: ${activeSortOption.label} (Click to cycle)`}
@@ -461,14 +461,14 @@ export const SubtaskChecklist = ({
             <button
               type="button"
               onClick={handleSelectAllSubtasks}
-              className="px-2 py-1 bg-[#202020] hover:bg-[#252525] border border-gray-border text-text-primary font-bold text-[9px] rounded-lg cursor-pointer transition-colors"
+              className="px-2 py-1 bg-bg-primary hover:bg-bg-secondary dark:bg-[#202020] dark:hover:bg-[#252525] border border-gray-border/50 text-text-primary font-bold text-[9px] rounded-lg cursor-pointer transition-colors"
             >
               Select All
             </button>
             <button
               type="button"
               onClick={handleDeselectAllSubtasks}
-              className="px-2 py-1 bg-[#202020] hover:bg-[#252525] border border-gray-border text-text-secondary hover:text-text-primary font-bold text-[9px] rounded-lg cursor-pointer transition-colors"
+              className="px-2 py-1 bg-bg-primary hover:bg-bg-secondary dark:bg-[#202020] dark:hover:bg-[#252525] border border-gray-border/50 text-text-secondary hover:text-text-primary font-bold text-[9px] rounded-lg cursor-pointer transition-colors"
             >
               Deselect
             </button>
@@ -544,7 +544,7 @@ export const SubtaskChecklist = ({
                     setBulkText('');
                     setNewSubtaskPriority('low');
                   }}
-                  className="px-2.5 py-1.5 bg-[#202020] hover:bg-[#252525] border border-gray-border text-text-primary font-bold text-[10px] rounded-lg cursor-pointer transition-colors"
+                  className="px-2.5 py-1.5 bg-bg-primary hover:bg-bg-secondary dark:bg-[#202020] dark:hover:bg-[#252525] border border-gray-border/50 text-text-primary font-bold text-[10px] rounded-lg cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
@@ -569,7 +569,7 @@ export const SubtaskChecklist = ({
               />
             </div>
             <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto shrink-0">
-              <div className="flex items-center gap-1.5 bg-[#1a1a1a] px-2 py-1.5 rounded-xl border border-gray-border/40">
+              <div className="flex items-center gap-1.5 bg-bg-primary/80 dark:bg-[#1a1a1a] px-2 py-1.5 rounded-xl border border-gray-border/40">
                 <span className="text-[9px] font-bold text-text-secondary/50 mr-1 uppercase tracking-wider">Priority</span>
                 <button
                   type="button"
@@ -717,13 +717,9 @@ export const SubtaskChecklist = ({
                         handleToggleSelectSubtask(sub.id);
                       }
                     }}
-                    className={`group flex flex-row items-center justify-between gap-3 p-3 rounded-2xl border border-success/15 bg-success/5 text-text-secondary/50 transition-all hover:bg-success/10 border-l-4 ${
-                      sub.priority === 'high'
-                        ? 'border-l-error/40'
-                        : sub.priority === 'medium'
-                          ? 'border-l-warning/40'
-                          : 'border-l-success/40'
-                    } ${isSelectionMode ? 'cursor-pointer hover:bg-success/15' : ''}`}
+                    className={`group flex flex-row items-center justify-between gap-3 p-3 rounded-2xl border border-gray-border/50 bg-bg-primary/30 dark:bg-bg-secondary/10 text-text-secondary/50 transition-all hover:bg-bg-primary/45 ${
+                      isSelectionMode ? 'cursor-pointer' : ''
+                    }`}
                   >
                     {editingSubtaskId === sub.id ? (
                       <form 
@@ -735,7 +731,7 @@ export const SubtaskChecklist = ({
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 w-full flex-1">
-                          <div className="flex items-center gap-1 shrink-0 bg-[#1a1a1a] px-2 py-1.5 rounded-lg border border-gray-border/40 self-start xs:self-auto">
+                          <div className="flex items-center gap-1 shrink-0 bg-bg-primary/80 dark:bg-[#1a1a1a] px-2 py-1.5 rounded-lg border border-gray-border/40 self-start xs:self-auto">
                             <button
                               type="button"
                               onClick={() => setEditingSubtaskPriority('low')}
@@ -780,7 +776,7 @@ export const SubtaskChecklist = ({
                                 setEditingSubtaskId(null);
                               }
                             }}
-                            className="flex-1 min-w-0 px-2 py-1 rounded bg-[#202020] border border-gray-border/20 text-text-primary text-[11px] font-semibold focus:outline-hidden focus:border-brand-primary"
+                            className="flex-1 min-w-0 px-2 py-1 rounded bg-bg-primary dark:bg-bg-secondary/40 border border-gray-border/20 text-text-primary text-[11px] font-semibold focus:outline-hidden focus:border-brand-primary"
                           />
                         </div>
                         <div className="flex items-center justify-end gap-1.5 shrink-0 self-end sm:self-auto">
@@ -812,7 +808,7 @@ export const SubtaskChecklist = ({
                                 e.stopPropagation();
                                 handleToggleSelectSubtask(sub.id);
                               }}
-                              className="w-4 h-4 rounded border-gray-border bg-[#202020] text-brand-primary focus:ring-brand-primary shrink-0 mt-1 cursor-pointer accent-brand-primary"
+                              className="w-4 h-4 rounded border-gray-border bg-bg-primary dark:bg-[#202020] text-brand-primary focus:ring-brand-primary shrink-0 mt-1 cursor-pointer accent-brand-primary"
                               onClick={(e) => e.stopPropagation()}
                             />
                           ) : (

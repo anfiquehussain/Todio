@@ -484,10 +484,10 @@ export const TaskList = () => {
     <div className={`flex-1 flex flex-col h-full border-r border-gray-border overflow-hidden ${activeTaskId ? 'hidden lg:flex' : 'flex'}`}>
       
       {/* Header Action Strip */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-6 py-4.5 border-b border-gray-border/50 bg-[#161616]/40 select-none">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-6 py-4.5 border-b border-gray-border/50 bg-bg-secondary/80 dark:bg-[#161616]/40 backdrop-blur-md select-none">
         <div className="flex items-center gap-2">
           <h1 className="text-lg font-black tracking-tight text-text-primary truncate max-w-[200px] xs:max-w-[280px] sm:max-w-none">{getHeaderTitle()}</h1>
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-border/30 text-text-secondary tabular-nums">
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-bg-primary dark:bg-gray-border/30 border border-gray-border/50 text-text-secondary tabular-nums">
             {activeQueue.length}
           </span>
         </div>
@@ -501,7 +501,7 @@ export const TaskList = () => {
             }}
             className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all cursor-pointer shadow-sm ${
               !anyExpanded
-                ? 'border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525]'
+                ? 'border-gray-border/85 bg-bg-primary/50 hover:bg-bg-secondary dark:bg-[#202020] text-text-secondary hover:text-text-primary dark:hover:bg-[#252525]'
                 : 'border-brand-primary/40 bg-brand-primary/10 text-brand-primary shadow-[0_0_10px_rgba(99,102,241,0.15)]'
             }`}
             title={anyExpanded ? 'Collapse All Tasks' : 'Expand All Tasks'}
@@ -519,7 +519,7 @@ export const TaskList = () => {
             }}
             className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all cursor-pointer shadow-sm ${
               subtaskFilter === 'all'
-                ? 'border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525]'
+                ? 'border-gray-border/85 bg-bg-primary/50 hover:bg-bg-secondary dark:bg-[#202020] text-text-secondary hover:text-text-primary dark:hover:bg-[#252525]'
                 : 'border-brand-primary/40 bg-brand-primary/10 text-brand-primary shadow-[0_0_10px_rgba(99,102,241,0.15)]'
             }`}
             title={`Subtask Filter: ${subtaskFilter === 'all' ? 'All Active' : 'Priority Only'}`}
@@ -536,7 +536,7 @@ export const TaskList = () => {
             }}
             className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all cursor-pointer shadow-sm ${
               !showListBadges
-                ? 'border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525]'
+                ? 'border-gray-border/85 bg-bg-primary/50 hover:bg-bg-secondary dark:bg-[#202020] text-text-secondary hover:text-text-primary dark:hover:bg-[#252525]'
                 : 'border-brand-primary/40 bg-brand-primary/10 text-brand-primary shadow-[0_0_10px_rgba(99,102,241,0.15)]'
             }`}
             title={`Workspace Badges: ${showListBadges ? 'Visible' : 'Hidden'}`}
@@ -553,7 +553,7 @@ export const TaskList = () => {
                 dispatch(setActiveTaskId(null));
                 playCompletionSound(soundEnabled);
               }}
-              className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525] transition-all cursor-pointer shadow-sm"
+              className="flex items-center justify-center w-9 h-9 rounded-xl border border-gray-border/85 bg-bg-primary/50 hover:bg-bg-secondary dark:bg-[#202020] text-text-secondary hover:text-text-primary dark:hover:bg-[#252525] transition-all cursor-pointer shadow-sm"
               title="Bulk Import Tasks"
               aria-label="Bulk Import Tasks"
             >
@@ -573,7 +573,7 @@ export const TaskList = () => {
               className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all cursor-pointer shadow-sm ${
                 isSelectionMode
                   ? 'border-brand-primary/40 bg-brand-primary/10 text-brand-primary shadow-[0_0_10px_rgba(99,102,241,0.15)]'
-                  : 'border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525]'
+                  : 'border-gray-border/85 bg-bg-primary/50 hover:bg-bg-secondary dark:bg-[#202020] text-text-secondary hover:text-text-primary dark:hover:bg-[#252525]'
               }`}
               title={isSelectionMode ? 'Exit Selection Mode' : 'Select Multiple Tasks'}
               aria-label="Toggle multi-select mode"
@@ -596,7 +596,7 @@ export const TaskList = () => {
             }}
             className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all cursor-pointer shadow-sm ${
               sortBy === 'custom'
-                ? 'border-gray-border bg-[#202020] text-text-secondary hover:text-text-primary hover:bg-[#252525]'
+                ? 'border-gray-border/85 bg-bg-primary/50 hover:bg-bg-secondary dark:bg-[#202020] text-text-secondary hover:text-text-primary dark:hover:bg-[#252525]'
                 : 'border-brand-primary/40 bg-brand-primary/10 text-brand-primary shadow-[0_0_10px_rgba(99,102,241,0.15)]'
             }`}
             title={`Active Sort: ${currentSort.label} (Click to cycle)`}
@@ -617,7 +617,7 @@ export const TaskList = () => {
               placeholder={`+ Add Task to "${getHeaderTitle()}"`}
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              className="w-full pl-9.5 pr-4 py-3 rounded-2xl border border-gray-border bg-[#181818] text-text-primary text-xs font-semibold placeholder:text-text-secondary/50 focus:outline-hidden focus:border-brand-primary/50 focus:bg-[#1a1a1a] transition-all"
+              className="w-full pl-9.5 pr-4 py-3 rounded-2xl border border-slate-200 dark:border-gray-border/80 bg-slate-100/90 dark:bg-[#181818] text-text-primary text-xs font-semibold placeholder:text-text-secondary/50 focus:outline-hidden focus:border-brand-primary/50 focus:bg-white dark:focus:bg-[#1a1a1a] transition-all"
             />
           </form>
         </div>
@@ -748,7 +748,7 @@ export const TaskList = () => {
                     >
                       <div className="flex items-center gap-3 flex-1 overflow-hidden">
                         {/* Priority Dots */}
-                        <div className="flex items-center gap-1 shrink-0 bg-[#202020] border border-gray-border/20 px-2 py-1.5 rounded-xl">
+                        <div className="flex items-center gap-1 shrink-0 bg-bg-primary/85 dark:bg-[#202020] border border-gray-border/40 px-2 py-1.5 rounded-xl">
                           <button
                             type="button"
                             onClick={() => setEditingTaskPriority('low')}
@@ -827,13 +827,9 @@ export const TaskList = () => {
                             dispatch(setActiveTaskId(task.id));
                           }
                         }}
-                        className={`group flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-success/15 bg-success/5 opacity-60 select-none cursor-pointer transition-all border-l-4 ${
-                          task.priority === 'high'
-                            ? 'border-l-error/40'
-                            : task.priority === 'medium'
-                              ? 'border-l-warning/40'
-                              : 'border-l-success/40'
-                        } ${isSelected ? 'bg-[#222] border-[#383838] opacity-100' : 'hover:opacity-100'}`}
+                        className={`group flex items-center justify-between px-3.5 py-2.5 rounded-xl border opacity-60 select-none cursor-pointer transition-all ${
+                          isSelected ? 'bg-brand-primary/10 border-brand-primary/45 opacity-100 shadow-xs' : 'bg-card border-gray-border/60 hover:opacity-100 hover:border-brand-primary/25'
+                        }`}
                       >
                         <div className="flex items-start gap-3 overflow-hidden flex-1">
                           {isSelectionMode ? (
@@ -844,7 +840,7 @@ export const TaskList = () => {
                                 e.stopPropagation();
                                 handleToggleSelectTask(task.id);
                               }}
-                              className="w-4 h-4 rounded border-gray-border bg-[#202020] text-brand-primary focus:ring-brand-primary shrink-0 mt-1.5 cursor-pointer accent-brand-primary"
+                              className="w-4 h-4 rounded border-gray-border bg-bg-primary dark:bg-[#202020] text-brand-primary focus:ring-brand-primary shrink-0 mt-1.5 cursor-pointer accent-brand-primary"
                               onClick={(e) => e.stopPropagation()}
                             />
                           ) : (
@@ -866,7 +862,7 @@ export const TaskList = () => {
                                   [task.id]: !isExpanded
                                 }));
                               }}
-                              className="p-1 -ml-1 text-text-secondary/50 hover:text-text-primary hover:bg-[#282828] rounded transition-colors shrink-0 mt-0.5 cursor-pointer flex items-center justify-center"
+                              className="p-1 -ml-1 text-text-secondary/50 hover:text-text-primary hover:bg-black/5 dark:hover:bg-[#282828] rounded transition-colors shrink-0 mt-0.5 cursor-pointer flex items-center justify-center"
                               title={isExpanded ? "Collapse subtasks" : "Expand subtasks"}
                               aria-label={isExpanded ? "Collapse subtasks" : "Expand subtasks"}
                             >
@@ -882,7 +878,7 @@ export const TaskList = () => {
                               <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                                 {col && (
                                   <span 
-                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-[#202020] border border-gray-border/50 text-text-secondary select-none"
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-black/5 dark:bg-[#202020] border border-gray-border/50 text-text-secondary select-none"
                                     style={{ borderColor: `${col.color}33`, color: col.color }}
                                   >
                                     <Folder className="w-2.5 h-2.5" style={{ color: col.color }} />
@@ -890,7 +886,7 @@ export const TaskList = () => {
                                   </span>
                                 )}
                                 {sub && (
-                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-[#202020] border border-gray-border/50 text-text-secondary select-none">
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-black/5 dark:bg-[#202020] border border-gray-border/50 text-text-secondary select-none">
                                     <LayoutList className="w-2.5 h-2.5 text-brand-secondary" />
                                     <span>{sub.name}</span>
                                   </span>

@@ -224,11 +224,11 @@ export const ActiveTaskItem = ({
               ? 'bg-error/5 border-error/20 border-l-error'
               : editingTaskPriority === 'medium'
                 ? 'bg-warning/5 border-warning/20 border-l-warning'
-                : 'bg-[#181818]/60 border-gray-border border-l-success'
+                : 'bg-bg-primary/60 dark:bg-[#181818]/60 border-gray-border border-l-success'
           }`}
         >
           <div className="flex items-center gap-3 flex-1 overflow-hidden">
-            <div className="flex items-center gap-1 shrink-0 bg-[#202020] border border-gray-border/20 px-2 py-1.5 rounded-xl">
+            <div className="flex items-center gap-1 shrink-0 bg-bg-primary/85 dark:bg-[#202020] border border-gray-border/40 px-2 py-1.5 rounded-xl">
               <button
                 type="button"
                 onClick={() => setEditingTaskPriority('low')}
@@ -305,12 +305,10 @@ export const ActiveTaskItem = ({
               dispatch(setActiveTaskId(task.id));
             }
           }}
-          className={`group flex items-center justify-between px-3.5 py-3 rounded-2xl border border-l-4 cursor-pointer select-none transition-all ${
-            task.priority === 'high'
-              ? `${isSelected ? 'bg-error/10 border-[#383838]' : 'bg-error/5 border-error/20 hover:bg-error/10'} border-l-error`
-              : task.priority === 'medium'
-                ? `${isSelected ? 'bg-warning/10 border-[#383838]' : 'bg-warning/5 border-warning/20 hover:bg-warning/10'} border-l-warning`
-                : `${isSelected ? 'bg-[#222222] border-[#383838]' : 'bg-[#181818]/60 border-gray-border hover:bg-[#1c1c1c]'} border-l-success`
+          className={`group flex items-center justify-between px-3.5 py-3 rounded-2xl border cursor-pointer select-none transition-all ${
+            isSelected 
+              ? 'bg-brand-primary/10 border-brand-primary/45 shadow-xs' 
+              : 'bg-card border-gray-border/80 hover:border-brand-primary/25 hover:shadow-xs'
           } ${isSelected ? 'shadow-md shadow-brand-primary/5' : ''}`}
         >
           <div className="flex items-start gap-3 overflow-hidden flex-1">
@@ -322,7 +320,7 @@ export const ActiveTaskItem = ({
                   e.stopPropagation();
                   onToggleSelect?.(task.id);
                 }}
-                className="w-4 h-4 rounded border-gray-border bg-[#202020] text-brand-primary focus:ring-brand-primary shrink-0 mt-1.5 cursor-pointer accent-brand-primary"
+                className="w-4 h-4 rounded border-gray-border bg-bg-primary text-brand-primary focus:ring-brand-primary shrink-0 mt-1.5 cursor-pointer accent-brand-primary"
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
@@ -332,7 +330,7 @@ export const ActiveTaskItem = ({
                     onPointerDown={(e) => {
                       dragControls.start(e);
                     }}
-                    className="p-1 -ml-1 text-text-secondary/30 group-hover:text-text-secondary/70 hover:bg-[#282828] rounded cursor-grab active:cursor-grabbing transition-colors shrink-0 mt-0.5 touch-none"
+                    className="p-1 -ml-1 text-text-secondary/30 group-hover:text-text-secondary/70 hover:bg-bg-primary rounded cursor-grab active:cursor-grabbing transition-colors shrink-0 mt-0.5 touch-none"
                     title="Drag to reorder"
                   >
                     <GripVertical className="w-3.5 h-3.5" />
@@ -347,7 +345,7 @@ export const ActiveTaskItem = ({
                         [task.id]: !isExpanded
                       }));
                     }}
-                    className="p-1 -ml-1 text-text-secondary/50 hover:text-text-primary hover:bg-[#282828] rounded transition-colors shrink-0 mt-0.5 cursor-pointer flex items-center justify-center"
+                    className="p-1 -ml-1 text-text-secondary/50 hover:text-text-primary hover:bg-bg-primary rounded transition-colors shrink-0 mt-0.5 cursor-pointer flex items-center justify-center"
                     title={isExpanded ? "Collapse subtasks" : "Expand subtasks"}
                     aria-label={isExpanded ? "Collapse subtasks" : "Expand subtasks"}
                   >
@@ -375,11 +373,23 @@ export const ActiveTaskItem = ({
             )}
             <div className="flex-1 min-w-0 flex flex-col gap-1 justify-center">
               <ExpandableText text={task.title} lineClass="text-text-primary" />
-              {showListBadges && (col || sub) && (
+              {showListBadges && (
                 <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                  <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-black/5 dark:bg-[#202020] border select-none ${
+                    task.priority === 'high'
+                      ? 'border-error/25 text-error'
+                      : task.priority === 'medium'
+                        ? 'border-warning/25 text-warning'
+                        : 'border-success/25 text-success'
+                  }`}>
+                    <span className={`w-1 h-1 rounded-full ${
+                      task.priority === 'high' ? 'bg-error' : task.priority === 'medium' ? 'bg-warning' : 'bg-success'
+                    }`} />
+                    <span>{task.priority}</span>
+                  </span>
                   {col && (
                     <span 
-                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-[#202020] border border-gray-border/50 text-text-secondary select-none"
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-black/5 dark:bg-[#202020] border border-gray-border/50 text-text-secondary select-none"
                       style={{ borderColor: `${col.color}33`, color: col.color }}
                     >
                       <Folder className="w-2.5 h-2.5" style={{ color: col.color }} />
@@ -387,7 +397,7 @@ export const ActiveTaskItem = ({
                     </span>
                   )}
                   {sub && (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-[#202020] border border-gray-border/50 text-text-secondary select-none">
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-black/5 dark:bg-[#202020] border border-gray-border/50 text-text-secondary select-none">
                       <LayoutList className="w-2.5 h-2.5 text-brand-secondary" />
                       <span>{sub.name}</span>
                     </span>
@@ -416,7 +426,7 @@ export const ActiveTaskItem = ({
                     e.stopPropagation();
                     setShowMenu(!showMenu);
                   }}
-                  className="p-1.5 hover:bg-[#2e2e2e]/60 rounded-xl text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0 relative z-50 flex items-center justify-center"
+                  className="p-1.5 hover:bg-bg-primary rounded-xl text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0 relative z-50 flex items-center justify-center"
                   title="More actions"
                   aria-label="More actions"
                 >
@@ -430,7 +440,7 @@ export const ActiveTaskItem = ({
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: -5 }}
                       transition={{ duration: 0.1 }}
-                      className="absolute right-0 mt-1.5 w-36 bg-[#1a1a1a]/95 backdrop-blur-md border border-gray-border/60 rounded-xl shadow-xl z-50 py-1 overflow-hidden"
+                      className="absolute right-0 mt-1.5 w-36 bg-white/95 dark:bg-card/95 backdrop-blur-md border border-gray-border/60 rounded-xl shadow-xl z-50 py-1 overflow-hidden"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {!activeCollectionId && !activeSubcollectionId && (
@@ -443,7 +453,7 @@ export const ActiveTaskItem = ({
                             dispatch(setFilter('all'));
                             toast("Navigated to task's workspace location! 🧭", 'success');
                           }}
-                          className="w-full px-3 py-2 text-left text-[11px] font-bold text-brand-primary hover:bg-[#282828] transition-colors flex items-center gap-2 cursor-pointer"
+                          className="w-full px-3 py-2 text-left text-[11px] font-bold text-brand-primary hover:bg-slate-100 dark:hover:bg-bg-primary transition-colors flex items-center gap-2 cursor-pointer"
                         >
                           <ArrowRight className="w-3.5 h-3.5" />
                           <span>Go to List</span>
@@ -454,7 +464,7 @@ export const ActiveTaskItem = ({
                           setShowMenu(false);
                           handleCopyTask(task);
                         }}
-                        className="w-full px-3 py-2 text-left text-[11px] font-bold text-text-primary hover:bg-[#282828] transition-colors flex items-center gap-2 cursor-pointer"
+                        className="w-full px-3 py-2 text-left text-[11px] font-bold text-text-primary hover:bg-slate-100 dark:hover:bg-bg-primary transition-colors flex items-center gap-2 cursor-pointer"
                       >
                         <Copy className="w-3.5 h-3.5 text-text-secondary" />
                         <span>Copy Task</span>
@@ -466,7 +476,7 @@ export const ActiveTaskItem = ({
                           setEditingTaskTitle(task.title);
                           setEditingTaskPriority(task.priority || 'medium');
                         }}
-                        className="w-full px-3 py-2 text-left text-[11px] font-bold text-text-primary hover:bg-[#282828] transition-colors flex items-center gap-2 cursor-pointer"
+                        className="w-full px-3 py-2 text-left text-[11px] font-bold text-text-primary hover:bg-slate-100 dark:hover:bg-bg-primary transition-colors flex items-center gap-2 cursor-pointer"
                       >
                         <Edit2 className="w-3.5 h-3.5 text-text-secondary" />
                         <span>Edit Task</span>
@@ -502,19 +512,13 @@ export const ActiveTaskItem = ({
             className="mt-0.5 mb-1.5 ml-8 mr-2 flex flex-col gap-1.5 pl-3 border-l border-gray-border/40 select-none overflow-hidden"
           >
             {inlineSubtasks.map(subtaskItem => (
-               <div 
-                 key={subtaskItem.id} 
-                 onClick={(e) => e.stopPropagation()} 
-                 className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border text-[10px] font-bold transition-all bg-[#1a1a1a]/40 ${
-                   subtaskItem.completed
-                     ? 'border-success/20 border-l-2 border-l-success opacity-60 bg-success/5'
-                     : subtaskItem.priority === 'high'
-                       ? 'border-error/20 border-l-2 border-l-error bg-error/5 hover:bg-error/10'
-                       : subtaskItem.priority === 'medium'
-                         ? 'border-warning/20 border-l-2 border-l-warning bg-warning/5 hover:bg-warning/10'
-                         : 'border-gray-border/60 border-l-2 border-l-success bg-bg-primary/40 hover:bg-[#151515]/50'
-                 }`}
-               >
+              <div 
+                key={subtaskItem.id} 
+                onClick={(e) => e.stopPropagation()} 
+                className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border text-[10px] font-bold transition-all bg-bg-secondary/40 border-gray-border/50 hover:bg-bg-primary/50 ${
+                  subtaskItem.completed ? 'opacity-60' : ''
+                }`}
+              >
                  <div className="flex items-center gap-2 overflow-hidden flex-1">
                    <button
                      onClick={(e) => {

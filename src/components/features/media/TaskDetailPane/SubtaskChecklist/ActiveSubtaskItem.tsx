@@ -138,12 +138,8 @@ export const ActiveSubtaskItem = ({
           isSelectionMode ? 'cursor-pointer' : ''
         } ${
           isSelectedForBulk
-            ? 'bg-brand-primary/10 border-brand-primary/40 text-text-primary border-l-4 border-l-brand-primary shadow-[0_0_10px_rgba(99,102,241,0.1)]'
-            : sub.priority === 'high'
-              ? 'bg-error/5 border-error/20 text-text-primary border-l-4 border-l-error hover:bg-error/10'
-              : sub.priority === 'medium'
-                ? 'bg-warning/5 border-warning/20 text-text-primary border-l-4 border-l-warning hover:bg-warning/10'
-                : 'bg-bg-primary border-gray-border text-text-primary border-l-4 border-l-success hover:bg-white/5'
+            ? 'bg-brand-primary/10 border-brand-primary/45 text-text-primary shadow-xs'
+            : 'bg-bg-primary/50 dark:bg-bg-secondary/20 border-gray-border hover:bg-bg-primary dark:hover:bg-bg-secondary/40'
         }`}
       >
         {editingSubtaskId === sub.id ? (
@@ -156,7 +152,7 @@ export const ActiveSubtaskItem = ({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 w-full flex-1">
-              <div className="flex items-center gap-1 shrink-0 bg-[#1a1a1a] px-2 py-1.5 rounded-lg border border-gray-border/40 self-start xs:self-auto">
+              <div className="flex items-center gap-1 shrink-0 bg-bg-primary px-2 py-1.5 rounded-lg border border-gray-border/40 self-start xs:self-auto">
                 <button
                   type="button"
                   onClick={() => setEditingSubtaskPriority('low')}
@@ -201,7 +197,7 @@ export const ActiveSubtaskItem = ({
                     setEditingSubtaskId(null);
                   }
                 }}
-                className="flex-1 min-w-0 px-2 py-1 rounded bg-[#202020] border border-gray-border/20 text-text-primary text-[11px] font-semibold focus:outline-hidden focus:border-brand-primary"
+                className="flex-1 min-w-0 px-2 py-1 rounded bg-bg-primary border border-gray-border/20 text-text-primary text-[11px] font-semibold focus:outline-hidden focus:border-brand-primary"
               />
             </div>
             <div className="flex items-center justify-end gap-1.5 shrink-0 self-end sm:self-auto">
@@ -215,7 +211,7 @@ export const ActiveSubtaskItem = ({
               <button
                 type="button"
                 onClick={() => setEditingSubtaskId(null)}
-                className="p-1.5 border border-gray-border hover:bg-white/5 text-text-secondary rounded-lg cursor-pointer flex items-center justify-center shrink-0"
+                className="p-1.5 border border-gray-border hover:bg-bg-secondary text-text-secondary rounded-lg cursor-pointer flex items-center justify-center shrink-0"
                 aria-label="Cancel"
               >
                 <X className="w-3 h-3" />
@@ -233,7 +229,7 @@ export const ActiveSubtaskItem = ({
                     e.stopPropagation();
                     onToggleSelect(sub.id);
                   }}
-                  className="w-4 h-4 rounded border-gray-border bg-[#202020] text-brand-primary focus:ring-brand-primary shrink-0 mt-1 cursor-pointer accent-brand-primary"
+                  className="w-4 h-4 rounded border-gray-border bg-bg-primary text-brand-primary focus:ring-brand-primary shrink-0 mt-1 cursor-pointer accent-brand-primary"
                   onClick={(e) => e.stopPropagation()}
                 />
               ) : (
@@ -243,7 +239,7 @@ export const ActiveSubtaskItem = ({
                       onPointerDown={(e) => {
                         dragControls.start(e);
                       }}
-                      className="p-1 -ml-1 text-text-secondary/30 group-hover:text-text-secondary/70 hover:bg-[#282828] rounded cursor-grab active:cursor-grabbing transition-colors shrink-0 mt-0.5 touch-none"
+                      className="p-1 -ml-1 text-text-secondary/30 group-hover:text-text-secondary/70 hover:bg-bg-primary rounded cursor-grab active:cursor-grabbing transition-colors shrink-0 mt-0.5 touch-none"
                       title="Drag to reorder"
                     >
                       <GripVertical className="w-3 h-3" />
@@ -275,7 +271,7 @@ export const ActiveSubtaskItem = ({
                     navigator.clipboard.writeText(sub.title);
                     toast('Subtask copied to clipboard! 📋', 'success');
                   }}
-                  className="p-1 hover:bg-[#282828] rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0"
+                  className="p-1 hover:bg-bg-primary rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0"
                   title="Copy subtask"
                 >
                   <Copy className="w-3 h-3" />
@@ -287,7 +283,7 @@ export const ActiveSubtaskItem = ({
                     setEditingSubtaskTitle(sub.title);
                     setEditingSubtaskPriority(sub.priority || 'low');
                   }}
-                  className="p-1 hover:bg-[#282828] rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0"
+                  className="p-1 hover:bg-bg-primary rounded text-text-secondary hover:text-text-primary transition-colors cursor-pointer shrink-0"
                   title="Edit subtask"
                 >
                   <Edit2 className="w-3 h-3" />
@@ -297,7 +293,7 @@ export const ActiveSubtaskItem = ({
                     e.stopPropagation();
                     handleDeleteSubtask(sub.id);
                   }}
-                  className="p-1 hover:bg-[#282828] rounded text-error transition-colors cursor-pointer shrink-0"
+                  className="p-1 hover:bg-bg-primary rounded text-error transition-colors cursor-pointer shrink-0"
                   title="Delete subtask"
                 >
                   <Trash2 className="w-3.5 h-3.5" />

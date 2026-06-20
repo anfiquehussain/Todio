@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { SettingsState, SettingsFontFamily, SettingsFontSize } from '../../types';
+import type { SettingsState, SettingsFontFamily, SettingsFontSize, SettingsAccentTheme } from '../../types';
 
 const initialState: SettingsState = {
   fontFamily: (localStorage.getItem('todo_font_family') as SettingsFontFamily) || 'default',
@@ -11,6 +11,8 @@ const initialState: SettingsState = {
   defaultTaskPriority: (localStorage.getItem('todo_default_task_priority') as SettingsState['defaultTaskPriority']) || 'low',
   autoArchiveCompleted: localStorage.getItem('todo_auto_archive_completed') === 'true',
   routineNotesPrompt: localStorage.getItem('todo_routine_notes_prompt') === 'true',
+  theme: (localStorage.getItem('todo_theme') as 'dark' | 'light') || 'dark',
+  accentTheme: (localStorage.getItem('todo_accent_theme') as SettingsAccentTheme) || 'midnight-gold',
 };
 
 export const settingsSlice = createSlice({
@@ -49,6 +51,14 @@ export const settingsSlice = createSlice({
       state.routineNotesPrompt = action.payload;
       localStorage.setItem('todo_routine_notes_prompt', String(action.payload));
     },
+    setTheme: (state, action: PayloadAction<'dark' | 'light'>) => {
+      state.theme = action.payload;
+      localStorage.setItem('todo_theme', action.payload);
+    },
+    setAccentTheme: (state, action: PayloadAction<SettingsAccentTheme>) => {
+      state.accentTheme = action.payload;
+      localStorage.setItem('todo_accent_theme', action.payload);
+    },
   },
 });
 
@@ -60,7 +70,9 @@ export const {
   setShowGlowBackdrops,
   setDefaultTaskPriority,
   setAutoArchiveCompleted,
-  setRoutineNotesPrompt
+  setRoutineNotesPrompt,
+  setTheme,
+  setAccentTheme
 } = settingsSlice.actions;
 export default settingsSlice.reducer;
 

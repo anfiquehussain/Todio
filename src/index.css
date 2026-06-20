@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+
 @theme {
   --color-brand-primary: #c2883c; /* Gold/Bronze accent for premium feel */
   --color-brand-secondary: #06b6d4;
@@ -23,9 +26,9 @@
 /* Light theme overrides using root dataset or class */
 :root[data-theme='light'],
 .light {
-  --color-bg-primary: #f8fafc;
+  --color-bg-primary: #f1f5f9;
   --color-bg-secondary: #ffffff;
-  --color-card: rgba(255, 255, 255, 0.8);
+  --color-card: #ffffff;
   --color-gray-border: rgba(15, 23, 42, 0.08);
   --color-text-primary: #0f172a;
   --color-text-secondary: #64748b;

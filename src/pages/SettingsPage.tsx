@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { 
   Settings, User, Palette, CheckSquare, RefreshCw, Award, 
-  Download, Upload, Check, Cloud, Flame, AlertCircle
+  Download, Upload, Check, Cloud, Flame, AlertCircle, Sun, Moon
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../hooks/useRedux';
@@ -13,7 +13,9 @@ import {
   setAutoArchiveCompleted, 
   setRoutineNotesPrompt,
   setFontFamily, 
-  setFontSize 
+  setFontSize,
+  setTheme,
+  setAccentTheme
 } from '../store/slices/settingsSlice';
 import { setAuthModalOpen } from '../store/slices/authSlice';
 import { fetchAllRoutineData } from '../store/slices/routineSlice';
@@ -21,7 +23,7 @@ import { playCompletionSound } from '../lib/sound';
 import { useToast } from '../hooks/useToast';
 import { PageHeader } from '../components/patterns/PageHeader';
 import { SandboxPreview } from '../components/features/settings/SandboxPreview';
-import type { SettingsFontFamily, SettingsFontSize } from '../types';
+import type { SettingsFontFamily, SettingsFontSize, SettingsAccentTheme } from '../types';
 
 type TabType = 'general' | 'sync' | 'appearance' | 'tasks' | 'routines' | 'gamification';
 
@@ -86,12 +88,28 @@ const SIZES: { id: SettingsFontSize; name: string; scale: string; pxValue: strin
   { id: '2xl', name: 'Huge', scale: '150%', pxValue: '24px' }
 ];
 
+const ACCENT_THEMES_LIST: { id: SettingsAccentTheme; name: string; color: string; desc: string }[] = [
+  { id: 'midnight-gold', name: 'Midnight Gold', color: '#c2883c', desc: 'Premium, luxury, elegant' },
+  { id: 'nordic-frost', name: 'Nordic Frost', color: '#06b6d4', desc: 'Clean, professional, modern' },
+  { id: 'sapphire-blue', name: 'Sapphire Blue', color: '#3b82f6', desc: 'Corporate, trustworthy' },
+  { id: 'obsidian-emerald', name: 'Obsidian Emerald', color: '#10b981', desc: 'Calm, productive, organic' },
+  { id: 'royal-amethyst', name: 'Royal Amethyst', color: '#8b5cf6', desc: 'Creative, premium' },
+  { id: 'crimson-rose', name: 'Crimson Rose', color: '#f43f5e', desc: 'Bold, energetic, modern' },
+  { id: 'copper-orange', name: 'Copper Orange', color: '#f97316', desc: 'Warm, vibrant, energetic' },
+  { id: 'arctic-silver', name: 'Arctic Silver', color: '#94a3b8', desc: 'Minimal, neutral' },
+  { id: 'ruby-red', name: 'Ruby Red', color: '#dc2626', desc: 'Strong, confident' },
+  { id: 'catppuccin-mocha', name: 'Catppuccin Mocha', color: '#cba6f7', desc: 'Soft, aesthetic' },
+  { id: 'dracula', name: 'Dracula', color: '#bd93f9', desc: 'Developer-focused, high contrast' },
+  { id: 'solarized', name: 'Solarized Blue', color: '#268bd2', desc: 'Reading-friendly, balanced' },
+];
+
 export const SettingsPage = () => {
   const dispatch = useAppDispatch();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [activeTab, setActiveTab] = useState<TabType>('general');
+  const [appearanceSubTab, setAppearanceSubTab] = useState<'typography' | 'theme'>('typography');
 
   // Redux state
   const { soundEnabled, tasks } = useAppSelector((state) => state.todo);
@@ -104,7 +122,9 @@ export const SettingsPage = () => {
     showGlowBackdrops, 
     defaultTaskPriority, 
     autoArchiveCompleted, 
-    routineNotesPrompt 
+    routineNotesPrompt,
+    theme,
+    accentTheme
   } = useAppSelector((state) => state.settings);
 
   // Sound handler
@@ -254,7 +274,7 @@ export const SettingsPage = () => {
                 className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 focus-visible:ring-2 focus-visible:ring-brand-primary/50 text-left ${
                   isActive
                     ? 'bg-brand-primary/10 text-brand-primary border border-brand-primary/20 shadow-md shadow-brand-primary/5'
-                    : 'text-text-secondary hover:text-text-primary hover:bg-[#1c1c1c]/50'
+                    : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary/50'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -275,7 +295,7 @@ export const SettingsPage = () => {
               </div>
 
               {/* Sound bells row */}
-              <div className="flex items-center justify-between gap-4 p-4 bg-[#181818]/60 border border-gray-border/50 rounded-2xl">
+              <div className="flex items-center justify-between gap-4 p-4 bg-bg-secondary/60 border border-gray-border/50 rounded-2xl">
                 <div className="text-left">
                   <span className="text-xs font-extrabold text-text-primary block">Physical Audio Bells</span>
                   <span className="text-[10px] text-text-secondary leading-relaxed">Web Audio API powered synthesizer milestone resonances.</span>
@@ -293,7 +313,7 @@ export const SettingsPage = () => {
               </div>
 
               {/* Backups row */}
-              <div className="flex flex-col gap-3 p-4 bg-[#181818]/60 border border-gray-border/50 rounded-2xl">
+              <div className="flex flex-col gap-3 p-4 bg-bg-secondary/60 border border-gray-border/50 rounded-2xl">
                 <div className="text-left border-b border-gray-border/30 pb-2.5">
                   <span className="text-xs font-extrabold text-text-primary block">Local Workspace Backups</span>
                   <span className="text-[10px] text-text-secondary">Export all checklist configurations or restore a local JSON copy.</span>
@@ -333,7 +353,7 @@ export const SettingsPage = () => {
               </div>
 
               {user ? (
-                <div className="flex flex-col gap-4 p-4 bg-[#181818]/60 border border-gray-border/50 rounded-2xl text-left">
+                <div className="flex flex-col gap-4 p-4 bg-bg-secondary/60 border border-gray-border/50 rounded-2xl text-left">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-2xl bg-brand-primary/10 border border-brand-primary/30 flex items-center justify-center text-brand-primary font-black uppercase text-base">
                       {user.displayName ? user.displayName[0] : 'U'}
@@ -361,7 +381,7 @@ export const SettingsPage = () => {
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center p-6 bg-[#181818]/60 border border-gray-border/50 rounded-2xl text-center gap-3">
+                <div className="flex flex-col items-center justify-center p-6 bg-bg-secondary/60 border border-gray-border/50 rounded-2xl text-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-gray-border/30 border border-gray-border/50 flex items-center justify-center text-text-secondary">
                     <User className="w-5 h-5" />
                   </div>
@@ -383,120 +403,237 @@ export const SettingsPage = () => {
           )}
 
           {activeTab === 'appearance' && (
-            <div className="flex flex-col gap-4 animate-slide-in">
+            <div className="flex flex-col gap-5 animate-slide-in">
               <div className="border-b border-gray-border/50 pb-2">
                 <h3 className="text-sm font-black text-text-primary">Appearance Preferences</h3>
-                <p className="text-xs text-text-secondary mt-0.5">Customize workspace font profiles, sizing scales, and backdrop blurs.</p>
+                <p className="text-xs text-text-secondary mt-0.5">Customize workspace font profiles, sizing scales, and theme modes.</p>
               </div>
 
-              {/* Fonts */}
-              <div className="flex flex-col gap-3">
-                <span className="text-xs font-black text-text-secondary/70 uppercase tracking-widest pl-1">Typography Fonts</span>
-                <div className="flex flex-col gap-2.5 max-h-60 overflow-y-auto pr-1">
-                  {FONTS.map((font) => (
-                    <button
-                      key={font.id}
-                      onClick={() => {
-                        dispatch(setFontFamily(font.id));
-                        playCompletionSound(soundEnabled);
-                      }}
-                      className={`flex items-center justify-between text-left gap-3 p-3 rounded-xl border transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-brand-primary/50 ${
-                        fontFamily === font.id
-                          ? 'bg-brand-primary/5 border-brand-primary/40 border-l-4 border-l-brand-primary text-text-primary'
-                          : 'bg-[#181818]/60 border-gray-border/60 hover:border-text-secondary/40 text-text-secondary hover:text-text-primary'
-                      }`}
-                    >
-                      <div className="flex-1 overflow-hidden min-w-0">
-                        <span className="text-xs font-bold text-text-primary block">{font.name}</span>
-                        <span className="text-[10px] text-text-secondary block truncate mt-0.5">{font.description}</span>
-                        <span 
-                          className="text-[11px] font-semibold mt-1 inline-block opacity-80 truncate border-t border-gray-border/20 pt-0.5 w-full"
-                          style={{ fontFamily: font.css }}
+              {/* Sub-tab Segmented Control */}
+              <div className="flex items-center gap-1.5 p-1 bg-bg-secondary/60 border border-gray-border/55 rounded-2xl w-fit">
+                <button
+                  type="button"
+                  onClick={() => setAppearanceSubTab('typography')}
+                  className={`px-4 py-2 rounded-xl text-xs font-black cursor-pointer transition-all ${
+                    appearanceSubTab === 'typography'
+                      ? 'bg-brand-primary text-white shadow-sm'
+                      : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  Typography & Fonts
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAppearanceSubTab('theme')}
+                  className={`px-4 py-2 rounded-xl text-xs font-black cursor-pointer transition-all ${
+                    appearanceSubTab === 'theme'
+                      ? 'bg-brand-primary text-white shadow-sm'
+                      : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  Theme & Layout
+                </button>
+              </div>
+
+              {appearanceSubTab === 'typography' && (
+                <div className="flex flex-col gap-4 animate-slide-in">
+                  {/* Fonts */}
+                  <div className="flex flex-col gap-3">
+                    <span className="text-[10px] font-black text-text-secondary/70 uppercase tracking-widest pl-1">Typography Fonts</span>
+                    <div className="flex flex-col gap-2.5 max-h-60 overflow-y-auto pr-1">
+                      {FONTS.map((font) => (
+                        <button
+                          key={font.id}
+                          onClick={() => {
+                            dispatch(setFontFamily(font.id));
+                            playCompletionSound(soundEnabled);
+                          }}
+                          className={`flex items-center justify-between text-left gap-3 p-3 rounded-xl border transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-brand-primary/50 ${
+                            fontFamily === font.id
+                              ? 'bg-brand-primary/5 border-brand-primary/40 border-l-4 border-l-brand-primary text-text-primary'
+                              : 'bg-bg-secondary/60 border-gray-border/60 hover:border-text-secondary/40 text-text-secondary hover:text-text-primary'
+                          }`}
                         >
-                          {font.sample}
-                        </span>
-                      </div>
-                      {fontFamily === font.id && (
-                        <div className="w-5.5 h-5.5 rounded-full bg-brand-primary text-white flex items-center justify-center shrink-0">
-                          <Check className="w-3.5 h-3.5" />
+                          <div className="flex-1 overflow-hidden min-w-0">
+                            <span className="text-xs font-bold text-text-primary block">{font.name}</span>
+                            <span className="text-[10px] text-text-secondary block truncate mt-0.5">{font.description}</span>
+                            <span 
+                              className="text-[11px] font-semibold mt-1 inline-block opacity-80 truncate border-t border-gray-border/20 pt-0.5 w-full"
+                              style={{ fontFamily: font.css }}
+                            >
+                              {font.sample}
+                            </span>
+                          </div>
+                          {fontFamily === font.id && (
+                            <div className="w-5.5 h-5.5 rounded-full bg-brand-primary text-white flex items-center justify-center shrink-0">
+                              <Check className="w-3.5 h-3.5" />
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Sizing */}
+                  <div className="flex flex-col gap-3 mt-2">
+                    <span className="text-[10px] font-black text-text-secondary/70 uppercase tracking-widest pl-1">Interface Sizing</span>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {SIZES.map((size) => (
+                        <button
+                          key={size.id}
+                          onClick={() => {
+                            dispatch(setFontSize(size.id));
+                            playCompletionSound(soundEnabled);
+                          }}
+                          className={`flex flex-col text-left gap-1 p-3 rounded-xl border transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-brand-primary/50 ${
+                            fontSize === size.id
+                              ? 'bg-brand-primary/5 border-brand-primary/40 border-l-4 border-l-brand-primary text-text-primary'
+                              : 'bg-bg-secondary/60 border-gray-border/60 hover:border-text-secondary/40 text-text-secondary hover:text-text-primary'
+                          }`}
+                        >
+                          <div className="flex justify-between items-center w-full">
+                            <span className="text-xs font-bold uppercase text-text-primary">{size.id}</span>
+                            <span className="text-[9px] font-bold text-text-secondary">{size.scale}</span>
+                          </div>
+                          <span className="text-[10px] text-text-secondary/80 block mt-1">{size.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {appearanceSubTab === 'theme' && (
+                <div className="flex flex-col gap-5 animate-slide-in">
+                  {/* Theme Mode Selector */}
+                  <div className="flex flex-col gap-3">
+                    <span className="text-[10px] font-black text-text-secondary/70 uppercase tracking-widest pl-1">Appearance Modes</span>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          dispatch(setTheme('dark'));
+                          playCompletionSound(soundEnabled);
+                          toast('Dark theme mode activated! 🌙', 'success');
+                        }}
+                        className={`flex flex-col items-start gap-1 p-4 rounded-xl border transition-colors cursor-pointer select-none text-left ${
+                          theme === 'dark'
+                            ? 'bg-brand-primary/5 border-brand-primary/40 text-text-primary'
+                            : 'bg-bg-secondary/60 border-gray-border/60 hover:border-text-secondary/40 text-text-secondary hover:text-text-primary'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2">
+                            <Moon className="w-4 h-4" />
+                            <span className="text-xs font-black">Dark Mode</span>
+                          </div>
+                          <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-brand-primary/20 text-brand-primary tracking-wider uppercase shrink-0">Recommended</span>
                         </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
+                        <span className="text-[10px] text-text-secondary mt-0.5">Modern, focused, low eye strain</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          dispatch(setTheme('light'));
+                          playCompletionSound(soundEnabled);
+                          toast('Light theme mode activated! ☀️', 'success');
+                        }}
+                        className={`flex flex-col items-start gap-1 p-4 rounded-xl border transition-colors cursor-pointer select-none text-left ${
+                          theme === 'light'
+                            ? 'bg-brand-primary/5 border-brand-primary/40 text-text-primary'
+                            : 'bg-bg-secondary/60 border-gray-border/60 hover:border-text-secondary/40 text-text-secondary hover:text-text-primary'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Sun className="w-4 h-4" />
+                          <span className="text-xs font-black">Light Mode</span>
+                        </div>
+                        <span className="text-[10px] text-text-secondary mt-0.5">Clean, bright, professional</span>
+                      </button>
+                    </div>
+                  </div>
 
-              {/* Sizing */}
-              <div className="flex flex-col gap-3 mt-2">
-                <span className="text-xs font-black text-text-secondary/70 uppercase tracking-widest pl-1">Interface Sizing</span>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {SIZES.map((size) => (
-                    <button
-                      key={size.id}
-                      onClick={() => {
-                        dispatch(setFontSize(size.id));
-                        playCompletionSound(soundEnabled);
-                      }}
-                      className={`flex flex-col text-left gap-1 p-3 rounded-xl border transition-colors cursor-pointer select-none focus-visible:ring-2 focus-visible:ring-brand-primary/50 ${
-                        fontSize === size.id
-                          ? 'bg-brand-primary/5 border-brand-primary/40 border-l-4 border-l-brand-primary text-text-primary'
-                          : 'bg-[#181818]/60 border-gray-border/60 hover:border-text-secondary/40 text-text-secondary hover:text-text-primary'
-                      }`}
-                    >
-                      <div className="flex justify-between items-center w-full">
-                        <span className="text-xs font-bold uppercase text-text-primary">{size.id}</span>
-                        <span className="text-[9px] font-bold text-text-secondary">{size.scale}</span>
+                  {/* Accent Themes */}
+                  <div className="flex flex-col gap-3">
+                    <span className="text-[10px] font-black text-text-secondary/70 uppercase tracking-widest pl-1">Accent Themes</span>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-64 overflow-y-auto pr-1">
+                      {ACCENT_THEMES_LIST.map((acc) => {
+                        const isSelected = accentTheme === acc.id;
+                        return (
+                          <button
+                            key={acc.id}
+                            type="button"
+                            onClick={() => {
+                              dispatch(setAccentTheme(acc.id));
+                              playCompletionSound(soundEnabled);
+                              toast(`${acc.name} theme applied! 🎨`, 'success');
+                            }}
+                            className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-colors cursor-pointer select-none text-left ${
+                              isSelected
+                                ? 'bg-brand-primary/5 border-brand-primary/40 text-text-primary'
+                                : 'bg-bg-secondary/60 border-gray-border/60 hover:border-text-secondary/40 text-text-secondary hover:text-text-primary'
+                            }`}
+                          >
+                            <span 
+                              className="w-3.5 h-3.5 rounded-full border border-black/25 shrink-0" 
+                              style={{ backgroundColor: acc.color }}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <span className="text-xs font-bold block truncate">{acc.name}</span>
+                              <span className="text-[9px] text-text-secondary block truncate mt-0.5">{acc.desc}</span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Display preferences rows */}
+                  <div className="flex flex-col gap-2.5 mt-2">
+                    <span className="text-[10px] font-black text-text-secondary/70 uppercase tracking-widest pl-1">Workspace Overlays</span>
+                    
+                    <div className="flex items-center justify-between p-3.5 bg-bg-secondary/60 border border-gray-border/50 rounded-xl">
+                      <div className="text-left">
+                        <span className="text-xs font-bold text-text-primary block">Show Workspace Badges</span>
+                        <span className="text-[10px] text-text-secondary">Display parent category folder tags on tasks in lists.</span>
                       </div>
-                      <span className="text-[10px] text-text-secondary/80 block mt-1">{size.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+                      <button
+                        onClick={() => {
+                          dispatch(setShowListBadges(!showListBadges));
+                          playCompletionSound(soundEnabled);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all border ${
+                          showListBadges
+                            ? 'bg-brand-primary text-white border-brand-primary shadow-sm'
+                            : 'bg-transparent text-text-secondary border-gray-border hover:text-text-primary hover:bg-card'
+                        }`}
+                      >
+                        {showListBadges ? 'Showing' : 'Hidden'}
+                      </button>
+                    </div>
 
-              {/* Display preferences rows */}
-              <div className="flex flex-col gap-2.5 mt-2">
-                <span className="text-xs font-black text-text-secondary/70 uppercase tracking-widest pl-1">Workspace Overlays</span>
-                
-                <div className="flex items-center justify-between p-3.5 bg-[#181818]/60 border border-gray-border/50 rounded-xl">
-                  <div className="text-left">
-                    <span className="text-xs font-bold text-text-primary block">Show Workspace Badges</span>
-                    <span className="text-[10px] text-text-secondary">Display parent category folder tags on tasks in lists.</span>
+                    <div className="flex items-center justify-between p-3.5 bg-bg-secondary/60 border border-gray-border/50 rounded-xl">
+                      <div className="text-left">
+                        <span className="text-xs font-bold text-text-primary block">Glow Blur Backdrops</span>
+                        <span className="text-[10px] text-text-secondary">Enable the decorative radial background gradients.</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          dispatch(setShowGlowBackdrops(!showGlowBackdrops));
+                          playCompletionSound(soundEnabled);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all border ${
+                          showGlowBackdrops
+                            ? 'bg-brand-primary text-white border-brand-primary shadow-sm'
+                            : 'bg-transparent text-text-secondary border-gray-border hover:text-text-primary hover:bg-card'
+                        }`}
+                      >
+                        {showGlowBackdrops ? 'Enabled' : 'Disabled'}
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => {
-                      dispatch(setShowListBadges(!showListBadges));
-                      playCompletionSound(soundEnabled);
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all border ${
-                      showListBadges
-                        ? 'bg-brand-primary text-white border-brand-primary shadow-sm'
-                        : 'bg-transparent text-text-secondary border-gray-border hover:text-text-primary hover:bg-card'
-                    }`}
-                  >
-                    {showListBadges ? 'Showing' : 'Hidden'}
-                  </button>
                 </div>
-
-                <div className="flex items-center justify-between p-3.5 bg-[#181818]/60 border border-gray-border/50 rounded-xl">
-                  <div className="text-left">
-                    <span className="text-xs font-bold text-text-primary block">Glow Blur Backdrops</span>
-                    <span className="text-[10px] text-text-secondary">Enable the decorative radial background gradients.</span>
-                  </div>
-                  <button
-                    onClick={() => {
-                      dispatch(setShowGlowBackdrops(!showGlowBackdrops));
-                      playCompletionSound(soundEnabled);
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all border ${
-                      showGlowBackdrops
-                        ? 'bg-brand-primary text-white border-brand-primary shadow-sm'
-                        : 'bg-transparent text-text-secondary border-gray-border hover:text-text-primary hover:bg-card'
-                    }`}
-                  >
-                    {showGlowBackdrops ? 'Enabled' : 'Disabled'}
-                  </button>
-                </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -508,7 +645,7 @@ export const SettingsPage = () => {
               </div>
 
               {/* Default Task Priority */}
-              <div className="flex flex-col gap-2.5 p-4 bg-[#181818]/60 border border-gray-border/50 rounded-2xl">
+              <div className="flex flex-col gap-2.5 p-4 bg-bg-secondary/60 border border-gray-border/50 rounded-2xl">
                 <div className="text-left">
                   <span className="text-xs font-extrabold text-text-primary block">Default Priority Weight</span>
                   <span className="text-[10px] text-text-secondary">Initial priority weight applied to newly established tasks.</span>
@@ -539,7 +676,7 @@ export const SettingsPage = () => {
               </div>
 
               {/* Toggles */}
-              <div className="flex items-center justify-between p-3.5 bg-[#181818]/60 border border-gray-border/50 rounded-xl">
+              <div className="flex items-center justify-between p-3.5 bg-bg-secondary/60 border border-gray-border/50 rounded-xl">
                 <div className="text-left">
                   <span className="text-xs font-bold text-text-primary block">Auto-Archive Completed</span>
                   <span className="text-[10px] text-text-secondary">Hide completed tasks immediately from active queues.</span>
@@ -559,7 +696,7 @@ export const SettingsPage = () => {
                 </button>
               </div>
 
-              <div className="flex items-center justify-between p-3.5 bg-[#181818]/60 border border-gray-border/50 rounded-xl">
+              <div className="flex items-center justify-between p-3.5 bg-bg-secondary/60 border border-gray-border/50 rounded-xl">
                 <div className="text-left">
                   <span className="text-xs font-bold text-text-primary block">Highlight High-Priority</span>
                   <span className="text-[10px] text-text-secondary">Visually apply red/amber highlight bounds for high priority tasks.</span>
@@ -579,7 +716,7 @@ export const SettingsPage = () => {
               </div>
 
               {/* Routine Notes Toggle */}
-              <div className="flex items-center justify-between p-3.5 bg-[#181818]/60 border border-gray-border/50 rounded-xl">
+              <div className="flex items-center justify-between p-3.5 bg-bg-secondary/60 border border-gray-border/50 rounded-xl">
                 <div className="text-left">
                   <span className="text-xs font-bold text-text-primary block">Check-in Notes Prompt</span>
                   <span className="text-[10px] text-text-secondary">Prompt for notes when logging routine task milestones.</span>
@@ -600,7 +737,7 @@ export const SettingsPage = () => {
               </div>
 
               {/* Streak Rules Info */}
-              <div className="flex flex-col gap-2 p-4 bg-[#181818]/60 border border-gray-border/50 rounded-2xl text-left">
+              <div className="flex flex-col gap-2 p-4 bg-bg-secondary/60 border border-gray-border/50 rounded-2xl text-left">
                 <div className="flex items-center gap-2 text-brand-primary border-b border-gray-border/30 pb-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span className="text-xs font-extrabold">Streak Reset Calculations</span>
@@ -626,7 +763,7 @@ export const SettingsPage = () => {
               </div>
 
               {/* XP multipliers summary card */}
-              <div className="flex flex-col gap-3 p-4 bg-[#181818]/60 border border-gray-border/50 rounded-2xl text-left">
+              <div className="flex flex-col gap-3 p-4 bg-bg-secondary/60 border border-gray-border/50 rounded-2xl text-left">
                 <span className="text-xs font-extrabold text-text-primary border-b border-gray-border/30 pb-2 flex items-center gap-1.5">
                   <Flame className="w-4 h-4 text-warning" />
                   <span>XP Reward Matrix</span>
@@ -653,7 +790,7 @@ export const SettingsPage = () => {
               </div>
 
               {/* Streak multiplier info */}
-              <div className="flex flex-col gap-2 p-4 bg-[#181818]/60 border border-gray-border/50 rounded-2xl text-left">
+              <div className="flex flex-col gap-2 p-4 bg-bg-secondary/60 border border-gray-border/50 rounded-2xl text-left">
                 <div className="flex justify-between items-center">
                   <div>
                     <h4 className="text-xs font-bold text-text-primary">Workspace Statistics</h4>
