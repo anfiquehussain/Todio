@@ -4,7 +4,7 @@ import { useAppSelector, useAppDispatch } from '../../../../hooks/useRedux';
 import type { Routine } from '../../../../types';
 import { useRoutineSchedule } from '../../../../hooks/useRoutineSchedule';
 import { 
-  createRoutineLogAsync, deleteRoutineLogAsync, setActiveRoutineId 
+  createRoutineLogAsync, deleteRoutineLogAsync, setActiveRoutineId, calculateStreakAndRate
 } from '../../../../store/slices/routineSlice';
 import { incrementXP, decrementXP } from '../../../../store/slices/profileSlice';
 import { playCompletionSound } from '../../../../lib/sound';
@@ -27,6 +27,8 @@ export const RoutineCard = ({ routine, isSelected }: RoutineCardProps) => {
   const dueToday = isDueToday(routine);
   const completed = isCompletedToday(routine, routineLogs);
   const recurrenceLabel = getRecurrenceLabel(routine);
+  const stats = calculateStreakAndRate(routine, routineLogs);
+  const currentStreak = stats.currentStreak;
 
   // Dynamic Lucide Icon mapping
   const getIcon = (iconName: string) => {
@@ -130,10 +132,10 @@ export const RoutineCard = ({ routine, isSelected }: RoutineCardProps) => {
       </div>
 
       {/* Streak Fire Badge */}
-      {!routine.deleted && routine.currentStreak > 0 && (
+      {!routine.deleted && (
         <div className="flex items-center gap-1 shrink-0 ml-3 bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded-lg select-none">
           <span className="text-[11px] font-bold text-orange-500">
-            {routine.currentStreak}
+            {currentStreak}
           </span>
           <span className="text-xs" role="img" aria-label="Streak fire">🔥</span>
         </div>
