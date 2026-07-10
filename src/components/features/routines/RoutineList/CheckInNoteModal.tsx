@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Check, ClipboardList } from 'lucide-react';
 import { Modal } from '../../../patterns/Modal';
 import { Button } from '../../../ui/Button';
@@ -18,12 +18,14 @@ export const CheckInNoteModal = ({
 }: CheckInNoteModalProps) => {
   const [note, setNote] = useState('');
 
-  // Reset note input state when modal opens
-  useEffect(() => {
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) {
       setNote('');
     }
-  }, [isOpen]);
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

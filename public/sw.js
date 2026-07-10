@@ -34,8 +34,13 @@ self.addEventListener('activate', (event) => {
 
 // Fetch Event
 self.addEventListener('fetch', (event) => {
-  // Only cache GET requests and bypass firestore/firebase/auth endpoints
-  if (event.request.method !== 'GET' || event.request.url.includes('firestore.googleapis.com') || event.request.url.includes('identitytoolkit.googleapis.com')) {
+  // Only cache GET requests and bypass firestore/firebase/auth/non-http endpoints
+  if (
+    event.request.method !== 'GET' ||
+    !event.request.url.startsWith('http') ||
+    event.request.url.includes('firestore.googleapis.com') ||
+    event.request.url.includes('identitytoolkit.googleapis.com')
+  ) {
     return;
   }
 
