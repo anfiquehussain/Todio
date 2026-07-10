@@ -100,7 +100,15 @@ export const MediaCard = ({
       <div className="mt-4">
         {/* Due Date Indicator & Priority Weights */}
         <div className="flex items-center justify-between border-t border-gray-border/50 pt-3 text-[11px] text-text-secondary">
-          <div className="flex items-center gap-1.5 font-medium">
+          <div className={`flex items-center gap-1.5 font-medium ${
+            media.dueDate
+              ? media.priority === 'high'
+                ? 'text-error'
+                : media.priority === 'medium'
+                  ? 'text-warning'
+                  : 'text-success'
+              : ''
+          }`}>
             <Calendar aria-hidden="true" className="w-3.5 h-3.5" />
             <span>{media.dueDate || 'No due date'}</span>
           </div>

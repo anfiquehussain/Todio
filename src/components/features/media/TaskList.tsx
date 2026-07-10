@@ -38,7 +38,7 @@ export const TaskList = () => {
     tasks: allTasks, collections: allCollections, subcollections: allSubcollections, activeCollectionId, 
     activeSubcollectionId, activeTaskId, filter, sortBy, soundEnabled, subtasks: allSubtasks
   } = useAppSelector((state) => state.todo);
-  const { showListBadges, subtaskFilter, defaultTaskPriority, autoArchiveCompleted } = useAppSelector((state) => state.settings);
+  const { showListBadges, subtaskFilter, autoArchiveCompleted } = useAppSelector((state) => state.settings);
 
   const collections = allCollections.filter(c => !c.deleted);
   const subcollections = allSubcollections.filter(s => !s.deleted);
@@ -48,6 +48,7 @@ export const TaskList = () => {
   const { user } = useAppSelector((state) => state.auth);
 
   const [newTitle, setNewTitle] = useState('');
+  const [quickAddPriority, setQuickAddPriority] = useState<'low' | 'medium' | 'high'>('low');
   const [expandedCompleted, setExpandedCompleted] = useState(false);
   const [manuallyExpandedTaskIds, setManuallyExpandedTaskIds] = useState<Record<string, boolean>>({});
 
@@ -229,7 +230,7 @@ export const TaskList = () => {
       id: `task-${Date.now()}`,
       title: newTitle.trim(),
       overview: '',
-      priority: defaultTaskPriority,
+      priority: quickAddPriority,
       dueDate: activeCollectionId ? '' : new Date().toISOString().split('T')[0], // Set today's date if in Today smart view
       completed: false,
       collectionId: activeCollectionId,
@@ -243,6 +244,7 @@ export const TaskList = () => {
       dispatch(incrementXP(10));
       dispatch(updateStreak());
       setNewTitle('');
+      setQuickAddPriority('low');
       toast('Action task successfully established! +10 XP Score 🚀', 'success');
     } catch {
       toast('Failed to establish task card.', 'error');
@@ -611,14 +613,66 @@ export const TaskList = () => {
       {filter !== 'trash' && (
         <div className="px-6 pt-4 pb-2 select-none">
           <form onSubmit={handleQuickAddTask} className="relative flex items-center">
-            <Plus className="absolute left-3 w-4 h-4 text-text-secondary/70 pointer-events-none" />
+            <Plus className={`absolute left-3 w-4 h-4 pointer-events-none transition-colors ${
+              newTitle.trim()
+                ? quickAddPriority === 'high'
+                  ? 'text-error'
+                  : quickAddPriority === 'medium'
+                    ? 'text-warning'
+                    : 'text-success'
+                : 'text-text-secondary/70'
+            }`} />
             <input
               type="text"
               placeholder={`+ Add Task to "${getHeaderTitle()}"`}
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              className="w-full pl-9.5 pr-4 py-3 rounded-2xl border border-slate-200 dark:border-gray-border/80 bg-slate-100/90 dark:bg-[#181818] text-text-primary text-xs font-semibold placeholder:text-text-secondary/50 focus:outline-hidden focus:border-brand-primary/50 focus:bg-white dark:focus:bg-[#1a1a1a] transition-all"
+              className={`w-full pl-9.5 pr-28 py-3 rounded-2xl border transition-all text-text-primary text-xs font-semibold placeholder:text-text-secondary/50 focus:outline-hidden ${
+                newTitle.trim()
+                  ? quickAddPriority === 'high'
+                    ? 'border-l-4 border-l-error border-error/30 bg-error/5 focus:bg-error/5 focus:border-error/50'
+                    : quickAddPriority === 'medium'
+                      ? 'border-l-4 border-l-warning border-warning/30 bg-warning/5 focus:bg-warning/5 focus:border-warning/50'
+                      : 'border-l-4 border-l-success border-success/30 bg-success/5 focus:bg-success/5 focus:border-success/50'
+                  : 'border-slate-200 dark:border-gray-border/80 bg-slate-100/90 dark:bg-[#181818] focus:border-brand-primary/50 focus:bg-white dark:focus:bg-[#1a1a1a]'
+              }`}
             />
+            {/* Priority Selector Inside Input Box */}
+            <div className="absolute right-3 flex items-center gap-1.5 bg-bg-primary/80 dark:bg-[#202020]/90 border border-gray-border/30 px-2 py-1 rounded-xl shadow-xs">
+              <button
+                type="button"
+                onClick={() => setQuickAddPriority('low')}
+                className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
+                  quickAddPriority === 'low'
+                    ? 'bg-success ring-2 ring-success/40 scale-110'
+                    : 'bg-success/30 hover:bg-success/60'
+                }`}
+                title="Low Priority"
+                aria-label="Set low priority"
+              />
+              <button
+                type="button"
+                onClick={() => setQuickAddPriority('medium')}
+                className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
+                  quickAddPriority === 'medium'
+                    ? 'bg-warning ring-2 ring-warning/40 scale-110'
+                    : 'bg-warning/30 hover:bg-warning/60'
+                }`}
+                title="Medium Priority"
+                aria-label="Set medium priority"
+              />
+              <button
+                type="button"
+                onClick={() => setQuickAddPriority('high')}
+                className={`w-2.5 h-2.5 rounded-full transition-all cursor-pointer ${
+                  quickAddPriority === 'high'
+                    ? 'bg-error ring-2 ring-error/40 scale-110'
+                    : 'bg-error/30 hover:bg-error/60'
+                }`}
+                title="High Priority"
+                aria-label="Set high priority"
+              />
+            </div>
           </form>
         </div>
       )}

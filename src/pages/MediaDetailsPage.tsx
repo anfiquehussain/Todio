@@ -135,14 +135,30 @@ export const MediaDetailsPage = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-brand-primary/10 border border-brand-primary/20 text-brand-primary flex items-center justify-center shrink-0">
-                <Calendar className="w-5 h-5 animate-pulse" />
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
+                task.dueDate
+                  ? task.priority === 'high'
+                    ? 'bg-error/10 border-error/20 text-error'
+                    : task.priority === 'medium'
+                      ? 'bg-warning/10 border-warning/20 text-warning'
+                      : 'bg-success/10 border-success/20 text-success'
+                  : 'bg-brand-primary/10 border-brand-primary/20 text-brand-primary'
+              }`}>
+                <Calendar className={`w-5 h-5 ${task.dueDate ? 'animate-pulse' : ''}`} />
               </div>
               <div className="flex flex-col">
                 <span className="text-[9px] font-bold text-text-secondary uppercase tracking-widest">
                   Due Target Date
                 </span>
-                <span className="text-sm font-bold text-text-primary mt-0.5">
+                <span className={`text-sm font-bold mt-0.5 ${
+                  task.dueDate
+                    ? task.priority === 'high'
+                      ? 'text-error'
+                      : task.priority === 'medium'
+                        ? 'text-warning'
+                        : 'text-success'
+                    : 'text-text-primary'
+                }`}>
                   {task.dueDate || 'No due date'}
                 </span>
               </div>

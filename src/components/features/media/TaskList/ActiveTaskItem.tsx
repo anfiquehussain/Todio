@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Reorder, useDragControls, AnimatePresence, motion } from 'framer-motion';
 import { 
-  Check, GripVertical, Folder, LayoutList, ArrowRight, Copy, Edit2, Trash2, X, ChevronDown, MoreVertical
+  Check, GripVertical, Folder, LayoutList, ArrowRight, Copy, Edit2, Trash2, X, ChevronDown, MoreVertical,
+  Calendar
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../../../hooks/useRedux';
 import { 
@@ -397,6 +398,18 @@ export const ActiveTaskItem = ({
                     }`} />
                     <span>{task.priority}</span>
                   </span>
+                  {task.dueDate && (
+                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-black/5 dark:bg-[#202020] border select-none ${
+                      task.priority === 'high'
+                        ? 'border-error/25 text-error'
+                        : task.priority === 'medium'
+                          ? 'border-warning/25 text-warning'
+                          : 'border-success/25 text-success'
+                    }`}>
+                      <Calendar className="w-2.5 h-2.5" />
+                      <span>{task.dueDate}</span>
+                    </span>
+                  )}
                   {col && (
                     <span 
                       className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-black/5 dark:bg-[#202020] border border-gray-border/50 text-text-secondary select-none"

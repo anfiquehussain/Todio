@@ -362,7 +362,7 @@ export const createSubtaskAsync = createAsyncThunk(
         const parentWeight = priorityWeights[parentTask.priority || 'low'] || 1;
 
         if (subtaskWeight > parentWeight) {
-          const updatedParent = { ...parentTask, priority: subtask.priority };
+          const updatedParent = { ...parentTask, priority: subtask.priority || 'low' };
           await dispatch(updateTaskAsync(updatedParent)).unwrap();
         }
       }
@@ -388,7 +388,7 @@ export const updateSubtaskAsync = createAsyncThunk(
         const parentWeight = priorityWeights[parentTask.priority || 'low'] || 1;
 
         if (subtaskWeight > parentWeight) {
-          const updatedParent = { ...parentTask, priority: subtask.priority };
+          const updatedParent = { ...parentTask, priority: subtask.priority || 'low' };
           await dispatch(updateTaskAsync(updatedParent)).unwrap();
         }
       }
