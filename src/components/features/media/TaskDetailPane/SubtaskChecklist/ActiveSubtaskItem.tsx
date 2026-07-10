@@ -134,12 +134,24 @@ export const ActiveSubtaskItem = ({
             onToggleSelect(sub.id);
           }
         }}
-        className={`group flex flex-row items-center justify-between gap-3 p-3 rounded-2xl border transition-all ${
+        className={`group flex flex-row items-center justify-between gap-3 p-3 rounded-2xl border border-l-4 transition-all ${
           isSelectionMode ? 'cursor-pointer' : ''
         } ${
           isSelectedForBulk
             ? 'bg-brand-primary/10 border-brand-primary/45 text-text-primary shadow-xs'
-            : 'bg-bg-primary/50 dark:bg-bg-secondary/20 border-gray-border hover:bg-bg-primary dark:hover:bg-bg-secondary/40'
+            : sub.completed
+              ? 'border-success/20 opacity-60 bg-success/5'
+              : sub.priority === 'high'
+                ? 'bg-error/5 border-error/20 hover:bg-error/10'
+                : sub.priority === 'medium'
+                  ? 'bg-warning/5 border-warning/20 hover:bg-warning/10'
+                  : 'bg-bg-primary/50 dark:bg-bg-secondary/20 border-gray-border hover:bg-bg-primary dark:hover:bg-bg-secondary/40'
+        } ${
+          sub.priority === 'high'
+            ? 'border-l-error'
+            : sub.priority === 'medium'
+              ? 'border-l-warning'
+              : 'border-l-success'
         }`}
       >
         {editingSubtaskId === sub.id ? (

@@ -11,6 +11,7 @@ const initialState: SettingsState = {
   defaultTaskPriority: (localStorage.getItem('todo_default_task_priority') as SettingsState['defaultTaskPriority']) || 'low',
   autoArchiveCompleted: localStorage.getItem('todo_auto_archive_completed') === 'true',
   routineNotesPrompt: localStorage.getItem('todo_routine_notes_prompt') === 'true',
+  autoEscalatePriority: localStorage.getItem('todo_auto_escalate_priority') !== 'false',
   theme: (localStorage.getItem('todo_theme') as 'dark' | 'light') || 'dark',
   accentTheme: (localStorage.getItem('todo_accent_theme') as SettingsAccentTheme) || 'midnight-gold',
 };
@@ -51,6 +52,10 @@ export const settingsSlice = createSlice({
       state.routineNotesPrompt = action.payload;
       localStorage.setItem('todo_routine_notes_prompt', String(action.payload));
     },
+    setAutoEscalatePriority: (state, action: PayloadAction<boolean>) => {
+      state.autoEscalatePriority = action.payload;
+      localStorage.setItem('todo_auto_escalate_priority', String(action.payload));
+    },
     setTheme: (state, action: PayloadAction<'dark' | 'light'>) => {
       state.theme = action.payload;
       localStorage.setItem('todo_theme', action.payload);
@@ -71,6 +76,7 @@ export const {
   setDefaultTaskPriority,
   setAutoArchiveCompleted,
   setRoutineNotesPrompt,
+  setAutoEscalatePriority,
   setTheme,
   setAccentTheme
 } = settingsSlice.actions;

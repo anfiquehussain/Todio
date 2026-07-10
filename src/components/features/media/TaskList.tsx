@@ -827,8 +827,20 @@ export const TaskList = () => {
                             dispatch(setActiveTaskId(task.id));
                           }
                         }}
-                        className={`group flex items-center justify-between px-3.5 py-2.5 rounded-xl border opacity-60 select-none cursor-pointer transition-all ${
-                          isSelected ? 'bg-brand-primary/10 border-brand-primary/45 opacity-100 shadow-xs' : 'bg-card border-gray-border/60 hover:opacity-100 hover:border-brand-primary/25'
+                        className={`group flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-l-4 opacity-60 select-none cursor-pointer transition-all ${
+                          isSelected 
+                            ? 'bg-brand-primary/10 border-brand-primary/45 opacity-100 shadow-xs' 
+                            : task.priority === 'high'
+                              ? 'bg-error/5 border-error/20 hover:opacity-100 hover:border-brand-primary/25'
+                              : task.priority === 'medium'
+                                ? 'bg-warning/5 border-warning/20 hover:opacity-100 hover:border-brand-primary/25'
+                                : 'bg-card border-gray-border/60 hover:opacity-100 hover:border-brand-primary/25'
+                        } ${
+                          task.priority === 'high'
+                            ? 'border-l-error'
+                            : task.priority === 'medium'
+                              ? 'border-l-warning'
+                              : 'border-l-success'
                         }`}
                       >
                         <div className="flex items-start gap-3 overflow-hidden flex-1">

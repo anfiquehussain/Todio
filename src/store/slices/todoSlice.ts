@@ -348,16 +348,52 @@ export const deleteTaskPermanentAsync = createAsyncThunk(
 
 export const createSubtaskAsync = createAsyncThunk(
   'todo/createSubtask',
-  async (subtask: Subtask) => {
+  async (subtask: Subtask, { getState, dispatch }) => {
     await firestoreService.createSubtask(subtask);
+
+    const state = getState() as { settings: { autoEscalatePriority: boolean }; todo: TodoState };
+    const autoEscalate = state.settings.autoEscalatePriority !== false;
+
+    if (autoEscalate) {
+      const parentTask = state.todo.tasks.find(t => t.id === subtask.taskId);
+      if (parentTask) {
+        const priorityWeights = { low: 1, medium: 2, high: 3 };
+        const subtaskWeight = priorityWeights[subtask.priority || 'low'] || 1;
+        const parentWeight = priorityWeights[parentTask.priority || 'low'] || 1;
+
+        if (subtaskWeight > parentWeight) {
+          const updatedParent = { ...parentTask, priority: subtask.priority };
+          await dispatch(updateTaskAsync(updatedParent)).unwrap();
+        }
+      }
+    }
+
     return subtask;
   }
 );
 
 export const updateSubtaskAsync = createAsyncThunk(
   'todo/updateSubtask',
-  async (subtask: Subtask) => {
+  async (subtask: Subtask, { getState, dispatch }) => {
     await firestoreService.updateSubtask(subtask);
+
+    const state = getState() as { settings: { autoEscalatePriority: boolean }; todo: TodoState };
+    const autoEscalate = state.settings.autoEscalatePriority !== false;
+
+    if (autoEscalate) {
+      const parentTask = state.todo.tasks.find(t => t.id === subtask.taskId);
+      if (parentTask) {
+        const priorityWeights = { low: 1, medium: 2, high: 3 };
+        const subtaskWeight = priorityWeights[subtask.priority || 'low'] || 1;
+        const parentWeight = priorityWeights[parentTask.priority || 'low'] || 1;
+
+        if (subtaskWeight > parentWeight) {
+          const updatedParent = { ...parentTask, priority: subtask.priority };
+          await dispatch(updateTaskAsync(updatedParent)).unwrap();
+        }
+      }
+    }
+
     return subtask;
   }
 );

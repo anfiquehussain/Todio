@@ -23,6 +23,7 @@ export interface SettingsState {
   defaultTaskPriority: 'low' | 'medium' | 'high';
   autoArchiveCompleted: boolean;
   routineNotesPrompt: boolean;
+  autoEscalatePriority: boolean;
   theme: 'dark' | 'light';
   accentTheme: SettingsAccentTheme;
 }

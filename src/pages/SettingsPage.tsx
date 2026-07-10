@@ -12,6 +12,7 @@ import {
   setDefaultTaskPriority, 
   setAutoArchiveCompleted, 
   setRoutineNotesPrompt,
+  setAutoEscalatePriority,
   setFontFamily, 
   setFontSize,
   setTheme,
@@ -123,6 +124,7 @@ export const SettingsPage = () => {
     defaultTaskPriority, 
     autoArchiveCompleted, 
     routineNotesPrompt,
+    autoEscalatePriority,
     theme,
     accentTheme
   } = useAppSelector((state) => state.settings);
@@ -693,6 +695,26 @@ export const SettingsPage = () => {
                   }`}
                 >
                   {autoArchiveCompleted ? 'Enabled' : 'Disabled'}
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-3.5 bg-bg-secondary/60 border border-gray-border/50 rounded-xl">
+                <div className="text-left">
+                  <span className="text-xs font-bold text-text-primary block">Auto-Escalate Priority</span>
+                  <span className="text-[10px] text-text-secondary">Automatically escalate task priority to match higher priority subtasks.</span>
+                </div>
+                <button
+                  onClick={() => {
+                    dispatch(setAutoEscalatePriority(!autoEscalatePriority));
+                    playCompletionSound(soundEnabled);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all border ${
+                    autoEscalatePriority
+                      ? 'bg-brand-primary text-white border-brand-primary shadow-sm'
+                      : 'bg-transparent text-text-secondary border-gray-border hover:text-text-primary hover:bg-card'
+                  }`}
+                >
+                  {autoEscalatePriority ? 'Enabled' : 'Disabled'}
                 </button>
               </div>
 

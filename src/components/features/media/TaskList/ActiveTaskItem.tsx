@@ -305,10 +305,20 @@ export const ActiveTaskItem = ({
               dispatch(setActiveTaskId(task.id));
             }
           }}
-          className={`group flex items-center justify-between px-3.5 py-3 rounded-2xl border cursor-pointer select-none transition-all ${
+          className={`group flex items-center justify-between px-3.5 py-3 rounded-2xl border border-l-4 cursor-pointer select-none transition-all ${
             isSelected 
               ? 'bg-brand-primary/10 border-brand-primary/45 shadow-xs' 
-              : 'bg-card border-gray-border/80 hover:border-brand-primary/25 hover:shadow-xs'
+              : task.priority === 'high'
+                ? 'bg-error/5 border-error/20 hover:border-brand-primary/25'
+                : task.priority === 'medium'
+                  ? 'bg-warning/5 border-warning/20 hover:border-brand-primary/25'
+                  : 'bg-card border-gray-border/80 hover:border-brand-primary/25 hover:shadow-xs'
+          } ${
+            task.priority === 'high'
+              ? 'border-l-error'
+              : task.priority === 'medium'
+                ? 'border-l-warning'
+                : 'border-l-success'
           } ${isSelected ? 'shadow-md shadow-brand-primary/5' : ''}`}
         >
           <div className="flex items-start gap-3 overflow-hidden flex-1">
@@ -515,8 +525,14 @@ export const ActiveTaskItem = ({
               <div 
                 key={subtaskItem.id} 
                 onClick={(e) => e.stopPropagation()} 
-                className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border text-[10px] font-bold transition-all bg-bg-secondary/40 border-gray-border/50 hover:bg-bg-primary/50 ${
-                  subtaskItem.completed ? 'opacity-60' : ''
+                className={`flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border border-l-2 text-[10px] font-bold transition-all hover:bg-bg-primary/50 ${
+                  subtaskItem.completed
+                    ? 'border-success/20 border-l-success opacity-60 bg-success/5'
+                    : subtaskItem.priority === 'high'
+                      ? 'bg-error/5 border-error/20 border-l-error'
+                      : subtaskItem.priority === 'medium'
+                        ? 'bg-warning/5 border-warning/20 border-l-warning'
+                        : 'bg-bg-secondary/40 border-gray-border/50 border-l-success'
                 }`}
               >
                  <div className="flex items-center gap-2 overflow-hidden flex-1">
