@@ -20,6 +20,7 @@ import {
 } from '../store/slices/settingsSlice';
 import { setAuthModalOpen } from '../store/slices/authSlice';
 import { fetchAllRoutineData } from '../store/slices/routineSlice';
+import { fetchAllTrackerData } from '../store/slices/trackerSlice';
 import { playCompletionSound } from '../lib/sound';
 import { useToast } from '../hooks/useToast';
 import { PageHeader } from '../components/patterns/PageHeader';
@@ -146,7 +147,8 @@ export const SettingsPage = () => {
     try {
       await Promise.all([
         dispatch(fetchAllTodoData(user.uid)).unwrap(),
-        dispatch(fetchAllRoutineData(user.uid)).unwrap()
+        dispatch(fetchAllRoutineData(user.uid)).unwrap(),
+        dispatch(fetchAllTrackerData(user.uid)).unwrap()
       ]);
       toast('Workspace successfully synchronized! 🔄', 'success');
     } catch {

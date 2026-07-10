@@ -5,6 +5,7 @@ import profileReducer from './slices/profileSlice';
 import todoReducer from './slices/todoSlice';
 import settingsReducer from './slices/settingsSlice';
 import routineReducer from './slices/routineSlice';
+import trackerReducer from './slices/trackerSlice';
 
 const localStorageMiddleware: Middleware = (store) => (next) => (action) => {
   const result = next(action);
@@ -30,6 +31,15 @@ const localStorageMiddleware: Middleware = (store) => (next) => (action) => {
       } catch (e) {
         console.error('Failed to sync routine state to localStorage:', e);
       }
+    } else if (action.type.startsWith('tracker/')) {
+      const state = store.getState() as { tracker: { trackers: unknown[]; entries: unknown[] } };
+      const trackerState = state.tracker;
+      try {
+        localStorage.setItem('todio_trackers', JSON.stringify(trackerState.trackers));
+        localStorage.setItem('todio_tracker_entries', JSON.stringify(trackerState.entries));
+      } catch (e) {
+        console.error('Failed to sync tracker state to localStorage:', e);
+      }
     }
   }
   
@@ -43,6 +53,7 @@ export const store = configureStore({
     todo: todoReducer,
     settings: settingsReducer,
     routine: routineReducer,
+    tracker: trackerReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

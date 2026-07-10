@@ -17,8 +17,10 @@ src/
 │   │   └── collectionsApi.ts     # API client for workspace categories
 │   ├── todo/           # Core task (todo) service layer
 │   │   └── firestoreService.ts # CRUD tasks and details sync service
-│   └── routines/       # Routine management service layer
-│       └── routineService.ts # CRUD routines and logs sync service
+│   ├── routines/       # Routine management service layer
+│   │   └── routineService.ts # CRUD routines and logs sync service
+│   └── trackers/       # Custom tracking service layer
+│       └── trackerService.ts # CRUD trackers and entries service
 ├── assets/             # Static assets (images, logos)
 ├── components/         # UI Components (3-Layer Architecture)
 │   ├── ui/             # [Layer 1] Primitives (Button.tsx, IconButton.tsx, Input.tsx, Rating.tsx, Skeleton.tsx)
@@ -63,6 +65,17 @@ src/
 │       │   └── RoutineDetailPane/
 │       │       ├── CalendarHeatmap.tsx # CSS grid activity matrix heatmap
 │       │       └── StreakStats.tsx # Streak counts & counter items
+│       ├── trackers/   # Universal Tracker feature components
+│       │   ├── TrackerList.tsx # List view of custom trackers
+│       │   ├── TrackerList/
+│       │   │   └── TrackerCard.tsx # Summary card block
+│       │   ├── TrackerFormModal.tsx # Scheme creator & editor modal
+│       │   ├── TrackerDetailPane.tsx # Detail statistics & entries coordinator
+│       │   └── TrackerDetailPane/
+│       │       ├── EntryList.tsx # Entry history timeline list
+│       │       ├── EntryFormModal.tsx # Parameter validation builder modal
+│       │       ├── AnalyticsPanel.tsx # Pure SVG metrics charts panel
+│       │       └── ReportExporter.tsx # CSV/JSON custom range download component
 │       └── settings/   # Customization features
 │           ├── FontCustomizer.tsx # Typography and size multipliers
 │           ├── SandboxPreview.tsx # UI sandbox mockup preview
@@ -76,14 +89,17 @@ src/
 │   ├── usePWA.ts       # PWA installer prompt and state manager hook
 │   ├── useIntersectionObserver.ts # Observer hook for infinite scroll loading
 │   ├── useRoutineSchedule.ts # Habit scheduling & streak calculators
-│   └── useTaskDetailsPage.ts # State/action coordinator for MediaDetailsPage.tsx
+│   ├── useTaskDetailsPage.ts # State/action coordinator for MediaDetailsPage.tsx
+│   └── useTrackerAnalytics.ts # Metrics computation hook
 ├── lib/                # Third-party library configs
 │   ├── firebase.ts     # Firebase config credentials initialization
-│   └── sound.ts        # Web Audio API Synthesizer bell sounds
+│   └── sound.ts        # Audio bell resonances
 ├── pages/              # Routed page components
 │   ├── HomePage.tsx      # Landing dashboard, streaks, and priority lists
 │   ├── BrowsePage.tsx    # Exploration, backup exporter/importer, and sound switches
 │   ├── RoutinesPage.tsx  # Habit tracking dashboard layout wrapper
+│   ├── TrackersPage.tsx  # Tracker dashboard layout wrapper
+│   ├── TrackerDetailsPage.tsx # Single tracker entries coordinator wrapper
 │   ├── ProfilePage.tsx   # Detailed progress metrics and database wipe resets
 │   ├── MediaDetailsPage.tsx   # Detailed subtask checklist lists and star priorities
 │   ├── CollectionsPage.tsx # Categories list dashboard
@@ -99,6 +115,7 @@ src/
 │       ├── profileSlice.ts
 │       ├── todoSlice.ts
 │       ├── routineSlice.ts # Routine management slice
+│       ├── trackerSlice.ts # Custom tracker management slice
 │       └── settingsSlice.ts # Settings customization state with LocalStorage persistence
 ├── types/              # Global TypeScript type definitions
 │   ├── env.d.ts        # Vite environment variable types
@@ -107,6 +124,7 @@ src/
 │   ├── settings.types.ts # Font family and font-size configuration typings
 │   ├── auth.types.ts   # Firebase auth types
 │   ├── routine.types.ts # Habit definitions & log models
+│   ├── tracker.types.ts # Custom tracker schemas & entry models
 │   └── index.ts        # Barrel export for all global types
 ├── App.tsx             # App entry with RouterProvider
 ├── main.tsx            # React DOM mounting point with Redux Provider

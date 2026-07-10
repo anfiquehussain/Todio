@@ -3,6 +3,7 @@ export type * from './todo.types';
 export type * from './settings.types';
 export type * from './collections.types';
 export type * from './routine.types';
+export type * from './tracker.types';
 
 
 

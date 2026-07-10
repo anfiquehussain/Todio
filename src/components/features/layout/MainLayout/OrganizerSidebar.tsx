@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
-  CheckSquare, Folder, Plus, Check, X, Edit2, Trash2, LayoutList, ChevronDown, ChevronRight, Download, RefreshCw
+  CheckSquare, Folder, Plus, Check, X, Edit2, Trash2, LayoutList, ChevronDown, ChevronRight, Download, RefreshCw, BarChart3
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '../../../../hooks/useRedux';
 import { 
@@ -347,6 +347,26 @@ export const OrganizerSidebar = ({
           }`}>
             {routinesDueTodayCount}
           </span>
+        </button>
+
+        <button
+          onClick={() => {
+            dispatch(setActiveCollectionId(null));
+            dispatch(setActiveSubcollectionId(null));
+            dispatch(setActiveTaskId(null));
+            navigate('/trackers');
+            setIsMobileMenuOpen(false);
+          }}
+          className={`flex items-center justify-between px-3 py-2 rounded-xl text-sm font-semibold select-none cursor-pointer transition-all border ${
+            location.pathname === '/trackers'
+              ? 'bg-brand-primary/10 text-brand-primary border-brand-primary/20 shadow-xs'
+              : 'text-text-secondary border-transparent hover:text-text-primary hover:bg-bg-primary'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <BarChart3 className="w-4 h-4" />
+            <span>Trackers</span>
+          </div>
         </button>
       </div>
 

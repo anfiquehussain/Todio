@@ -3,6 +3,7 @@ import { useAppDispatch, useAppSelector } from './useRedux';
 import { setUser, setLoading, setError } from '../store/slices/authSlice';
 import { fetchAllTodoData, wipeData as wipeTodoData, cleanupExpiredTrashAsync } from '../store/slices/todoSlice';
 import { fetchAllRoutineData, wipeData as wipeRoutineData } from '../store/slices/routineSlice';
+import { fetchAllTrackerData, wipeTrackerData } from '../store/slices/trackerSlice';
 import { auth, onAuthStateChanged } from '../lib/firebase';
 import type { UserProfile } from '../types';
 
@@ -25,10 +26,11 @@ export const useAuth = () => {
           };
           dispatch(setUser(profile));
           
-          // Fetch all todo and routine data concurrently
+          // Fetch all todo, routine, and tracker data concurrently
           Promise.all([
             dispatch(fetchAllTodoData(profile.uid)).unwrap(),
-            dispatch(fetchAllRoutineData(profile.uid)).unwrap()
+            dispatch(fetchAllRoutineData(profile.uid)).unwrap(),
+            dispatch(fetchAllTrackerData(profile.uid)).unwrap()
           ]).then(() => {
             dispatch(cleanupExpiredTrashAsync());
           });
@@ -36,6 +38,7 @@ export const useAuth = () => {
           dispatch(setUser(null));
           dispatch(wipeTodoData());
           dispatch(wipeRoutineData());
+          dispatch(wipeTrackerData());
         }
         dispatch(setLoading(false));
       },

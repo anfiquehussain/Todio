@@ -7,6 +7,8 @@ import { CollectionsPage } from '../pages/CollectionsPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { CollectionDetailsPage } from '../pages/CollectionDetailsPage';
 import { RoutinesPage } from '../pages/RoutinesPage';
+import { TrackersPage } from '../pages/TrackersPage';
+import { TrackerDetailsPage } from '../pages/TrackerDetailsPage';
 
 export const router = createBrowserRouter([
   {
@@ -44,6 +46,14 @@ export const router = createBrowserRouter([
       {
         path: 'routines',
         element: <RoutinesPage />,
+      },
+      {
+        path: 'trackers',
+        element: <TrackersPage />,
+      },
+      {
+        path: 'tracker/:id',
+        element: <TrackerDetailsPage />,
       }
     ],
   },

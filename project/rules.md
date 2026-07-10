@@ -412,3 +412,42 @@ Each completed occurrence generates a log entry:
 - Completing a routine check-in awards `25 XP` and increments the profile streak.
 - Unchecking / deleting a completion log decrements `25 XP` and resets the streak.
 
+
+## 19. Universal Tracker System Domain Models
+
+Trackers allow users to specify custom logging parameters for different categories like finance, fitness, productivity, and lifestyle.
+
+### 19.1 Tracker Schema
+- `id`: Unique identifier (`string`).
+- `userId`: Owner user ID (`string`).
+- `name`: Custom title of the tracking parameter (`string`).
+- `description`: Custom details or prompt text (`string`).
+- `icon`: Lucide icon name for visual representation (`string`).
+- `color`: Custom HEX color code (`string`).
+- `category`: Classification label (`'finance' | 'health' | 'productivity' | 'work' | 'lifestyle' | 'custom'`).
+- `fields`: Schema blueprint for custom entry attributes (`TrackerField[]`).
+- `reminders`: Optional scheduled alerts (`TrackerReminder[]`).
+- `archived`: Toggled archiving flag (`boolean`).
+- `deleted`: Soft-delete trash bin flag (`boolean`).
+- `deletedAt`: ISO timestamp when soft deleted (`string | null`).
+- `createdAt`: ISO creation timestamp (`string`).
+
+### 19.2 TrackerField Schema
+- `id`: Unique identifier (`string`).
+- `name`: Display label of input parameter (`string`).
+- `type`: Data type control (`'number' | 'text' | 'date' | 'time' | 'boolean' | 'select'`).
+- `unit`: Measurement unit label (e.g., 'kg', 'min') for numbers (`string | null`).
+- `options`: Predefined selection alternatives (`string[] | null`).
+- `required`: Validation flag (`boolean`).
+- `order`: Visual alignment value (`number`).
+
+### 19.3 TrackerEntry Schema
+- `id`: Unique entry identifier (`string`).
+- `trackerId`: Parent tracker scheme association (`string`).
+- `userId`: Entry author user ID (`string`).
+- `values`: User inputs mapped as record `{ [field.id]: value }` (`Record<string, string | number | boolean | null>`).
+- `note`: Optional inline description note (`string | null`).
+- `date`: Logged target date YYYY-MM-DD (`string`).
+- `createdAt`: ISO entry submission timestamp (`string`).
+
+
